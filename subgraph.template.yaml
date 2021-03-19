@@ -1,0 +1,326 @@
+specVersion: 0.0.2
+description: The Graph Network Smart Contracts on Ethereum
+repository: https://github.com/graphprotocol/contracts/graph-network-subgraph
+schema:
+  file: ./schema.graphql
+dataSources:
+  # - kind: ethereum/contract
+  #   name: Controller
+  #   network: {{network}}
+  #   source:
+  #     address: '{{controller}}'
+  #     abi: Controller
+  #     startBlock: {{blockNumber}}
+  #   mapping:
+  #     kind: ethereum/events
+  #     apiVersion: 0.0.4
+  #     language: wasm/assemblyscript
+  #     file: ./src/mappings/controller.ts
+  #     entities:
+  #       - Indexer
+  #     abis:
+  #       - name: Controller
+  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/Controller.json
+  #     eventHandlers:
+  #       - event: SetContractProxy(indexed bytes32,address)
+  #         handler: handleSetContractProxy
+  #       - event: NewOwnership(indexed address,indexed address)
+  #         handler: handleNewOwnership
+  #       - event: PartialPauseChanged(bool)
+  #         handler: handlePartialPauseChanged
+  #       - event: PauseChanged(bool)
+  #         handler: handlePauseChanged
+  #       - event: NewPauseGuardian(indexed address,indexed address)
+  #         handler: handleNewPauseGuardian
+  # - kind: ethereum/contract
+  #   name: GNS
+  #   network: {{network}}
+  #   source:
+  #     address: '{{gns}}'
+  #     abi: GNS
+  #     startBlock: {{blockNumber}}
+  #   mapping:
+  #     kind: ethereum/events
+  #     apiVersion: 0.0.4
+  #     language: wasm/assemblyscript
+  #     file: ./src/mappings/gns.ts
+  #     entities:
+  #       - Subgraph
+  #       - SubgraphVersion
+  #       - SubgraphDeployment
+  #       - GraphAccount
+  #       - NameSignal
+  #     abis:
+  #       - name: GNS
+  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/GNS.json
+  #       - name: ENS
+  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/IENS.json
+  #       - name: ENSPublicResolver
+  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/IPublicResolver.json
+  #     eventHandlers:
+  #       - event: SubgraphPublished(indexed address,indexed uint256,indexed bytes32,bytes32)
+  #         handler: handleSubgraphPublished
+  #       - event: SubgraphDeprecated(indexed address,indexed uint256)
+  #         handler: handleSubgraphDeprecated
+  #       - event: SetDefaultName(indexed address,uint256,bytes32,string)
+  #         handler: handleSetDefaultName
+  #       - event: SubgraphMetadataUpdated(indexed address,indexed uint256,bytes32)
+  #         handler: handleSubgraphMetadataUpdated
+  #       - event: NameSignalEnabled(indexed address,indexed uint256,indexed bytes32,uint32)
+  #         handler: handleNameSignalEnabled
+  #       - event: NSignalMinted(indexed address,indexed uint256,indexed address,uint256,uint256,uint256)
+  #         handler: handleNSignalMinted
+  #       - event: NSignalBurned(indexed address,indexed uint256,indexed address,uint256,uint256,uint256)
+  #         handler: handleNSignalBurned
+  #       - event: NameSignalDisabled(indexed address,indexed uint256,uint256)
+  #         handler: handleNameSignalDisabled
+  #       - event: GRTWithdrawn(indexed address,indexed uint256,indexed address,uint256,uint256)
+  #         handler: handleGRTWithdrawn
+  # - kind: ethereum/contract
+  #   name: ServiceRegistry
+  #   network: {{network}}
+  #   source:
+  #     address: '{{serviceRegistry}}'
+  #     abi: ServiceRegistry
+  #     startBlock: {{blockNumber}}
+  #   mapping:
+  #     kind: ethereum/events
+  #     apiVersion: 0.0.4
+  #     language: wasm/assemblyscript
+  #     file: ./src/mappings/serviceRegistry.ts
+  #     entities:
+  #       - Indexer
+  #     abis:
+  #       - name: ServiceRegistry
+  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/ServiceRegistry.json
+  #     eventHandlers:
+  #       - event: ServiceRegistered(indexed address,string,string)
+  #         handler: handleServiceRegistered
+  #       - event: ServiceUnregistered(indexed address)
+  #         handler: handleServiceUnregistered
+  - kind: ethereum/contract
+    name: Staking
+    network: {{network}}
+    source:
+      address: '{{staking}}'
+      abi: Staking
+      startBlock: {{blockNumber}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      file: ./src/mappings/staking.ts
+      entities:
+        - Indexer
+        - Allocation
+        - GraphNetwork
+        - Pool
+        - SubgraphDeployment
+        - GraphAccount
+        - Delegator
+        - DelegatedStake
+        - Epoch
+      abis:
+        - name: Staking
+          file: ./node_modules/@graphprotocol/contracts/dist/abis/Staking.json
+        - name: GraphToken
+          file: ./node_modules/@graphprotocol/contracts/dist/abis/GraphToken.json
+        - name: EpochManager
+          file: ./node_modules/@graphprotocol/contracts/dist/abis/EpochManager.json
+      eventHandlers:
+        - event: DelegationParametersUpdated(indexed address,uint32,uint32,uint32)
+          handler: handleDelegationParametersUpdated
+        - event: StakeDeposited(indexed address,uint256)
+          handler: handleStakeDeposited
+        - event: StakeLocked(indexed address,uint256,uint256)
+          handler: handleStakeLocked
+        - event: StakeWithdrawn(indexed address,uint256)
+          handler: handleStakeWithdrawn
+        - event: StakeSlashed(indexed address,uint256,uint256,address)
+          handler: handleStakeSlashed
+        - event: StakeDelegated(indexed address,indexed address,uint256,uint256)
+          handler: handleStakeDelegated
+        - event: StakeDelegatedLocked(indexed address,indexed address,uint256,uint256,uint256)
+          handler: handleStakeDelegatedLocked
+        - event: StakeDelegatedWithdrawn(indexed address,indexed address,uint256)
+          handler: handleStakeDelegatedWithdrawn
+        - event: AllocationCreated(indexed address,indexed bytes32,uint256,uint256,indexed address,bytes32)
+          handler: handleAllocationCreated
+        - event: AllocationCollected(indexed address,indexed bytes32,uint256,uint256,indexed address,address,uint256,uint256)
+          handler: handleAllocationCollected
+        - event: AllocationClosed(indexed address,indexed bytes32,uint256,uint256,indexed address,uint256,address,bytes32,bool)
+          handler: handleAllocationClosed
+        # - event: AllocationClosed(indexed address,indexed bytes32,uint256,uint256,indexed address,uint256,address,bytes32,bool)
+        #   handler: handleAllocationClosed
+        - event: RebateClaimed(indexed address,indexed bytes32,indexed address,uint256,uint256,uint256,uint256,uint256)
+          handler: handleRebateClaimed
+        - event: ParameterUpdated(string)
+          handler: handleParameterUpdated
+        # - event: SetOperator(indexed address,indexed address,bool)
+        #   handler: handleSetOperator
+        # - event: SlasherUpdate(indexed address,indexed address,bool)
+        #   handler: handleSlasherUpdate
+        # - event: AssetHolderUpdate(indexed address,indexed address,bool)
+        #   handler: handleAssetHolderUpdate
+        # - event: ImplementationUpdated(address,address)
+        #   handler: handleImplementationUpdated
+  # - kind: ethereum/contract
+  #   name: Curation
+  #   network: {{network}}
+  #   source:
+  #     address: '{{curation}}'
+  #     abi: Curation
+  #     startBlock: {{blockNumber}}
+  #   mapping:
+  #     kind: ethereum/events
+  #     apiVersion: 0.0.4
+  #     language: wasm/assemblyscript
+  #     file: ./src/mappings/curation.ts
+  #     entities:
+  #       - Curator
+  #       - GraphNetwork
+  #       - Signal
+  #       - SubgraphDeployment
+  #       - Epoch
+  #     abis:
+  #       - name: Curation
+  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/Curation.json
+  #     eventHandlers:
+  #       - event: Signalled(indexed address,indexed bytes32,uint256,uint256,uint256)
+  #         handler: handleSignalled
+  #       - event: Burned(indexed address,indexed bytes32,uint256,uint256)
+  #         handler: handleBurned
+  #       # - event: Collected(indexed bytes32,uint256) NOT used - all can be handled by handleAllocationClosed
+  #       #   handler: handleCollected
+  #       - event: ParameterUpdated(string)
+  #         handler: handleParameterUpdated
+  #       # - event: ImplementationUpdated(address,address)
+  #       #   handler: handleImplementationUpdated
+  # - kind: ethereum/contract
+  #   name: GraphToken
+  #   network: {{network}}
+  #   source:
+  #     address: '{{graphToken}}'
+  #     abi: GraphToken
+  #     startBlock: {{blockNumber}}
+  #   mapping:
+  #     kind: ethereum/events
+  #     apiVersion: 0.0.4
+  #     language: wasm/assemblyscript
+  #     file: ./src/mappings/graphToken.ts
+  #     entities:
+  #       - GraphAccount
+  #       - GraphNetwork
+  #     abis:
+  #       - name: GraphToken
+  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/GraphToken.json
+  #     eventHandlers:
+  #       - event: Transfer(indexed address,indexed address,uint256)
+  #         handler: handleTransfer
+  #       - event: Approval(indexed address,indexed address,uint256)
+  #         handler: handleApproval
+  # - kind: ethereum/contract
+  #   name: EthereumDIDRegistry
+  #   network: {{network}}
+  #   source:
+  #     address: '0xdCa7EF03e98e0DC2B855bE647C39ABe984fcF21B'
+  #     abi: EthereumDIDRegistry
+  #     startBlock: {{blockNumber}}
+  #   mapping:
+  #     kind: ethereum/events
+  #     apiVersion: 0.0.3
+  #     language: wasm/assemblyscript
+  #     file: ./src/mappings/ethereumDIDRegistry.ts
+  #     entities:
+  #       - GraphAccount
+  #     abis:
+  #       - name: EthereumDIDRegistry
+  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/EthereumDIDRegistry.json
+  #     eventHandlers:
+  #       - event: DIDAttributeChanged(indexed address,bytes32,bytes,uint256,uint256)
+  #         handler: handleDIDAttributeChanged
+  # - kind: ethereum/contract
+  #   name: EpochManager
+  #   network: {{network}}
+  #   source:
+  #     address: '{{epochManager}}'
+  #     abi: EpochManager
+  #     startBlock: {{blockNumber}}
+  #   mapping:
+  #     kind: ethereum/events
+  #     apiVersion: 0.0.4
+  #     language: wasm/assemblyscript
+  #     file: ./src/mappings/epochManager.ts
+  #     entities:
+  #       - Epoch
+  #       - GraphNetwork
+  #     abis:
+  #       - name: EpochManager
+  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/EpochManager.json
+  #     eventHandlers:
+  #       - event: EpochRun(indexed uint256,address)
+  #         handler: handleEpochRun
+  #       - event: EpochLengthUpdate(indexed uint256,uint256)
+  #         handler: handleEpochLengthUpdate
+  #       # - event: ImplementationUpdated(address,address)
+  #       #   handler: handleImplementationUpdated
+  - kind: ethereum/contract
+    name: RewardsManager
+    network: {{network}}
+    source:
+      address: '{{rewardsManager}}'
+      abi: RewardsManager
+      startBlock: {{blockNumber}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      file: ./src/mappings/rewardsManager.ts
+      entities:
+        - Indexer
+        - Allocation
+        - GraphNetwork
+        - Epoch
+        - SubgraphDeployment
+      abis:
+        - name: RewardsManager
+          file: ./node_modules/@graphprotocol/contracts/dist/abis/RewardsManager.json
+      eventHandlers:
+        - event: RewardsAssigned(indexed address,indexed address,uint256,uint256)
+          handler: handleRewardsAssigned
+        # - event: ImplementationUpdated(address,address)
+        #   handler: handleImplementationUpdated
+        # - event: ParameterUpdated(string)
+        #   handler: handleParameterUpdated
+  # - kind: ethereum/contract
+  #   name: DisputeManager
+  #   network: {{network}}
+  #   source:
+  #     address: '{{disputeManager}}'
+  #     abi: DisputeManager
+  #     startBlock: {{blockNumber}}
+  #   mapping:
+  #     kind: ethereum/events
+  #     apiVersion: 0.0.4
+  #     language: wasm/assemblyscript
+  #     file: ./src/mappings/disputeManager.ts
+  #     entities:
+  #       - TODO
+  #     abis:
+  #       - name: DisputeManager
+  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/DisputeManager.json
+  #     eventHandlers:
+  #       - event: QueryDisputeCreated(indexed bytes32,indexed address,indexed address,uint256,bytes32,bytes)
+  #         handler: handleQueryDisputeCreated
+  #       - event: IndexingDisputeCreated(indexed bytes32,indexed address,indexed address,uint256,address)
+  #         handler: handleIndexingDisputeCreated
+  #       - event: DisputeAccepted(indexed bytes32,indexed address,indexed address,uint256)
+  #         handler: handleDisputeAccepted
+  #       - event: DisputeRejected(indexed bytes32,indexed address,indexed address,uint256)
+  #         handler: handleDisputeRejected
+  #       - event: DisputeDrawn(indexed bytes32,indexed address,indexed address,uint256)
+  #         handler: handleDisputeDrawn
+  #       - event: DisputeLinked(indexed bytes32,indexed bytes32)
+  #         handler: handleDisputeLinked
+  #       - event: ParameterUpdated(string)
+  #         handler: handleParameterUpdated
