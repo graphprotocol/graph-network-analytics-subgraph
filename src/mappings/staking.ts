@@ -39,6 +39,8 @@ import {
   updateDelegationExchangeRate,
   createOrLoadGraphNetwork,
   getAndUpdateIndexerDailyData,
+  getAndUpdateDelegatorDailyData,
+  getAndUpdateDelegatedStakeDailyData,
 } from './helpers'
 
 export function handleDelegationParametersUpdated(event: DelegationParametersUpdated): void {
@@ -82,6 +84,7 @@ export function handleStakeDeposited(event: StakeDeposited): void {
   // epoch.stakeDeposited = epoch.stakeDeposited.plus(event.params.tokens)
   // epoch.save()
 
+  // analytics
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
 }
 
@@ -111,6 +114,7 @@ export function handleStakeLocked(event: StakeLocked): void {
   }
   graphNetwork.save()
 
+  // analytics
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
 }
 
@@ -138,6 +142,7 @@ export function handleStakeWithdrawn(event: StakeWithdrawn): void {
   )
   graphNetwork.save()
 
+  // analytics
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
 }
 
@@ -166,6 +171,7 @@ export function handleStakeSlashed(event: StakeSlashed): void {
   graphNetwork.totalTokensStaked = graphNetwork.totalTokensStaked.minus(event.params.tokens)
   graphNetwork.save()
 
+  // analytics
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   // Also update net slashed stake?
 }
@@ -190,6 +196,7 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   let delegatorID = event.params.delegator.toHexString()
   let delegator = createOrLoadDelegator(delegatorID, event.block.timestamp)
   delegator.totalStakedTokens = delegator.totalStakedTokens.plus(event.params.tokens)
+  delegator.stakedTokens = delegator.stakedTokens.plus(event.params.tokens)
   delegator.save()
 
   // update delegated stake
@@ -213,6 +220,7 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   }
 
   delegatedStake.stakedTokens = delegatedStake.stakedTokens.plus(event.params.tokens)
+  delegatedStake.totalStakedTokens = delegatedStake.totalStakedTokens.plus(event.params.tokens)
   delegatedStake.shareAmount = delegatedStake.shareAmount.plus(event.params.shares)
   delegatedStake.lastDelegatedAt = event.block.timestamp.toI32()
   delegatedStake.save()
@@ -222,9 +230,23 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   graphNetwork.totalDelegatedTokens = graphNetwork.totalDelegatedTokens.plus(event.params.tokens)
   graphNetwork.save()
 
-  let dailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
-  dailyData.netDailyDelegatedTokens = dailyData.netDailyDelegatedTokens.plus(event.params.tokens)
-  dailyData.save();
+  // analytics
+  let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  indexerDailyData.netDailyDelegatedTokens = indexerDailyData.netDailyDelegatedTokens.plus(
+    event.params.tokens,
+  )
+  indexerDailyData.save()
+
+  let delegatorDailyData = getAndUpdateDelegatorDailyData(
+    delegator as Delegator,
+    event.block.timestamp,
+  )
+  let delegatedStakeDailyData = getAndUpdateDelegatedStakeDailyData(
+    delegatedStake as DelegatedStake,
+    event.block.timestamp,
+    delegatorDailyData,
+    indexerDailyData,
+  )
 }
 
 export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
@@ -247,7 +269,8 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   let delegatorID = event.params.delegator.toHexString()
   let id = joinID([delegatorID, indexerID])
   let delegatedStake = DelegatedStake.load(id)
-  delegatedStake.unstakedTokens = delegatedStake.unstakedTokens.plus(event.params.tokens)
+  delegatedStake.totalUnstakedTokens = delegatedStake.totalUnstakedTokens.plus(event.params.tokens)
+  delegatedStake.stakedTokens = delegatedStake.stakedTokens.minus(event.params.tokens)
   delegatedStake.shareAmount = delegatedStake.shareAmount.minus(event.params.shares)
   delegatedStake.lockedTokens = delegatedStake.lockedTokens.plus(event.params.tokens)
   delegatedStake.lockedUntil = event.params.until.toI32() // until always updates and overwrites the past lockedUntil time
@@ -264,6 +287,8 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   let delegator = Delegator.load(delegatorID)
   delegator.totalUnstakedTokens = delegator.totalUnstakedTokens.plus(event.params.tokens)
   delegator.totalRealizedRewards = delegator.totalRealizedRewards.plus(realizedRewards)
+  delegator.stakedTokens = delegator.stakedTokens.minus(event.params.tokens)
+  delegator.lockedTokens = delegator.lockedTokens.plus(event.params.tokens)
   delegator.save()
 
   // upgrade graph network
@@ -271,19 +296,55 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   graphNetwork.totalDelegatedTokens = graphNetwork.totalDelegatedTokens.minus(event.params.tokens)
   graphNetwork.save()
 
-  let dailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
-  dailyData.netDailyDelegatedTokens = dailyData.netDailyDelegatedTokens.minus(event.params.tokens)
-  dailyData.save();
+  // analytics
+  let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  indexerDailyData.netDailyDelegatedTokens = indexerDailyData.netDailyDelegatedTokens.minus(
+    event.params.tokens,
+  )
+  indexerDailyData.save()
+
+  let delegatorDailyData = getAndUpdateDelegatorDailyData(
+    delegator as Delegator,
+    event.block.timestamp,
+  )
+  let delegatedStakeDailyData = getAndUpdateDelegatedStakeDailyData(
+    delegatedStake as DelegatedStake,
+    event.block.timestamp,
+    delegatorDailyData,
+    indexerDailyData,
+  )
 }
 
 export function handleStakeDelegatedWithdrawn(event: StakeDelegatedWithdrawn): void {
   let indexerID = event.params.indexer.toHexString()
+  let indexer = Indexer.load(indexerID)
   let delegatorID = event.params.delegator.toHexString()
+  let delegator = Delegator.load(delegatorID)
   let id = joinID([delegatorID, indexerID])
   let delegatedStake = DelegatedStake.load(id)
+  let lockedBefore = delegatedStake.lockedTokens
+
+  delegator.lockedTokens = delegatedStake.lockedTokens.minus(lockedBefore)
+  delegator.save()
+
   delegatedStake.lockedTokens = BigInt.fromI32(0)
   delegatedStake.lockedUntil = 0
   delegatedStake.save()
+
+  // analytics
+  let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+
+  let delegatorDailyData = getAndUpdateDelegatorDailyData(
+    delegator as Delegator,
+    event.block.timestamp,
+  )
+
+  getAndUpdateDelegatedStakeDailyData(
+    delegatedStake as DelegatedStake,
+    event.block.timestamp,
+    delegatorDailyData,
+    indexerDailyData,
+  )
 }
 
 /**
@@ -410,7 +471,7 @@ export function handleAllocationCollected(event: AllocationCollected): void {
   )
   graphNetwork.save()
 
-  getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
 }
 
 /**

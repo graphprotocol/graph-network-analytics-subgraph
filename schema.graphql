@@ -411,14 +411,22 @@ type Delegator @entity {
   id: ID!
   "Stakes of this delegator"
   stakes: [DelegatedStake!]! @derivedFrom(field: "delegator")
+  "Time created at"
+  createdAt: Int!
+  "Current amount of staked tokens across all DelegatedStakes"
+  stakedTokens: BigInt!
+  "Current amount of locked tokens (undelegating) across all DelegatedStakes"
+  lockedTokens: BigInt!
+  "Total realized rewards on all delegated stakes. Realized rewards are added when undelegating and realizing a profit"
+  totalRealizedRewards: BigDecimal!
+
+  dailyData: [DelegatorDailyData!]! @derivedFrom(field:"delegator")
+
+  # Old probably not very useful metrics
   "CUMULATIVE staked tokens in DelegatorStakes of this Delegator"
   totalStakedTokens: BigInt!
   "CUMULATIVE unstaked tokens in DelegatorStakes of this Delegator"
   totalUnstakedTokens: BigInt!
-  "Time created at"
-  createdAt: Int!
-  "Total realized rewards on all delegated stakes. Realized rewards are added when undelegating and realizing a profit"
-  totalRealizedRewards: BigDecimal!
 }
 
 """
@@ -431,10 +439,8 @@ type DelegatedStake @entity {
   indexer: Indexer!
   "Delegator"
   delegator: Delegator!
-  "CUMULATIVE tokens delegated"
+  "CURRENT tokens staked. Old stakedTokens implementation renamed to totalStakedTokens (19/03/21)"
   stakedTokens: BigInt!
-  "CUMULATIVE tokens undelegated"
-  unstakedTokens: BigInt!
   "CURRENT tokens locked"
   lockedTokens: BigInt!
   "Epoch the locked tokens get unlocked"
@@ -445,6 +451,12 @@ type DelegatedStake @entity {
   personalExchangeRate: BigDecimal!
   "Realized rewards from undelegating and realizing a reward"
   realizedRewards: BigDecimal!
+
+  "CUMULATIVE tokens delegated"
+  totalStakedTokens: BigInt!
+  "CUMULATIVE tokens undelegated"
+  totalUnstakedTokens: BigInt!
+
   "Time this delegator first delegated to an indexer"
   createdAt: Int!
   "Last time this delegator delegated towards this indexer"
@@ -729,6 +741,9 @@ type IndexerDailyData @entity {
   "Current value of delegatedTokens for that day"
   delegatedTokens: BigInt!
 
+  "Current value of allocatedTokens for that day"
+  allocatedTokens: BigInt!
+
   "Amount of delegated tokens moved that day. Negative means more tokens were undelegated than delegated"
   netDailyDelegatedTokens: BigInt!
 
@@ -743,6 +758,59 @@ type IndexerDailyData @entity {
   indexerIndexingRewards: BigInt!
 
   delegatorIndexingRewards: BigInt!
+
+  delegationExchangeRate: BigDecimal!
+
+  delegationsDailyData: [DelegatedStakeDailyData!]! @derivedFrom(field:"indexerDailyData")
+}
+
+type DelegatorDailyData @entity {
+  "<DELEGATOR ADDRESS>-<DAY NUMBER>"
+  id: ID!
+
+  dayStart: BigInt!
+
+  dayEnd: BigInt!
+
+  dayNumber: Int!
+
+  delegator: Delegator!
+
+  "Current amount of staked tokens for this day across all stakes"
+  stakedTokens: BigInt!
+
+  "Current amount of locked (undelegating) tokens for this day across all stakes"
+  lockedTokens: BigInt!
+
+  stakesDailyData: [DelegatedStakeDailyData!]! @derivedFrom(field:"delegatorDailyAggregator")
+}
+
+type DelegatedStakeDailyData @entity {
+  "<DELEGATOR ADDRESS>-<INDEXER ADDRESS>-<DAY NUMBER>"
+  id: ID!
+
+  dayStart: BigInt!
+
+  dayEnd: BigInt!
+
+  dayNumber: Int!
+
+  stake: DelegatedStake!
+
+  "Current amount of staked tokens for this day and this indexer"
+  stakedTokens: BigInt!
+
+  "Current amount of locked tokens (undelegating) for this day and this indexer"
+  lockedTokens: BigInt!
+
+  "Current amount of shares for this day and this indexer"
+  shareAmount: BigInt!
+
+  personalExchangeRate: BigDecimal!
+
+  delegatorDailyAggregator: DelegatorDailyData!
+
+  indexerDailyData: IndexerDailyData!
 }
 
 """

@@ -13,6 +13,8 @@ import {
   Delegator,
   DelegatedStake,
   IndexerDailyData,
+  DelegatorDailyData,
+  DelegatedStakeDailyData,
 } from '../types/schema'
 import { ENS } from '../types/GNS/ENS'
 import { Controller } from '../types/Controller/Controller'
@@ -143,6 +145,8 @@ export function createOrLoadDelegator(id: string, timestamp: BigInt): Delegator 
   let delegator = Delegator.load(id)
   if (delegator == null) {
     delegator = new Delegator(id)
+    delegator.stakedTokens = BigInt.fromI32(0)
+    delegator.lockedTokens = BigInt.fromI32(0)
     delegator.totalStakedTokens = BigInt.fromI32(0)
     delegator.totalUnstakedTokens = BigInt.fromI32(0)
     delegator.createdAt = timestamp.toI32()
@@ -168,7 +172,8 @@ export function createOrLoadDelegatedStake(
     delegatedStake.indexer = indexer
     delegatedStake.delegator = delegator
     delegatedStake.stakedTokens = BigInt.fromI32(0)
-    delegatedStake.unstakedTokens = BigInt.fromI32(0)
+    delegatedStake.totalStakedTokens = BigInt.fromI32(0)
+    delegatedStake.totalUnstakedTokens = BigInt.fromI32(0)
     delegatedStake.lockedTokens = BigInt.fromI32(0)
     delegatedStake.lockedUntil = 0
     delegatedStake.shareAmount = BigInt.fromI32(0)
@@ -594,12 +599,13 @@ export function updateDelegationExchangeRate(indexer: Indexer): Indexer {
   return indexer as Indexer
 }
 
-export function getAndUpdateIndexerDailyData(
-  indexer: Indexer,
-  timestamp: BigInt,
-): IndexerDailyData {
+function dailyEntityId(entityId: string, dayId: string): string {
+  return entityId.concat('-').concat(dayId)
+}
+
+export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt): IndexerDailyData {
   let dayId = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
-  let id = indexer.id.concat('-').concat(BigInt.fromI32(dayId).toString())
+  let id = dailyEntityId(entity.id, BigInt.fromI32(dayId).toString())
   let dailyData = IndexerDailyData.load(id)
 
   if (dailyData == null) {
@@ -608,20 +614,78 @@ export function getAndUpdateIndexerDailyData(
     dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
     dailyData.dayEnd = dailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
     dailyData.dayNumber = dayId
-    dailyData.indexer = indexer.id
+    dailyData.indexer = entity.id
     dailyData.netDailyDelegatedTokens = BigInt.fromI32(0)
   }
 
-  dailyData.stakedTokens = indexer.stakedTokens
-  dailyData.delegatedTokens = indexer.delegatedTokens
-  dailyData.queryFeesCollected = indexer.queryFeesCollected
-  dailyData.queryFeeRebates = indexer.queryFeeRebates
-  dailyData.delegatorQueryFees = indexer.delegatorQueryFees
-  dailyData.totalIndexingRewards = indexer.rewardsEarned
-  dailyData.indexerIndexingRewards = indexer.indexerIndexingRewards
-  dailyData.delegatorIndexingRewards = indexer.delegatorIndexingRewards
+  dailyData.stakedTokens = entity.stakedTokens
+  dailyData.delegatedTokens = entity.delegatedTokens
+  dailyData.allocatedTokens = entity.allocatedTokens
+  dailyData.queryFeesCollected = entity.queryFeesCollected
+  dailyData.queryFeeRebates = entity.queryFeeRebates
+  dailyData.delegatorQueryFees = entity.delegatorQueryFees
+  dailyData.totalIndexingRewards = entity.rewardsEarned
+  dailyData.indexerIndexingRewards = entity.indexerIndexingRewards
+  dailyData.delegatorIndexingRewards = entity.delegatorIndexingRewards
+  dailyData.delegationExchangeRate = entity.delegationExchangeRate
 
   dailyData.save()
 
   return dailyData as IndexerDailyData
+}
+
+export function getAndUpdateDelegatorDailyData(
+  entity: Delegator,
+  timestamp: BigInt,
+): DelegatorDailyData {
+  let dayId = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
+  let id = dailyEntityId(entity.id, BigInt.fromI32(dayId).toString())
+  let dailyData = DelegatorDailyData.load(id)
+
+  if (dailyData == null) {
+    dailyData = new DelegatorDailyData(id)
+
+    dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
+    dailyData.dayEnd = dailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
+    dailyData.dayNumber = dayId
+    dailyData.delegator = entity.id
+  }
+
+  dailyData.stakedTokens = entity.stakedTokens
+  dailyData.lockedTokens = entity.lockedTokens
+
+  dailyData.save()
+
+  return dailyData as DelegatorDailyData
+}
+
+export function getAndUpdateDelegatedStakeDailyData(
+  entity: DelegatedStake,
+  timestamp: BigInt,
+  delegatorDailyAggregator: DelegatorDailyData,
+  indexerDailyData: IndexerDailyData,
+): DelegatedStakeDailyData {
+  let dayId = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
+  let id = dailyEntityId(entity.id, BigInt.fromI32(dayId).toString())
+  let dailyData = DelegatedStakeDailyData.load(id)
+
+  if (dailyData == null) {
+    dailyData = new DelegatedStakeDailyData(id)
+
+    dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
+    dailyData.dayEnd = dailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
+    dailyData.dayNumber = dayId
+    dailyData.stake = entity.id
+    dailyData.delegatorDailyAggregator = delegatorDailyAggregator.id
+    dailyData.indexerDailyData = indexerDailyData.id
+  }
+
+  dailyData.stakedTokens = entity.stakedTokens
+  dailyData.lockedTokens = entity.lockedTokens
+  dailyData.shareAmount = entity.shareAmount
+  dailyData.personalExchangeRate = entity.personalExchangeRate
+
+  dailyData.save()
+
+  return dailyData as DelegatedStakeDailyData
 }
