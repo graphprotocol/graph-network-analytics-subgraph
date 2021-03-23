@@ -190,7 +190,6 @@ export function createOrLoadCurator(id: string, timestamp: BigInt): Curator {
   if (curator == null) {
     curator = new Curator(id)
     curator.createdAt = timestamp.toI32()
-    curator.account = id
     curator.totalSignalledTokens = BigInt.fromI32(0)
     curator.totalUnsignalledTokens = BigInt.fromI32(0)
 
@@ -206,10 +205,6 @@ export function createOrLoadCurator(id: string, timestamp: BigInt): Curator {
     curator.totalNameSignal = BigDecimal.fromString('0')
     curator.totalAverageCostBasisPerNameSignal = BigDecimal.fromString('0')
     curator.save()
-
-    let graphAccount = GraphAccount.load(id)
-    graphAccount.curator = id
-    graphAccount.save()
 
     let graphNetwork = createOrLoadGraphNetwork()
     graphNetwork.curatorCount = graphNetwork.curatorCount + 1
@@ -621,6 +616,7 @@ export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt)
   dailyData.stakedTokens = entity.stakedTokens
   dailyData.delegatedTokens = entity.delegatedTokens
   dailyData.allocatedTokens = entity.allocatedTokens
+  dailyData.availableStake = entity.availableStake
   dailyData.queryFeesCollected = entity.queryFeesCollected
   dailyData.queryFeeRebates = entity.queryFeeRebates
   dailyData.delegatorQueryFees = entity.delegatorQueryFees

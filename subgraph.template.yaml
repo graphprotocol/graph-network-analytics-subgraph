@@ -164,38 +164,38 @@ dataSources:
         #   handler: handleAssetHolderUpdate
         # - event: ImplementationUpdated(address,address)
         #   handler: handleImplementationUpdated
-  # - kind: ethereum/contract
-  #   name: Curation
-  #   network: {{network}}
-  #   source:
-  #     address: '{{curation}}'
-  #     abi: Curation
-  #     startBlock: {{blockNumber}}
-  #   mapping:
-  #     kind: ethereum/events
-  #     apiVersion: 0.0.4
-  #     language: wasm/assemblyscript
-  #     file: ./src/mappings/curation.ts
-  #     entities:
-  #       - Curator
-  #       - GraphNetwork
-  #       - Signal
-  #       - SubgraphDeployment
-  #       - Epoch
-  #     abis:
-  #       - name: Curation
-  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/Curation.json
-  #     eventHandlers:
-  #       - event: Signalled(indexed address,indexed bytes32,uint256,uint256,uint256)
-  #         handler: handleSignalled
-  #       - event: Burned(indexed address,indexed bytes32,uint256,uint256)
-  #         handler: handleBurned
-  #       # - event: Collected(indexed bytes32,uint256) NOT used - all can be handled by handleAllocationClosed
-  #       #   handler: handleCollected
-  #       - event: ParameterUpdated(string)
-  #         handler: handleParameterUpdated
-  #       # - event: ImplementationUpdated(address,address)
-  #       #   handler: handleImplementationUpdated
+  - kind: ethereum/contract
+    name: Curation
+    network: {{network}}
+    source:
+      address: '{{curation}}'
+      abi: Curation
+      startBlock: {{blockNumber}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      file: ./src/mappings/curation.ts
+      entities:
+        - Curator
+        - GraphNetwork
+        - Signal
+        - SubgraphDeployment
+        - Epoch
+      abis:
+        - name: Curation
+          file: ./node_modules/@graphprotocol/contracts/dist/abis/Curation.json
+      eventHandlers:
+        - event: Signalled(indexed address,indexed bytes32,uint256,uint256,uint256)
+          handler: handleSignalled
+        - event: Burned(indexed address,indexed bytes32,uint256,uint256)
+          handler: handleBurned
+        # - event: Collected(indexed bytes32,uint256) NOT used - all can be handled by handleAllocationClosed
+        #   handler: handleCollected
+        # - event: ParameterUpdated(string)
+        #   handler: handleParameterUpdated
+        # - event: ImplementationUpdated(address,address)
+        #   handler: handleImplementationUpdated
   # - kind: ethereum/contract
   #   name: GraphToken
   #   network: {{network}}

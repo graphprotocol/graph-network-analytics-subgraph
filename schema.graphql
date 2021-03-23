@@ -701,6 +701,7 @@ type SignalTransaction implements Transaction @entity {
   blockNumber: Int!
   timestamp: Int!
   type: TransactionType!
+  signer: Curator!
   "Amount of signal updated"
   signal: BigInt!
   "Tokens used"
@@ -743,6 +744,9 @@ type IndexerDailyData @entity {
 
   "Current value of allocatedTokens for that day"
   allocatedTokens: BigInt!
+
+  "Current value of availableStake for that day"
+  availableStake: BigInt!
 
   "Amount of delegated tokens moved that day. Negative means more tokens were undelegated than delegated"
   netDailyDelegatedTokens: BigInt!
