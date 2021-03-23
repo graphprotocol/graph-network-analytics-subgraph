@@ -16,9 +16,6 @@ import {
   DelegatorDailyData,
   DelegatedStakeDailyData,
 } from '../types/schema'
-import { ENS } from '../types/GNS/ENS'
-import { Controller } from '../types/Controller/Controller'
-
 import { addresses } from '../../config/addresses'
 import { LAUNCH_DAY, SECONDS_PER_DAY } from './utils'
 

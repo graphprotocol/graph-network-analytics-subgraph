@@ -1,7 +1,7 @@
 # Graph Network Subgraph
 
-This repository contains the code for the Graph Network Subgraph. The mainnet version of the
-[subgraph can be explored through the playground here](https://thegraph.com/explorer/subgraph/graphprotocol/graph-network-mainnet?version=pending).
+This repository contains the code for analytics part of the Graph Network Subgraph. This version of the
+[subgraph can be explored through the playground here](https://thegraph.com/explorer/subgraph/graphprotocol/graph-network-analytics?version=pending).
 
 # Contributing to the repository
 
@@ -11,7 +11,7 @@ Contributions are always welcome! Likely you will want to create a PR against `m
 Please submit bugs as an issue in this repository.
 ## Maintaining the repository
 
-This repository has three different configurations for the `testnet`, `mainnet`, and 
+This repository has three different configurations for the `testnet`, `mainnet`, and
 `mainnet-staging` subgraphs. These can be seen in the npm scripts.
 
 We are using `mustache` to configure two different `subgraph.yaml` manifests. Each manifest
@@ -23,7 +23,7 @@ or mainnet package, [which you can find here](https://www.npmjs.com/package/@gra
 The setup for each branch is:
 
 ```
-master -            The code on master will always match the subgraph deployed to 
+master -            The code on master will always match the subgraph deployed to
                     graph-network-mainnet in the explorer, as well as the version of the subgraph
                     the gateway is using. All code must be reviewed before merging to master.
                     The front end team should also confirm mainnet-staging works before the
@@ -32,9 +32,9 @@ master -            The code on master will always match the subgraph deployed t
                     hosted service.
 
 mainnet-staging -   This branch will be where mainnet subgraph updates are tested. We will let the
-                    subgraph sync here, and confirm it works, before merging into master. 
+                    subgraph sync here, and confirm it works, before merging into master.
 
-testnet -           This branch will contain the testnet subgraph. Development work can be done 
+testnet -           This branch will contain the testnet subgraph. Development work can be done
                     here first, and then the commits brought into mainnet-staging. In general
                     it is likely this branch will be used more for new features that might not work
                     on mainnet-staging, such as contract upgrades. Then the new work would have
