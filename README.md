@@ -80,6 +80,10 @@ Note that you will have to fill in your own subgraph name in the npm script, whe
 `<INSERT_SUBGRAPH_NAME>`. Depending if you are deploying to rinkeby or mainnet, you will also
 have to fill in `prepare:rinkeby` or `prepare:mainnet` where it has `<INSERT_MAINNET_OR_RINKEBY>`.
 
+## Automated deploy
+**Staging**
+- When `mainnet-staging` branch is updated, it will automatically deploy the subgraph to hosted service under the name `graphprotocol/graph-network-analytics-staging`
+
 ## Documentation
 
 For documentation on the subgraph, please see [DOCUMENTATION.md](./DOCUMENTATION.md).
