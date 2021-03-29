@@ -2,6 +2,8 @@ import { BigInt, ByteArray, Address, Bytes, crypto, log, BigDecimal } from '@gra
 import {
   SubgraphDeployment,
   GraphNetwork,
+  GraphAccount,
+  GraphAccountName,
   Indexer,
   Pool,
   Curator,
@@ -15,9 +17,31 @@ import {
   IndexerDailyData,
   DelegatorDailyData,
   DelegatedStakeDailyData,
+  SubgraphDeploymentDailyData,
 } from '../types/schema'
+import { ENS } from '../types/GNS/ENS'
 import { addresses } from '../../config/addresses'
 import { LAUNCH_DAY, SECONDS_PER_DAY } from './utils'
+
+export function createOrLoadGraphAccount(
+  id: string,
+  owner: Bytes,
+  timeStamp: BigInt,
+): GraphAccount {
+  let graphAccount = GraphAccount.load(id)
+  if (graphAccount == null) {
+    graphAccount = new GraphAccount(id)
+    graphAccount.createdAt = timeStamp.toI32()
+    graphAccount.operators = []
+    graphAccount.balance = BigInt.fromI32(0)
+    graphAccount.curationApproval = BigInt.fromI32(0)
+    graphAccount.stakingApproval = BigInt.fromI32(0)
+    graphAccount.gnsApproval = BigInt.fromI32(0)
+    //graphAccount.subgraphQueryFees = BigInt.fromI32(0)
+    graphAccount.save()
+  }
+  return graphAccount as GraphAccount
+}
 
 export function createOrLoadSubgraph(
   subgraphID: string,
@@ -74,6 +98,7 @@ export function createOrLoadSubgraphDeployment(
     deployment.signalledTokens = BigInt.fromI32(0)
     deployment.unsignalledTokens = BigInt.fromI32(0)
     deployment.signalAmount = BigInt.fromI32(0)
+    deployment.pricePerShare = BigDecimal.fromString('0')
     deployment.reserveRatio = 0
     deployment.deniedAt = 0
     deployment.save()
@@ -681,4 +706,29 @@ export function getAndUpdateDelegatedStakeDailyData(
   dailyData.save()
 
   return dailyData as DelegatedStakeDailyData
+}
+
+export function getAndUpdateSubgraphDeploymentDailyData(
+  entity: SubgraphDeployment,
+  timestamp: BigInt,
+): SubgraphDeploymentDailyData {
+  let dayId = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
+  let id = dailyEntityId(entity.id, BigInt.fromI32(dayId).toString())
+  let dailyData = SubgraphDeploymentDailyData.load(id)
+
+  if (dailyData == null) {
+    dailyData = new SubgraphDeploymentDailyData(id)
+
+    dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
+    dailyData.dayEnd = dailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
+    dailyData.dayNumber = dayId
+  }
+
+  dailyData.signalledTokens = entity.signalledTokens
+  dailyData.signalAmount = entity.signalAmount
+  dailyData.pricePerShare = entity.pricePerShare
+
+  dailyData.save()
+
+  return dailyData as SubgraphDeploymentDailyData
 }

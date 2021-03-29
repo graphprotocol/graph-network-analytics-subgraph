@@ -12,7 +12,7 @@ import {
   SubgraphDeployment,
   SignalTransaction,
 } from '../types/schema'
-import { Address, BigInt } from '@graphprotocol/graph-ts'
+import { Address, BigInt, BigDecimal } from '@graphprotocol/graph-ts'
 
 import {
   createOrLoadSignal,
@@ -20,6 +20,7 @@ import {
   createOrLoadCurator,
   createOrLoadGraphNetwork,
   joinID,
+  getAndUpdateSubgraphDeploymentDailyData,
 } from './helpers'
 
 /**
@@ -46,6 +47,13 @@ export function handleSignalled(event: Signalled): void {
   let deployment = createOrLoadSubgraphDeployment(subgraphDeploymentID, event.block.timestamp)
   deployment.signalledTokens = deployment.signalledTokens.plus(event.params.tokens)
   deployment.signalAmount = deployment.signalAmount.plus(event.params.signal)
+  deployment.pricePerShare =
+    deployment.signalAmount == BigInt.fromI32(0)
+      ? BigDecimal.fromString('0')
+      : deployment.signalledTokens
+          .toBigDecimal()
+          .div(deployment.signalAmount.toBigDecimal())
+          .truncate(18)
 
   let curation = Curation.bind(event.address)
   deployment.reserveRatio = curation.pools(event.params.subgraphDeploymentID).value1.toI32()
@@ -74,6 +82,8 @@ export function handleSignalled(event: Signalled): void {
   signalTransaction.withdrawalFees = BigInt.fromI32(0)
   signalTransaction.subgraphDeployment = event.params.subgraphDeploymentID.toHexString()
   signalTransaction.save()
+
+  getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)
 }
 /**
  * @dev handleRedeemed
@@ -101,6 +111,13 @@ export function handleBurned(event: Burned): void {
   let deployment = SubgraphDeployment.load(subgraphDeploymentID)
   deployment.signalledTokens = deployment.signalledTokens.minus(event.params.tokens)
   deployment.signalAmount = deployment.signalAmount.minus(event.params.signal)
+  deployment.pricePerShare =
+    deployment.signalAmount == BigInt.fromI32(0)
+      ? BigDecimal.fromString('0')
+      : deployment.signalledTokens
+          .toBigDecimal()
+          .div(deployment.signalAmount.toBigDecimal())
+          .truncate(18)
   deployment.save()
 
   // Update epoch - none
@@ -123,6 +140,8 @@ export function handleBurned(event: Burned): void {
   signalTransaction.withdrawalFees = BigInt.fromI32(0)
   signalTransaction.subgraphDeployment = event.params.subgraphDeploymentID.toHexString()
   signalTransaction.save()
+
+  getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)
 }
 
 /**
