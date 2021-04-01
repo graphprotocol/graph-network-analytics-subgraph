@@ -269,8 +269,10 @@ type SubgraphDeployment @entity {
   indexingDelegatorRewardAmount: BigInt!
   "Total query fees earned by this Subgraph Deployment, without curator query fees"
   queryFeesAmount: BigInt!
-  "Total query fee rebates earned from the protocol, through the cobbs douglas formula. Does not include delegation fees"
+  "Total query fee rebates for indexers earned from the protocol, through the cobbs douglas formula."
   queryFeeRebates: BigInt!
+  "Total query fee rebates for delegators earned from the protocol, through the cobbs douglas formula."
+  delegatorQueryFees: BigInt!
   "Total curator rewards from fees"
   curatorFeeRewards: BigInt!
   # TODO - We can add a field here for delegation fees earned when calling claim()
@@ -925,6 +927,21 @@ type SubgraphDeploymentDailyData @entity {
   signalAmount: BigInt!
 
   pricePerShare: BigDecimal!
+
+  "Total rewards accrued all time by this Subgraph Deployment. Includes delegator and indexer rewards"
+  indexingRewardAmount: BigInt!
+  "Total rewards accrued all time by indexers"
+  indexingIndexerRewardAmount: BigInt!
+  "Total rewards accrued all time by delegators"
+  indexingDelegatorRewardAmount: BigInt!
+  "Total query fees earned by this Subgraph Deployment, without curator query fees"
+  queryFeesAmount: BigInt!
+  "Total query fee rebates for indexers earned from the protocol, through the cobbs douglas formula."
+  queryFeeRebates: BigInt!
+  "Total query fee rebates for delegators earned from the protocol, through the cobbs douglas formula."
+  delegatorQueryFees: BigInt!
+  "Total curator rewards from fees"
+  curatorFeeRewards: BigInt!
 }
 
 """

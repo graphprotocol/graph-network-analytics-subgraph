@@ -93,6 +93,7 @@ export function createOrLoadSubgraphDeployment(
     deployment.indexingDelegatorRewardAmount = BigInt.fromI32(0)
     deployment.queryFeesAmount = BigInt.fromI32(0)
     deployment.queryFeeRebates = BigInt.fromI32(0)
+    deployment.delegatorQueryFees = BigInt.fromI32(0)
     deployment.curatorFeeRewards = BigInt.fromI32(0)
 
     deployment.signalledTokens = BigInt.fromI32(0)
@@ -727,8 +728,26 @@ export function getAndUpdateSubgraphDeploymentDailyData(
   dailyData.signalledTokens = entity.signalledTokens
   dailyData.signalAmount = entity.signalAmount
   dailyData.pricePerShare = entity.pricePerShare
+  dailyData.indexingRewardAmount = entity.indexingRewardAmount
+  dailyData.indexingIndexerRewardAmount = entity.indexingIndexerRewardAmount
+  dailyData.indexingDelegatorRewardAmount = entity.indexingDelegatorRewardAmount
+  dailyData.queryFeesAmount = entity.queryFeesAmount
+  dailyData.queryFeeRebates = entity.queryFeeRebates
+  dailyData.delegatorQueryFees = entity.delegatorQueryFees
+  dailyData.curatorFeeRewards = entity.curatorFeeRewards
 
   dailyData.save()
 
   return dailyData as SubgraphDeploymentDailyData
+}
+
+export function calculatePricePerShare(deployment: SubgraphDeployment): BigDecimal {
+  let pricePerShare =
+    deployment.signalAmount == BigInt.fromI32(0)
+      ? BigDecimal.fromString('0')
+      : deployment.signalledTokens
+          .toBigDecimal()
+          .div(deployment.signalAmount.toBigDecimal())
+          .truncate(18)
+  return pricePerShare
 }
