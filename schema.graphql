@@ -253,8 +253,8 @@ type SubgraphDeployment @entity {
   createdAt: Int!
   "The block at which this deployment was denied for rewards. Null if not denied"
   deniedAt: Int!
-  "The original Subgraph that was deployed through GNS. Can be null if never created through GNS. Used for filtering in the Explorer"
-  originalName: String
+  # "The original Subgraph that was deployed through GNS. Can be null if never created through GNS. Used for filtering in the Explorer"
+  # originalName: String
 
   # From Staking
   "CURRENT total stake of all indexers on this Subgraph Deployment"
@@ -944,13 +944,13 @@ type SubgraphDeploymentDailyData @entity {
   curatorFeeRewards: BigInt!
 }
 
-"""
-Full test search for displayName and description on the Subgraph Entity
-"""
-type _Schema_
-  @fulltext(
-    name: "subgraphSearch"
-    language: en
-    algorithm: rank
-    include: [{ entity: "Subgraph", fields: [{ name: "displayName" }, { name: "description" }] }]
-  )
+# """
+# Full test search for displayName and description on the Subgraph Entity
+# """
+# type _Schema_
+#   @fulltext(
+#     name: "subgraphSearch"
+#     language: en
+#     algorithm: rank
+#     include: [{ entity: "Subgraph", fields: [{ name: "displayName" }, { name: "description" }] }]
+#   )

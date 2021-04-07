@@ -64,11 +64,11 @@ export function createOrLoadSubgraph(
     subgraph.withdrawnTokens = BigInt.fromI32(0)
 
     subgraph.metadataHash = Bytes.fromI32(0) as Bytes
-    subgraph.description = ''
-    subgraph.image = ''
-    subgraph.codeRepository = ''
-    subgraph.website = ''
-    subgraph.displayName = ''
+    // subgraph.description = ''
+    // subgraph.image = ''
+    // subgraph.codeRepository = ''
+    // subgraph.website = ''
+    // subgraph.displayName = ''
 
     subgraph.save()
 

@@ -104,14 +104,14 @@ export function handleSubgraphMetadataUpdated(event: SubgraphMetadataUpdated): v
 
   // Add the original subgraph name to the subgraph deployment
   // This is a temporary solution until we can filter on nested queries
-  let subgraphVersion = SubgraphVersion.load(subgraph.currentVersion)
-  let subgraphDeployment = SubgraphDeployment.load(subgraphVersion.subgraphDeployment)
-  // Not super robust, someone could deploy blank, then point a subgraph to here
-  // It is more appropriate to say this is the first name 'claimed' for the deployment
-  if (subgraphDeployment.originalName == null) {
-    subgraphDeployment.originalName = subgraph.displayName
-    subgraphDeployment.save()
-  }
+  // let subgraphVersion = SubgraphVersion.load(subgraph.currentVersion)
+  // let subgraphDeployment = SubgraphDeployment.load(subgraphVersion.subgraphDeployment)
+  // // Not super robust, someone could deploy blank, then point a subgraph to here
+  // // It is more appropriate to say this is the first name 'claimed' for the deployment
+  // if (subgraphDeployment.originalName == null) {
+  //   subgraphDeployment.originalName = subgraph.displayName
+  //   subgraphDeployment.save()
+  // }
 }
 
 /**
