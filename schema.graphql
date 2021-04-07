@@ -83,21 +83,21 @@ type GraphAccount @entity {
   "Default display name is the current default name. Used for filtered queries in the explorer"
   defaultDisplayName: String
 
-  # IPFS Metadata
-  "True if it is an organization. False if it is an individual"
-  isOrganization: Boolean
+  # # IPFS Metadata
+  # "True if it is an organization. False if it is an individual"
+  # isOrganization: Boolean
   "IPFS hash with account metadata details"
   metadataHash: Bytes
-  "Main repository of code for the graph account"
-  codeRepository: String
-  "Description of the graph account"
-  description: String
-  "Image URL"
-  image: String
-  "Website URL"
-  website: String
-  "Display name. Not unique"
-  displayName: String
+  # "Main repository of code for the graph account"
+  # codeRepository: String
+  # "Description of the graph account"
+  # description: String
+  # "Image URL"
+  # image: String
+  # "Website URL"
+  # website: String
+  # "Display name. Not unique"
+  # displayName: String
 
   # Operator info
   "Operator of other Graph Accounts"
@@ -193,19 +193,19 @@ type Subgraph @entity {
   "Curators of this subgraph deployment"
   nameSignals: [NameSignal!]! @derivedFrom(field: "subgraph")
 
-  # Metadata from IPFS linked in GNS
+  # # Metadata from IPFS linked in GNS
   "Subgraph metadata"
   metadataHash: Bytes!
-  "Short description of the subgraph"
-  description: String!
-  "Image in string format"
-  image: String!
-  "Location of the code for this project"
-  codeRepository: String!
-  "Projects website"
-  website: String!
-  "Display name"
-  displayName: String!
+  # "Short description of the subgraph"
+  # description: String!
+  # "Image in string format"
+  # image: String!
+  # "Location of the code for this project"
+  # codeRepository: String!
+  # "Projects website"
+  # website: String!
+  # "Display name"
+  # displayName: String!
 }
 
 """
@@ -231,10 +231,10 @@ type SubgraphVersion @entity {
   # Metadata from IPFS linked in GNS
   "Subgraph version metadata content address"
   metadataHash: Bytes!
-  "Short description of the version"
-  description: String!
-  "Semantic versioning label"
-  label: String!
+  # "Short description of the version"
+  # description: String!
+  # "Semantic versioning label"
+  # label: String!
 }
 
 """
