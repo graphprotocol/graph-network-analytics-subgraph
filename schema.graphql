@@ -831,33 +831,34 @@ type IndexerDailyData @entity {
 
   indexer: Indexer!
 
-  "Current value of stakedTokens for that day"
+  "[CURRENT] Value of stakedTokens for that day"
   stakedTokens: BigInt!
 
-  "Current value of delegatedTokens for that day"
+  "[CURRENT] Value of delegatedTokens for that day"
   delegatedTokens: BigInt!
 
-  "Current value of allocatedTokens for that day"
+  "[CURRENT] Value of allocatedTokens for that day"
   allocatedTokens: BigInt!
 
-  "Current value of availableStake for that day"
+  "[CURRENT] Value of availableStake for that day"
   availableStake: BigInt!
 
-  "Amount of delegated tokens moved that day. Negative means more tokens were undelegated than delegated"
+  "[CURRENT] Amount of delegated tokens moved that day. Negative means more tokens were undelegated than delegated"
   netDailyDelegatedTokens: BigInt!
 
+  "[CUMULATIVE] Total amount of query fees collected by the indexer and sent to the rebate pool"
   queryFeesCollected: BigInt!
-
+  "[CUMULATIVE]Total amount of query fees that the indexer got from rebates"
   queryFeeRebates: BigInt!
-
+  "[CUMULATIVE] Total amount of query fees that the delegation pool received"
   delegatorQueryFees: BigInt!
-
+  "[CUMULATIVE] Total amount of indexing rewards generated on this indexer"
   totalIndexingRewards: BigInt!
-
+  "[CUMULATIVE] Total amount of indexing rewards that the indexer kept"
   indexerIndexingRewards: BigInt!
-
+  "[CUMULATIVE] Total amount of indexing rewards sent to the delegation pool"
   delegatorIndexingRewards: BigInt!
-
+  "[CURRENT] Exchange rate for shares of the delegation pool for this specific day"
   delegationExchangeRate: BigDecimal!
 
   delegationsDailyData: [DelegatedStakeDailyData!]! @derivedFrom(field:"indexerDailyData")
@@ -875,10 +876,10 @@ type DelegatorDailyData @entity {
 
   delegator: Delegator!
 
-  "Current amount of staked tokens for this day across all stakes"
+  "[CURRENT] Amount of staked tokens for this day across all stakes"
   stakedTokens: BigInt!
 
-  "Current amount of locked (undelegating) tokens for this day across all stakes"
+  "[CURRENT] Amount of locked (undelegating) tokens for this day across all stakes"
   lockedTokens: BigInt!
 
   stakesDailyData: [DelegatedStakeDailyData!]! @derivedFrom(field:"delegatorDailyAggregator")
@@ -896,15 +897,16 @@ type DelegatedStakeDailyData @entity {
 
   stake: DelegatedStake!
 
-  "Current amount of staked tokens for this day and this indexer"
+  "[CURRENT] Amount of staked tokens for this day and this indexer"
   stakedTokens: BigInt!
 
-  "Current amount of locked tokens (undelegating) for this day and this indexer"
+  "[CURRENT] Amount of locked tokens (undelegating) for this day and this indexer"
   lockedTokens: BigInt!
 
-  "Current amount of shares for this day and this indexer"
+  "[CURRENT] Amount of shares for this day and this indexer"
   shareAmount: BigInt!
 
+  "[CURRENT] Initial exchange rate for this delegator in this indexer at this day. It will increase as an average cost basis if the delegator adds more delegation."
   personalExchangeRate: BigDecimal!
 
   delegatorDailyAggregator: DelegatorDailyData!
@@ -928,19 +930,19 @@ type SubgraphDeploymentDailyData @entity {
 
   pricePerShare: BigDecimal!
 
-  "Total rewards accrued all time by this Subgraph Deployment. Includes delegator and indexer rewards"
+  "[CUMULATIVE] Total rewards accrued all time by this Subgraph Deployment. Includes delegator and indexer rewards"
   indexingRewardAmount: BigInt!
-  "Total rewards accrued all time by indexers"
+  "[CUMULATIVE] Total rewards accrued all time by indexers"
   indexingIndexerRewardAmount: BigInt!
-  "Total rewards accrued all time by delegators"
+  "[CUMULATIVE] Total rewards accrued all time by delegators"
   indexingDelegatorRewardAmount: BigInt!
-  "Total query fees earned by this Subgraph Deployment, without curator query fees"
+  "[CUMULATIVE] Total query fees earned by this Subgraph Deployment, without curator query fees"
   queryFeesAmount: BigInt!
-  "Total query fee rebates for indexers earned from the protocol, through the cobbs douglas formula."
+  "[CUMULATIVE] Total query fee rebates for indexers earned from the protocol, through the cobbs douglas formula."
   queryFeeRebates: BigInt!
-  "Total query fee rebates for delegators earned from the protocol, through the cobbs douglas formula."
+  "[CUMULATIVE] Total query fee rebates for delegators earned from the protocol, through the cobbs douglas formula."
   delegatorQueryFees: BigInt!
-  "Total curator rewards from fees"
+  "[CUMULATIVE] Total curator rewards from fees"
   curatorFeeRewards: BigInt!
 }
 

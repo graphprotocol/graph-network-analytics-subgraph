@@ -243,7 +243,7 @@ export function handleStakeDelegated(event: StakeDelegated): void {
     delegator as Delegator,
     event.block.timestamp,
   )
-  let delegatedStakeDailyData = getAndUpdateDelegatedStakeDailyData(
+  getAndUpdateDelegatedStakeDailyData(
     delegatedStake as DelegatedStake,
     event.block.timestamp,
     delegatorDailyData,
@@ -309,7 +309,7 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
     delegator as Delegator,
     event.block.timestamp,
   )
-  let delegatedStakeDailyData = getAndUpdateDelegatedStakeDailyData(
+  getAndUpdateDelegatedStakeDailyData(
     delegatedStake as DelegatedStake,
     event.block.timestamp,
     delegatorDailyData,
@@ -474,7 +474,7 @@ export function handleAllocationCollected(event: AllocationCollected): void {
   )
   graphNetwork.save()
 
-  let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)
 }
 
@@ -543,6 +543,7 @@ export function handleAllocationClosed(event: AllocationClosed): void {
   graphNetwork.save()
 
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)
 }
 
 /**
@@ -608,6 +609,7 @@ export function handleRebateClaimed(event: RebateClaimed): void {
   graphNetwork.save()
 
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateSubgraphDeploymentDailyData(subgraphDeployment as SubgraphDeployment, event.block.timestamp)
 }
 
 /**
