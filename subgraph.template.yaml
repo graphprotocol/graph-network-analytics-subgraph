@@ -32,50 +32,50 @@ dataSources:
   #         handler: handlePauseChanged
   #       - event: NewPauseGuardian(indexed address,indexed address)
   #         handler: handleNewPauseGuardian
-  # - kind: ethereum/contract
-  #   name: GNS
-  #   network: {{network}}
-  #   source:
-  #     address: '{{gns}}'
-  #     abi: GNS
-  #     startBlock: {{blockNumber}}
-  #   mapping:
-  #     kind: ethereum/events
-  #     apiVersion: 0.0.4
-  #     language: wasm/assemblyscript
-  #     file: ./src/mappings/gns.ts
-  #     entities:
-  #       - Subgraph
-  #       - SubgraphVersion
-  #       - SubgraphDeployment
-  #       - GraphAccount
-  #       - NameSignal
-  #     abis:
-  #       - name: GNS
-  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/GNS.json
-  #       - name: ENS
-  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/IENS.json
-  #       - name: ENSPublicResolver
-  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/IPublicResolver.json
-  #     eventHandlers:
-  #       - event: SubgraphPublished(indexed address,indexed uint256,indexed bytes32,bytes32)
-  #         handler: handleSubgraphPublished
-  #       - event: SubgraphDeprecated(indexed address,indexed uint256)
-  #         handler: handleSubgraphDeprecated
-  #       - event: SetDefaultName(indexed address,uint256,bytes32,string)
-  #         handler: handleSetDefaultName
-  #       - event: SubgraphMetadataUpdated(indexed address,indexed uint256,bytes32)
-  #         handler: handleSubgraphMetadataUpdated
-  #       - event: NameSignalEnabled(indexed address,indexed uint256,indexed bytes32,uint32)
-  #         handler: handleNameSignalEnabled
-  #       - event: NSignalMinted(indexed address,indexed uint256,indexed address,uint256,uint256,uint256)
-  #         handler: handleNSignalMinted
-  #       - event: NSignalBurned(indexed address,indexed uint256,indexed address,uint256,uint256,uint256)
-  #         handler: handleNSignalBurned
-  #       - event: NameSignalDisabled(indexed address,indexed uint256,uint256)
-  #         handler: handleNameSignalDisabled
-  #       - event: GRTWithdrawn(indexed address,indexed uint256,indexed address,uint256,uint256)
-  #         handler: handleGRTWithdrawn
+  - kind: ethereum/contract
+    name: GNS
+    network: {{network}}
+    source:
+      address: '{{gns}}'
+      abi: GNS
+      startBlock: {{blockNumber}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      file: ./src/mappings/gns.ts
+      entities:
+        - Subgraph
+        - SubgraphVersion
+        - SubgraphDeployment
+        - GraphAccount
+        - NameSignal
+      abis:
+        - name: GNS
+          file: ./node_modules/@graphprotocol/contracts/dist/abis/GNS.json
+        - name: ENS
+          file: ./node_modules/@graphprotocol/contracts/dist/abis/IENS.json
+        - name: ENSPublicResolver
+          file: ./node_modules/@graphprotocol/contracts/dist/abis/IPublicResolver.json
+      eventHandlers:
+        - event: SubgraphPublished(indexed address,indexed uint256,indexed bytes32,bytes32)
+          handler: handleSubgraphPublished
+        - event: SubgraphDeprecated(indexed address,indexed uint256)
+          handler: handleSubgraphDeprecated
+        - event: SetDefaultName(indexed address,uint256,bytes32,string)
+          handler: handleSetDefaultName
+        - event: SubgraphMetadataUpdated(indexed address,indexed uint256,bytes32)
+          handler: handleSubgraphMetadataUpdated
+        - event: NameSignalEnabled(indexed address,indexed uint256,indexed bytes32,uint32)
+          handler: handleNameSignalEnabled
+        - event: NSignalMinted(indexed address,indexed uint256,indexed address,uint256,uint256,uint256)
+          handler: handleNSignalMinted
+        - event: NSignalBurned(indexed address,indexed uint256,indexed address,uint256,uint256,uint256)
+          handler: handleNSignalBurned
+        - event: NameSignalDisabled(indexed address,indexed uint256,uint256)
+          handler: handleNameSignalDisabled
+        - event: GRTWithdrawn(indexed address,indexed uint256,indexed address,uint256,uint256)
+          handler: handleGRTWithdrawn
   # - kind: ethereum/contract
   #   name: ServiceRegistry
   #   network: {{network}}
@@ -219,26 +219,26 @@ dataSources:
   #         handler: handleTransfer
   #       - event: Approval(indexed address,indexed address,uint256)
   #         handler: handleApproval
-  # - kind: ethereum/contract
-  #   name: EthereumDIDRegistry
-  #   network: {{network}}
-  #   source:
-  #     address: '0xdCa7EF03e98e0DC2B855bE647C39ABe984fcF21B'
-  #     abi: EthereumDIDRegistry
-  #     startBlock: {{blockNumber}}
-  #   mapping:
-  #     kind: ethereum/events
-  #     apiVersion: 0.0.3
-  #     language: wasm/assemblyscript
-  #     file: ./src/mappings/ethereumDIDRegistry.ts
-  #     entities:
-  #       - GraphAccount
-  #     abis:
-  #       - name: EthereumDIDRegistry
-  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/EthereumDIDRegistry.json
-  #     eventHandlers:
-  #       - event: DIDAttributeChanged(indexed address,bytes32,bytes,uint256,uint256)
-  #         handler: handleDIDAttributeChanged
+  - kind: ethereum/contract
+    name: EthereumDIDRegistry
+    network: {{network}}
+    source:
+      address: '0xdCa7EF03e98e0DC2B855bE647C39ABe984fcF21B'
+      abi: EthereumDIDRegistry
+      startBlock: {{blockNumber}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.3
+      language: wasm/assemblyscript
+      file: ./src/mappings/ethereumDIDRegistry.ts
+      entities:
+        - GraphAccount
+      abis:
+        - name: EthereumDIDRegistry
+          file: ./node_modules/@graphprotocol/contracts/dist/abis/EthereumDIDRegistry.json
+      eventHandlers:
+        - event: DIDAttributeChanged(indexed address,bytes32,bytes,uint256,uint256)
+          handler: handleDIDAttributeChanged
   # - kind: ethereum/contract
   #   name: EpochManager
   #   network: {{network}}

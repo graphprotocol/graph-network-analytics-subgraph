@@ -12,6 +12,7 @@ import {
   updateDelegationExchangeRate,
   createOrLoadGraphNetwork,
   getAndUpdateIndexerDailyData,
+  getAndUpdateSubgraphDeploymentDailyData,
 } from './helpers'
 
 export function handleRewardsAssigned(event: RewardsAssigned): void {
@@ -87,6 +88,10 @@ export function handleRewardsAssigned(event: RewardsAssigned): void {
   graphNetwork.save()
 
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateSubgraphDeploymentDailyData(
+    subgraphDeployment as SubgraphDeployment,
+    event.block.timestamp,
+  )
 }
 
 /**

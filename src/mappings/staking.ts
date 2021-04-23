@@ -41,6 +41,8 @@ import {
   getAndUpdateIndexerDailyData,
   getAndUpdateDelegatorDailyData,
   getAndUpdateDelegatedStakeDailyData,
+  calculatePricePerShare,
+  getAndUpdateSubgraphDeploymentDailyData,
 } from './helpers'
 
 export function handleDelegationParametersUpdated(event: DelegationParametersUpdated): void {
@@ -241,7 +243,7 @@ export function handleStakeDelegated(event: StakeDelegated): void {
     delegator as Delegator,
     event.block.timestamp,
   )
-  let delegatedStakeDailyData = getAndUpdateDelegatedStakeDailyData(
+  getAndUpdateDelegatedStakeDailyData(
     delegatedStake as DelegatedStake,
     event.block.timestamp,
     delegatorDailyData,
@@ -307,7 +309,7 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
     delegator as Delegator,
     event.block.timestamp,
   )
-  let delegatedStakeDailyData = getAndUpdateDelegatedStakeDailyData(
+  getAndUpdateDelegatedStakeDailyData(
     delegatedStake as DelegatedStake,
     event.block.timestamp,
     delegatorDailyData,
@@ -450,6 +452,7 @@ export function handleAllocationCollected(event: AllocationCollected): void {
   deployment.queryFeesAmount = deployment.queryFeesAmount.plus(event.params.rebateFees)
   deployment.signalledTokens = deployment.signalledTokens.plus(event.params.curationFees)
   deployment.curatorFeeRewards = deployment.curatorFeeRewards.plus(event.params.curationFees)
+  deployment.pricePerShare = calculatePricePerShare(deployment as SubgraphDeployment)
   deployment.save()
 
   // since we don't get the protocol tax explicitly, we will use tokens - (curation + rebate) to calculate it
@@ -471,7 +474,8 @@ export function handleAllocationCollected(event: AllocationCollected): void {
   )
   graphNetwork.save()
 
-  let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)
 }
 
 /**
@@ -539,6 +543,7 @@ export function handleAllocationClosed(event: AllocationClosed): void {
   graphNetwork.save()
 
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)
 }
 
 /**
@@ -585,6 +590,9 @@ export function handleRebateClaimed(event: RebateClaimed): void {
   // update subgraph deployment
   let subgraphDeployment = SubgraphDeployment.load(subgraphDeploymentID)
   subgraphDeployment.queryFeeRebates = subgraphDeployment.queryFeeRebates.plus(event.params.tokens)
+  subgraphDeployment.delegatorQueryFees = subgraphDeployment.delegatorQueryFees.plus(
+    event.params.delegationFees,
+  )
   subgraphDeployment.save()
 
   // update graph network
@@ -601,6 +609,7 @@ export function handleRebateClaimed(event: RebateClaimed): void {
   graphNetwork.save()
 
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateSubgraphDeploymentDailyData(subgraphDeployment as SubgraphDeployment, event.block.timestamp)
 }
 
 /**

@@ -68,6 +68,92 @@ type GraphNetwork @entity {
 }
 
 """
+An account within the graph network. Contains metadata and all relevant data for this accounts
+delegating, curating, and indexing.
+"""
+type GraphAccount @entity {
+  "Graph account ID"
+  id: ID!
+  "All names this graph account has claimed from all name systems"
+  names: [GraphAccountName!]! @derivedFrom(field: "graphAccount")
+  "Default name the graph account has chosen"
+  defaultName: GraphAccountName # Can optimize in future by checking ENS & others to make sure they still own the name
+  "Time the account was created"
+  createdAt: Int!
+  "Default display name is the current default name. Used for filtered queries in the explorer"
+  defaultDisplayName: String
+
+  # # IPFS Metadata
+  # "True if it is an organization. False if it is an individual"
+  # isOrganization: Boolean
+  "IPFS hash with account metadata details"
+  metadataHash: Bytes
+  # "Main repository of code for the graph account"
+  # codeRepository: String
+  # "Description of the graph account"
+  # description: String
+  # "Image URL"
+  # image: String
+  # "Website URL"
+  # website: String
+  # "Display name. Not unique"
+  # displayName: String
+
+  # Operator info
+  "Operator of other Graph Accounts"
+  operatorOf: [GraphAccount!]! @derivedFrom(field: "operators")
+  "Operators of this Graph Accounts"
+  operators: [GraphAccount!]!
+
+  # GRT info
+  "Graph token balance"
+  balance: BigInt!
+  "Amount this account has approved staking to transfer their GRT"
+  curationApproval: BigInt!
+  "Amount this account has approved curation to transfer their GRT"
+  stakingApproval: BigInt!
+  "Amount this account has approved the GNS to transfer their GRT"
+  gnsApproval: BigInt!
+
+  # Subgraphs
+  "Subgraphs the graph account owns"
+  subgraphs: [Subgraph!]! @derivedFrom(field: "owner")
+  "Time that this graph account became a developer"
+  developerCreatedAt: Int
+
+  # Staking and Curating and Delegating
+  "Curator fields for this GraphAccount. Null if never curated"
+  curator: Curator
+  "Indexer fields for this GraphAccount. Null if never indexed"
+  indexer: Indexer
+  "Delegator fields for this GraphAccount. Null if never delegated"
+  delegator: Delegator
+
+  # Transactions / activity feed
+  "Name signal transactions created by this GraphAccount"
+  nameSignalTransactions: [NameSignalTransaction]! @derivedFrom(field: "signer")
+}
+
+"""
+A name chosen by a Graph Account from a Name System such as ENS. This allows Graph Accounts to be
+recognized by name, rather than just an Ethereum address
+"""
+type GraphAccountName @entity {
+  "Name system concatenated with the unique ID of the name system"
+  id: ID!
+  "Name system for this name"
+  nameSystem: NameSystem!
+  "Name from the system"
+  name: String!
+  "The graph account that owned the name when it was linked in the graph network"
+  graphAccount: GraphAccount # May not match if the graph account proceeded to transfer away their name on that system
+}
+
+enum NameSystem {
+  ENS
+}
+
+"""
 The Subgraph entity represents a permanent, unique endpoint. This unique endpoint can resolve to
 many different SubgraphVersions over it's lifetime. The Subgraph can also have a name attributed
 to it. The owner of the Subgraph can only use a name once, thus making the owner account and the
@@ -78,6 +164,8 @@ subgraph is stored on IPFS.
 type Subgraph @entity {
   "Subgraph ID - which is derived from the Organization/Individual graph accountID"
   id: ID!
+  "Graph account that owns this subgraph"
+  owner: GraphAccount!
   "Current version. Null if the subgraph is deprecated"
   currentVersion: SubgraphVersion
   "Past versions"
@@ -105,19 +193,19 @@ type Subgraph @entity {
   "Curators of this subgraph deployment"
   nameSignals: [NameSignal!]! @derivedFrom(field: "subgraph")
 
-  # Metadata from IPFS linked in GNS
+  # # Metadata from IPFS linked in GNS
   "Subgraph metadata"
   metadataHash: Bytes!
-  "Short description of the subgraph"
-  description: String!
-  "Image in string format"
-  image: String!
-  "Location of the code for this project"
-  codeRepository: String!
-  "Projects website"
-  website: String!
-  "Display name"
-  displayName: String!
+  # "Short description of the subgraph"
+  # description: String!
+  # "Image in string format"
+  # image: String!
+  # "Location of the code for this project"
+  # codeRepository: String!
+  # "Projects website"
+  # website: String!
+  # "Display name"
+  # displayName: String!
 }
 
 """
@@ -143,10 +231,10 @@ type SubgraphVersion @entity {
   # Metadata from IPFS linked in GNS
   "Subgraph version metadata content address"
   metadataHash: Bytes!
-  "Short description of the version"
-  description: String!
-  "Semantic versioning label"
-  label: String!
+  # "Short description of the version"
+  # description: String!
+  # "Semantic versioning label"
+  # label: String!
 }
 
 """
@@ -165,8 +253,8 @@ type SubgraphDeployment @entity {
   createdAt: Int!
   "The block at which this deployment was denied for rewards. Null if not denied"
   deniedAt: Int!
-  "The original Subgraph that was deployed through GNS. Can be null if never created through GNS. Used for filtering in the Explorer"
-  originalName: String
+  # "The original Subgraph that was deployed through GNS. Can be null if never created through GNS. Used for filtering in the Explorer"
+  # originalName: String
 
   # From Staking
   "CURRENT total stake of all indexers on this Subgraph Deployment"
@@ -181,8 +269,10 @@ type SubgraphDeployment @entity {
   indexingDelegatorRewardAmount: BigInt!
   "Total query fees earned by this Subgraph Deployment, without curator query fees"
   queryFeesAmount: BigInt!
-  "Total query fee rebates earned from the protocol, through the cobbs douglas formula. Does not include delegation fees"
+  "Total query fee rebates for indexers earned from the protocol, through the cobbs douglas formula."
   queryFeeRebates: BigInt!
+  "Total query fee rebates for delegators earned from the protocol, through the cobbs douglas formula."
+  delegatorQueryFees: BigInt!
   "Total curator rewards from fees"
   curatorFeeRewards: BigInt!
   # TODO - We can add a field here for delegation fees earned when calling claim()
@@ -194,6 +284,8 @@ type SubgraphDeployment @entity {
   unsignalledTokens: BigInt! # Will be used for rewards
   "CURRENT curation signal for this subgraph deployment"
   signalAmount: BigInt!
+  "signalledTokens / signalAmount"
+  pricePerShare: BigDecimal!
 
   "Curators of this subgraph deployment"
   curatorSignals: [Signal!]! @derivedFrom(field: "subgraphDeployment")
@@ -670,6 +762,8 @@ interface Transaction {
   blockNumber: Int!
   "Timestamp for the transaction"
   timestamp: Int!
+  "Signer of the transaction"
+  signer: GraphAccount!
   "Type of Graph Network transaction"
   type: TransactionType!
   # TODO - add epoch number,
@@ -682,6 +776,7 @@ type NameSignalTransaction implements Transaction @entity {
   id: ID!
   blockNumber: Int!
   timestamp: Int!
+  signer: GraphAccount!
   type: TransactionType!
   "Amount of name signal updated"
   nameSignal: BigInt!
@@ -700,8 +795,8 @@ type SignalTransaction implements Transaction @entity {
   id: ID!
   blockNumber: Int!
   timestamp: Int!
+  signer: GraphAccount!
   type: TransactionType!
-  signer: Curator!
   "Amount of signal updated"
   signal: BigInt!
   "Tokens used"
@@ -736,33 +831,34 @@ type IndexerDailyData @entity {
 
   indexer: Indexer!
 
-  "Current value of stakedTokens for that day"
+  "[CURRENT] Value of stakedTokens for that day"
   stakedTokens: BigInt!
 
-  "Current value of delegatedTokens for that day"
+  "[CURRENT] Value of delegatedTokens for that day"
   delegatedTokens: BigInt!
 
-  "Current value of allocatedTokens for that day"
+  "[CURRENT] Value of allocatedTokens for that day"
   allocatedTokens: BigInt!
 
-  "Current value of availableStake for that day"
+  "[CURRENT] Value of availableStake for that day"
   availableStake: BigInt!
 
-  "Amount of delegated tokens moved that day. Negative means more tokens were undelegated than delegated"
+  "[CURRENT] Amount of delegated tokens moved that day. Negative means more tokens were undelegated than delegated"
   netDailyDelegatedTokens: BigInt!
 
+  "[CUMULATIVE] Total amount of query fees collected by the indexer and sent to the rebate pool"
   queryFeesCollected: BigInt!
-
+  "[CUMULATIVE]Total amount of query fees that the indexer got from rebates"
   queryFeeRebates: BigInt!
-
+  "[CUMULATIVE] Total amount of query fees that the delegation pool received"
   delegatorQueryFees: BigInt!
-
+  "[CUMULATIVE] Total amount of indexing rewards generated on this indexer"
   totalIndexingRewards: BigInt!
-
+  "[CUMULATIVE] Total amount of indexing rewards that the indexer kept"
   indexerIndexingRewards: BigInt!
-
+  "[CUMULATIVE] Total amount of indexing rewards sent to the delegation pool"
   delegatorIndexingRewards: BigInt!
-
+  "[CURRENT] Exchange rate for shares of the delegation pool for this specific day"
   delegationExchangeRate: BigDecimal!
 
   delegationsDailyData: [DelegatedStakeDailyData!]! @derivedFrom(field:"indexerDailyData")
@@ -780,10 +876,10 @@ type DelegatorDailyData @entity {
 
   delegator: Delegator!
 
-  "Current amount of staked tokens for this day across all stakes"
+  "[CURRENT] Amount of staked tokens for this day across all stakes"
   stakedTokens: BigInt!
 
-  "Current amount of locked (undelegating) tokens for this day across all stakes"
+  "[CURRENT] Amount of locked (undelegating) tokens for this day across all stakes"
   lockedTokens: BigInt!
 
   stakesDailyData: [DelegatedStakeDailyData!]! @derivedFrom(field:"delegatorDailyAggregator")
@@ -801,15 +897,16 @@ type DelegatedStakeDailyData @entity {
 
   stake: DelegatedStake!
 
-  "Current amount of staked tokens for this day and this indexer"
+  "[CURRENT] Amount of staked tokens for this day and this indexer"
   stakedTokens: BigInt!
 
-  "Current amount of locked tokens (undelegating) for this day and this indexer"
+  "[CURRENT] Amount of locked tokens (undelegating) for this day and this indexer"
   lockedTokens: BigInt!
 
-  "Current amount of shares for this day and this indexer"
+  "[CURRENT] Amount of shares for this day and this indexer"
   shareAmount: BigInt!
 
+  "[CURRENT] Initial exchange rate for this delegator in this indexer at this day. It will increase as an average cost basis if the delegator adds more delegation."
   personalExchangeRate: BigDecimal!
 
   delegatorDailyAggregator: DelegatorDailyData!
@@ -817,13 +914,45 @@ type DelegatedStakeDailyData @entity {
   indexerDailyData: IndexerDailyData!
 }
 
-"""
-Full test search for displayName and description on the Subgraph Entity
-"""
-type _Schema_
-  @fulltext(
-    name: "subgraphSearch"
-    language: en
-    algorithm: rank
-    include: [{ entity: "Subgraph", fields: [{ name: "displayName" }, { name: "description" }] }]
-  )
+type SubgraphDeploymentDailyData @entity {
+  "<SUBGRAPH ID>-<DAY NUMBER>"
+  id: ID!
+
+  dayStart: BigInt!
+
+  dayEnd: BigInt!
+
+  dayNumber: Int!
+
+  signalledTokens: BigInt!
+
+  signalAmount: BigInt!
+
+  pricePerShare: BigDecimal!
+
+  "[CUMULATIVE] Total rewards accrued all time by this Subgraph Deployment. Includes delegator and indexer rewards"
+  indexingRewardAmount: BigInt!
+  "[CUMULATIVE] Total rewards accrued all time by indexers"
+  indexingIndexerRewardAmount: BigInt!
+  "[CUMULATIVE] Total rewards accrued all time by delegators"
+  indexingDelegatorRewardAmount: BigInt!
+  "[CUMULATIVE] Total query fees earned by this Subgraph Deployment, without curator query fees"
+  queryFeesAmount: BigInt!
+  "[CUMULATIVE] Total query fee rebates for indexers earned from the protocol, through the cobbs douglas formula."
+  queryFeeRebates: BigInt!
+  "[CUMULATIVE] Total query fee rebates for delegators earned from the protocol, through the cobbs douglas formula."
+  delegatorQueryFees: BigInt!
+  "[CUMULATIVE] Total curator rewards from fees"
+  curatorFeeRewards: BigInt!
+}
+
+# """
+# Full test search for displayName and description on the Subgraph Entity
+# """
+# type _Schema_
+#   @fulltext(
+#     name: "subgraphSearch"
+#     language: en
+#     algorithm: rank
+#     include: [{ entity: "Subgraph", fields: [{ name: "displayName" }, { name: "description" }] }]
+#   )
