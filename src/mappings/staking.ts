@@ -40,7 +40,6 @@ import {
   createOrLoadGraphNetwork,
   getAndUpdateIndexerDailyData,
   getAndUpdateDelegatorDailyData,
-  getAndUpdateDelegatedStakeDailyData,
   calculatePricePerShare,
   getAndUpdateSubgraphDeploymentDailyData,
 } from './helpers'
@@ -239,15 +238,10 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   )
   indexerDailyData.save()
 
-  let delegatorDailyData = getAndUpdateDelegatorDailyData(
+  getAndUpdateDelegatorDailyData(
     delegator as Delegator,
-    event.block.timestamp,
-  )
-  getAndUpdateDelegatedStakeDailyData(
     delegatedStake as DelegatedStake,
     event.block.timestamp,
-    delegatorDailyData,
-    indexerDailyData,
   )
 }
 
@@ -305,15 +299,10 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   )
   indexerDailyData.save()
 
-  let delegatorDailyData = getAndUpdateDelegatorDailyData(
+  getAndUpdateDelegatorDailyData(
     delegator as Delegator,
-    event.block.timestamp,
-  )
-  getAndUpdateDelegatedStakeDailyData(
     delegatedStake as DelegatedStake,
     event.block.timestamp,
-    delegatorDailyData,
-    indexerDailyData,
   )
 }
 
@@ -336,16 +325,10 @@ export function handleStakeDelegatedWithdrawn(event: StakeDelegatedWithdrawn): v
   // analytics
   let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
 
-  let delegatorDailyData = getAndUpdateDelegatorDailyData(
+  getAndUpdateDelegatorDailyData(
     delegator as Delegator,
-    event.block.timestamp,
-  )
-
-  getAndUpdateDelegatedStakeDailyData(
     delegatedStake as DelegatedStake,
     event.block.timestamp,
-    delegatorDailyData,
-    indexerDailyData,
   )
 }
 

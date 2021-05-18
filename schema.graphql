@@ -129,6 +129,9 @@ type GraphAccount @entity {
   "Delegator fields for this GraphAccount. Null if never delegated"
   delegator: Delegator
 
+  "Latest available daily data entity for income related stats. Null if there isn't data for any of the income related entities"
+  latestDailyData: GraphAccountDailyData
+
   # Transactions / activity feed
   "Name signal transactions created by this GraphAccount"
   nameSignalTransactions: [NameSignalTransaction]! @derivedFrom(field: "signer")
@@ -512,6 +515,9 @@ type Delegator @entity {
   "Total realized rewards on all delegated stakes. Realized rewards are added when undelegating and realizing a profit"
   totalRealizedRewards: BigDecimal!
 
+  "Lated daily data entity that exists for this delegator. Null if it doesn't exist"
+  latestDailyData: DelegatorDailyData
+  "List of all the daily data entities that exists for this delegator"
   dailyData: [DelegatorDailyData!]! @derivedFrom(field:"delegator")
 
   # Old probably not very useful metrics
@@ -860,8 +866,6 @@ type IndexerDailyData @entity {
   delegatorIndexingRewards: BigInt!
   "[CURRENT] Exchange rate for shares of the delegation pool for this specific day"
   delegationExchangeRate: BigDecimal!
-
-  delegationsDailyData: [DelegatedStakeDailyData!]! @derivedFrom(field:"indexerDailyData")
 }
 
 type DelegatorDailyData @entity {
@@ -882,7 +886,9 @@ type DelegatorDailyData @entity {
   "[CURRENT] Amount of locked (undelegating) tokens for this day across all stakes"
   lockedTokens: BigInt!
 
-  stakesDailyData: [DelegatedStakeDailyData!]! @derivedFrom(field:"delegatorDailyAggregator")
+  stakesCount: BigInt!
+
+  stakesDailyData: [DelegatedStakeDailyRelation!]! @derivedFrom(field:"delegatorDailyData")
 }
 
 type DelegatedStakeDailyData @entity {
@@ -908,10 +914,14 @@ type DelegatedStakeDailyData @entity {
 
   "[CURRENT] Initial exchange rate for this delegator in this indexer at this day. It will increase as an average cost basis if the delegator adds more delegation."
   personalExchangeRate: BigDecimal!
+}
 
-  delegatorDailyAggregator: DelegatorDailyData!
+type DelegatedStakeDailyRelation @entity {
+  "Auxiliary entity to avoid using arrays for many-to-many relation tracking. Compound ID of both entities."
+  id: ID!
 
-  indexerDailyData: IndexerDailyData!
+  delegatorDailyData: DelegatorDailyData!
+  delegatedStakeDailyData: DelegatedStakeDailyData!
 }
 
 type SubgraphDeploymentDailyData @entity {
@@ -944,6 +954,21 @@ type SubgraphDeploymentDailyData @entity {
   delegatorQueryFees: BigInt!
   "[CUMULATIVE] Total curator rewards from fees"
   curatorFeeRewards: BigInt!
+}
+
+type GraphAccountDailyData @entity {
+  "<ACCOUNT ADDRESS>-<DAY NUMBER>"
+  id: ID!
+
+  dayStart: BigInt!
+
+  dayEnd: BigInt!
+
+  dayNumber: Int!
+
+  latestIndexerDailyData: IndexerDailyData
+
+  latestDelegatorDailyData: DelegatorDailyData
 }
 
 # """
