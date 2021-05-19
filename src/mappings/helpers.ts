@@ -651,6 +651,7 @@ export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt)
         copy.dayEnd = dailyData.dayEnd
         copy.dayNumber = dailyData.dayNumber
         copy.indexerDailyData = dailyData.id
+        copy.delegatedStakeDailyData = toCopy.delegatedStakeDailyData
 
         copy.save()
       }
