@@ -410,6 +410,7 @@ type Indexer @entity {
   "NOT IMPLEMENTED - Staking efficiency of the indexer"
   stakingEfficiency: BigDecimal!
 
+  latestDailyData: IndexerDailyData
   dailyData: [IndexerDailyData!]! @derivedFrom(field: "indexer")
 }
 
@@ -866,6 +867,10 @@ type IndexerDailyData @entity {
   delegatorIndexingRewards: BigInt!
   "[CURRENT] Exchange rate for shares of the delegation pool for this specific day"
   delegationExchangeRate: BigDecimal!
+
+  delegatorsCount: BigInt!
+
+  delegatorsDailyData: [IndexerDelegatedStakeDailyRelation!]! @derivedFrom(field:"indexerDailyData")
 }
 
 type DelegatorDailyData @entity {
@@ -888,7 +893,7 @@ type DelegatorDailyData @entity {
 
   stakesCount: BigInt!
 
-  stakesDailyData: [DelegatedStakeDailyRelation!]! @derivedFrom(field:"delegatorDailyData")
+  stakesDailyData: [DelegatorDelegatedStakeDailyRelation!]! @derivedFrom(field:"delegatorDailyData")
 }
 
 type DelegatedStakeDailyData @entity {
@@ -916,9 +921,29 @@ type DelegatedStakeDailyData @entity {
   personalExchangeRate: BigDecimal!
 }
 
-type DelegatedStakeDailyRelation @entity {
+type IndexerDelegatedStakeDailyRelation @entity {
   "Auxiliary entity to avoid using arrays for many-to-many relation tracking. Compound ID of both entities."
   id: ID!
+
+  dayStart: BigInt!
+
+  dayEnd: BigInt!
+
+  dayNumber: Int!
+
+  indexerDailyData: IndexerDailyData!
+  delegatedStakeDailyData: DelegatedStakeDailyData!
+}
+
+type DelegatorDelegatedStakeDailyRelation @entity {
+  "Auxiliary entity to avoid using arrays for many-to-many relation tracking. Compound ID of both entities."
+  id: ID!
+
+  dayStart: BigInt!
+
+  dayEnd: BigInt!
+
+  dayNumber: Int!
 
   delegatorDailyData: DelegatorDailyData!
   delegatedStakeDailyData: DelegatedStakeDailyData!
