@@ -46,6 +46,7 @@ import {
   calculatePricePerShare,
   getAndUpdateSubgraphDeploymentDailyData,
   updateIndexerDelegatedStakeRelation,
+  batchUpdateDelegatorsForIndexer,
 } from './helpers'
 
 export function handleDelegationParametersUpdated(event: DelegationParametersUpdated): void {
@@ -228,6 +229,10 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   delegatedStake.totalStakedTokens = delegatedStake.totalStakedTokens.plus(event.params.tokens)
   delegatedStake.shareAmount = delegatedStake.shareAmount.plus(event.params.shares)
   delegatedStake.lastDelegatedAt = event.block.timestamp.toI32()
+  delegatedStake.originalDelegation = delegatedStake.personalExchangeRate * delegatedStake.shareAmount.toBigDecimal()
+  delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate;
+  delegatedStake.currentDelegation = delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
+  delegatedStake.unrealizedRewards =  delegatedStake.currentDelegation - delegatedStake.originalDelegation
   delegatedStake.save()
 
   // upgrade graph network
@@ -257,6 +262,8 @@ export function handleStakeDelegated(event: StakeDelegated): void {
     indexerDailyData as IndexerDailyData,
     stakeDailyData as DelegatedStakeDailyData,
   )
+
+  batchUpdateDelegatorsForIndexer(indexer as Indexer)
 }
 
 export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
@@ -291,6 +298,10 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   let realizedRewards = currentBalance.minus(oldBalance)
 
   delegatedStake.realizedRewards = delegatedStake.realizedRewards.plus(realizedRewards)
+  delegatedStake.originalDelegation = delegatedStake.personalExchangeRate * delegatedStake.shareAmount.toBigDecimal()
+  delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate;
+  delegatedStake.currentDelegation = delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
+  delegatedStake.unrealizedRewards =  delegatedStake.currentDelegation - delegatedStake.originalDelegation
   delegatedStake.save()
 
   // update delegator
@@ -328,6 +339,8 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
     indexerDailyData as IndexerDailyData,
     stakeDailyData as DelegatedStakeDailyData,
   )
+
+  batchUpdateDelegatorsForIndexer(indexer as Indexer)
 }
 
 export function handleStakeDelegatedWithdrawn(event: StakeDelegatedWithdrawn): void {
@@ -363,6 +376,8 @@ export function handleStakeDelegatedWithdrawn(event: StakeDelegatedWithdrawn): v
     indexerDailyData as IndexerDailyData,
     stakeDailyData as DelegatedStakeDailyData,
   )
+
+  batchUpdateDelegatorsForIndexer(indexer as Indexer)
 }
 
 /**
@@ -629,6 +644,8 @@ export function handleRebateClaimed(event: RebateClaimed): void {
     subgraphDeployment as SubgraphDeployment,
     event.block.timestamp,
   )
+
+  batchUpdateDelegatorsForIndexer(indexer as Indexer)
 }
 
 /**

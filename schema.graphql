@@ -410,6 +410,8 @@ type Indexer @entity {
   "NOT IMPLEMENTED - Staking efficiency of the indexer"
   stakingEfficiency: BigDecimal!
 
+  delegatorsCount: BigInt!
+
   latestDailyData: IndexerDailyData
   dailyData: [IndexerDailyData!]! @derivedFrom(field: "indexer")
 }
@@ -550,6 +552,12 @@ type DelegatedStake @entity {
   personalExchangeRate: BigDecimal!
   "Realized rewards from undelegating and realizing a reward"
   realizedRewards: BigDecimal!
+
+  # Pre-calculated data
+  latestIndexerExchangeRate: BigDecimal!
+  unrealizedRewards: BigDecimal!
+  originalDelegation: BigDecimal!
+  currentDelegation: BigDecimal!
 
   "CUMULATIVE tokens delegated"
   totalStakedTokens: BigInt!
@@ -935,6 +943,8 @@ type IndexerDelegatedStakeDailyRelation @entity {
 
   delegator: Delegator!
 
+  stake: DelegatedStake!
+
   indexerDailyData: IndexerDailyData!
   delegatedStakeDailyData: DelegatedStakeDailyData!
 }
@@ -950,6 +960,8 @@ type DelegatorDelegatedStakeDailyRelation @entity {
   dayNumber: Int!
 
   delegator: Delegator!
+
+  stake: DelegatedStake!
 
   delegatorDailyData: DelegatorDailyData!
   delegatedStakeDailyData: DelegatedStakeDailyData!

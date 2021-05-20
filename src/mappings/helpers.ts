@@ -157,6 +157,8 @@ export function createOrLoadIndexer(id: string, timestamp: BigInt): Indexer {
     indexer.annualizedReturn = BigDecimal.fromString('0')
     indexer.stakingEfficiency = BigDecimal.fromString('0')
 
+    indexer.delegatorsCount = BigInt.fromI32(0)
+
     let graphNetwork = createOrLoadGraphNetwork()
     graphNetwork.indexerCount = graphNetwork.indexerCount + 1
     graphNetwork.save()
@@ -203,9 +205,12 @@ export function createOrLoadDelegatedStake(
     delegatedStake.lockedUntil = 0
     delegatedStake.shareAmount = BigInt.fromI32(0)
     delegatedStake.personalExchangeRate = BigDecimal.fromString('1')
+    delegatedStake.latestIndexerExchangeRate = BigDecimal.fromString('1')
     delegatedStake.realizedRewards = BigDecimal.fromString('0')
+    delegatedStake.unrealizedRewards = BigDecimal.fromString('0')
+    delegatedStake.originalDelegation = BigDecimal.fromString('0')
+    delegatedStake.currentDelegation = BigDecimal.fromString('0')
     delegatedStake.createdAt = timestamp
-
     delegatedStake.save()
   }
   return delegatedStake as DelegatedStake
@@ -623,6 +628,22 @@ export function compoundId(idA: string, idB: string): string {
   return idA.concat('-').concat(idB)
 }
 
+export function batchUpdateDelegatorsForIndexer(indexer: Indexer): void {
+  // pre-calculates a lot of data for all delegators that exists for a specific indexer
+  // using already existing links with the indexer-delegatedStake relations
+  let dailyDataId = indexer.latestDailyData
+  for (let i = 0; i < indexer.delegatorsCount.toI32(); i++) {
+    let latestRelationId = compoundId(dailyDataId, BigInt.fromI32(i).toString())
+    let latestRelation = IndexerDelegatedStakeDailyRelation.load(latestRelationId)
+    let delegatedStake = DelegatedStake.load(latestRelation.stake)
+    delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate;
+    delegatedStake.currentDelegation = delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
+    delegatedStake.unrealizedRewards =  delegatedStake.currentDelegation - delegatedStake.originalDelegation
+
+    delegatedStake.save();
+  }
+}
+
 export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt): IndexerDailyData {
   let dayNumber = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
   let id = compoundId(entity.id, BigInt.fromI32(dayNumber).toString())
@@ -654,13 +675,13 @@ export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt)
         copy.delegatedStakeDailyData = toCopy.delegatedStakeDailyData
         copy.indexer = toCopy.indexer
         copy.delegator = toCopy.delegator
+        copy.stake = toCopy.stake
 
         copy.save()
       }
     }
 
     entity.latestDailyData = dailyData.id
-    entity.save()
   }
 
   dailyData.stakedTokens = entity.stakedTokens
@@ -675,6 +696,9 @@ export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt)
   dailyData.delegatorIndexingRewards = entity.delegatorIndexingRewards
   dailyData.delegationExchangeRate = entity.delegationExchangeRate
 
+  entity.delegatorsCount = dailyData.delegatorsCount
+
+  entity.save()
   dailyData.save()
 
   return dailyData as IndexerDailyData
@@ -750,7 +774,8 @@ export function getAndUpdateDelegatorDailyData(
         copy.dayEnd = dailyData.dayEnd
         copy.dayNumber = dailyData.dayNumber
         copy.delegatorDailyData = dailyData.id
-        copy.delegator = entity.id;
+        copy.delegator = toCopy.delegator
+        copy.stake = toCopy.stake
 
         if (compareDelegatedStakeDailyDataID(toCopy.delegatedStakeDailyData, stakeDailyData.id)) {
           copy.delegatedStakeDailyData = stakeDailyData.id
@@ -770,7 +795,8 @@ export function getAndUpdateDelegatorDailyData(
         relation.dayNumber = dailyData.dayNumber
         relation.delegatorDailyData = dailyData.id
         relation.delegatedStakeDailyData = stakeDailyData.id
-        relation.delegator = entity.id;
+        relation.delegator = entity.id
+        relation.stake = stakeDailyData.stake
         relation.save()
 
         dailyData.stakesCount = dailyData.stakesCount.plus(BigInt.fromI32(1))
@@ -783,7 +809,8 @@ export function getAndUpdateDelegatorDailyData(
       relation.dayNumber = dailyData.dayNumber
       relation.delegatorDailyData = dailyData.id
       relation.delegatedStakeDailyData = stakeDailyData.id
-      relation.delegator = entity.id;
+      relation.delegator = entity.id
+      relation.stake = stakeDailyData.stake
       relation.save()
 
       dailyData.stakesCount = dailyData.stakesCount.plus(BigInt.fromI32(1))
@@ -817,7 +844,8 @@ export function getAndUpdateDelegatorDailyData(
       relation.dayNumber = dailyData.dayNumber
       relation.delegatorDailyData = dailyData.id
       relation.delegatedStakeDailyData = stakeDailyData.id
-      relation.delegator = entity.id;
+      relation.delegator = entity.id
+      relation.stake = stakeDailyData.stake
       relation.save()
 
       dailyData.stakesCount = dailyData.stakesCount.plus(BigInt.fromI32(1))
@@ -863,10 +891,16 @@ export function updateIndexerDelegatedStakeRelation(
     relation.delegatedStakeDailyData = stakeDailyData.id
     relation.indexer = dailyData.indexer
     relation.delegator = stakeDailyData.id.split('-')[0]
+    relation.stake = stakeDailyData.stake
     relation.save()
 
+    let indexer = Indexer.load(dailyData.indexer)
+
     dailyData.delegatorsCount = dailyData.delegatorsCount.plus(BigInt.fromI32(1))
+    indexer.delegatorsCount = dailyData.delegatorsCount
+
     dailyData.save()
+    indexer.save()
   }
 }
 
