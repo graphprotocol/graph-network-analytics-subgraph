@@ -931,6 +931,10 @@ type IndexerDelegatedStakeDailyRelation @entity {
 
   dayNumber: Int!
 
+  indexer: Indexer!
+
+  delegator: Delegator!
+
   indexerDailyData: IndexerDailyData!
   delegatedStakeDailyData: DelegatedStakeDailyData!
 }
@@ -944,6 +948,8 @@ type DelegatorDelegatedStakeDailyRelation @entity {
   dayEnd: BigInt!
 
   dayNumber: Int!
+
+  delegator: Delegator!
 
   delegatorDailyData: DelegatorDailyData!
   delegatedStakeDailyData: DelegatedStakeDailyData!

@@ -652,6 +652,8 @@ export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt)
         copy.dayNumber = dailyData.dayNumber
         copy.indexerDailyData = dailyData.id
         copy.delegatedStakeDailyData = toCopy.delegatedStakeDailyData
+        copy.indexer = toCopy.indexer
+        copy.delegator = toCopy.delegator
 
         copy.save()
       }
@@ -748,6 +750,7 @@ export function getAndUpdateDelegatorDailyData(
         copy.dayEnd = dailyData.dayEnd
         copy.dayNumber = dailyData.dayNumber
         copy.delegatorDailyData = dailyData.id
+        copy.delegator = entity.id;
 
         if (compareDelegatedStakeDailyDataID(toCopy.delegatedStakeDailyData, stakeDailyData.id)) {
           copy.delegatedStakeDailyData = stakeDailyData.id
@@ -767,6 +770,7 @@ export function getAndUpdateDelegatorDailyData(
         relation.dayNumber = dailyData.dayNumber
         relation.delegatorDailyData = dailyData.id
         relation.delegatedStakeDailyData = stakeDailyData.id
+        relation.delegator = entity.id;
         relation.save()
 
         dailyData.stakesCount = dailyData.stakesCount.plus(BigInt.fromI32(1))
@@ -779,6 +783,7 @@ export function getAndUpdateDelegatorDailyData(
       relation.dayNumber = dailyData.dayNumber
       relation.delegatorDailyData = dailyData.id
       relation.delegatedStakeDailyData = stakeDailyData.id
+      relation.delegator = entity.id;
       relation.save()
 
       dailyData.stakesCount = dailyData.stakesCount.plus(BigInt.fromI32(1))
@@ -812,6 +817,7 @@ export function getAndUpdateDelegatorDailyData(
       relation.dayNumber = dailyData.dayNumber
       relation.delegatorDailyData = dailyData.id
       relation.delegatedStakeDailyData = stakeDailyData.id
+      relation.delegator = entity.id;
       relation.save()
 
       dailyData.stakesCount = dailyData.stakesCount.plus(BigInt.fromI32(1))
@@ -855,6 +861,8 @@ export function updateIndexerDelegatedStakeRelation(
     relation.dayNumber = dailyData.dayNumber
     relation.indexerDailyData = dailyData.id
     relation.delegatedStakeDailyData = stakeDailyData.id
+    relation.indexer = dailyData.indexer
+    relation.delegator = stakeDailyData.id.split('-')[0]
     relation.save()
 
     dailyData.delegatorsCount = dailyData.delegatorsCount.plus(BigInt.fromI32(1))
