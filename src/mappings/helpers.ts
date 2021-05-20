@@ -733,6 +733,10 @@ export function getAndUpdateDelegatedStakeDailyData(
   stakeDailyData.lockedTokens = stakeEntity.lockedTokens
   stakeDailyData.shareAmount = stakeEntity.shareAmount
   stakeDailyData.personalExchangeRate = stakeEntity.personalExchangeRate
+  stakeDailyData.latestIndexerExchangeRate = stakeEntity.latestIndexerExchangeRate
+  stakeDailyData.unrealizedRewards = stakeEntity.unrealizedRewards
+  stakeDailyData.originalDelegation = stakeEntity.originalDelegation
+  stakeDailyData.currentDelegation = stakeEntity.currentDelegation
 
   stakeDailyData.save()
 

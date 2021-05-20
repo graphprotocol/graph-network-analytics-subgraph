@@ -927,6 +927,18 @@ type DelegatedStakeDailyData @entity {
 
   "[CURRENT] Initial exchange rate for this delegator in this indexer at this day. It will increase as an average cost basis if the delegator adds more delegation."
   personalExchangeRate: BigDecimal!
+
+  "[CURRENT] Latest delegationExchangeRate value for the indexer"
+  latestIndexerExchangeRate: BigDecimal!
+
+  "[CURRENT] Unrealized rewards for the delegator on this particular stake"
+  unrealizedRewards: BigDecimal!
+
+  "[CURRENT] Original delegation for the delegator on this particular stake"
+  originalDelegation: BigDecimal!
+
+  "[CURRENT] Current delegation for the delegator on this particular stake"
+  currentDelegation: BigDecimal!
 }
 
 type IndexerDelegatedStakeDailyRelation @entity {
