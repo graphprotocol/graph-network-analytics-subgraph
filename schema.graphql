@@ -515,8 +515,10 @@ type Delegator @entity {
   stakedTokens: BigInt!
   "Current amount of locked tokens (undelegating) across all DelegatedStakes"
   lockedTokens: BigInt!
-  "Total realized rewards on all delegated stakes. Realized rewards are added when undelegating and realizing a profit"
+  "[CURRENT] Total realized rewards on all delegated stakes. Realized rewards are added when undelegating and realizing a profit"
   totalRealizedRewards: BigDecimal!
+  "[CURRENT] Total unrealized rewards on all delegated stakes."
+  totalUnrealizedRewards: BigDecimal!
 
   "Lated daily data entity that exists for this delegator. Null if it doesn't exist"
   latestDailyData: DelegatorDailyData
@@ -528,6 +530,8 @@ type Delegator @entity {
   totalStakedTokens: BigInt!
   "CUMULATIVE unstaked tokens in DelegatorStakes of this Delegator"
   totalUnstakedTokens: BigInt!
+
+  stakesCount: BigInt!
 }
 
 """
@@ -834,6 +838,17 @@ enum TransactionType {
 """
 Analytics
 """
+type IndexerDelegatedStakeRelation @entity {
+  "Auxiliary entity to DelegatedStake to make it easier to batch update those delegations"
+  id: ID!
+
+  indexer: Indexer!
+
+  delegator: Delegator!
+
+  stake: DelegatedStake!
+}
+
 type IndexerDailyData @entity {
   "<INDEXER ADDRESS>-<DAY NUMBER>"
   id: ID!
@@ -877,8 +892,6 @@ type IndexerDailyData @entity {
   delegationExchangeRate: BigDecimal!
 
   delegatorsCount: BigInt!
-
-  delegatorsDailyData: [IndexerDelegatedStakeDailyRelation!]! @derivedFrom(field:"indexerDailyData")
 }
 
 type DelegatorDailyData @entity {
@@ -899,9 +912,11 @@ type DelegatorDailyData @entity {
   "[CURRENT] Amount of locked (undelegating) tokens for this day across all stakes"
   lockedTokens: BigInt!
 
-  stakesCount: BigInt!
+  totalUnrealizedRewards: BigDecimal!
 
-  stakesDailyData: [DelegatorDelegatedStakeDailyRelation!]! @derivedFrom(field:"delegatorDailyData")
+  totalRealizedRewards: BigDecimal!
+
+  stakesCount: BigInt!
 }
 
 type DelegatedStakeDailyData @entity {
@@ -915,6 +930,10 @@ type DelegatedStakeDailyData @entity {
   dayNumber: Int!
 
   stake: DelegatedStake!
+
+  delegator: Delegator!
+
+  indexer: Indexer!
 
   "[CURRENT] Amount of staked tokens for this day and this indexer"
   stakedTokens: BigInt!
@@ -939,26 +958,6 @@ type DelegatedStakeDailyData @entity {
 
   "[CURRENT] Current delegation for the delegator on this particular stake"
   currentDelegation: BigDecimal!
-}
-
-type IndexerDelegatedStakeDailyRelation @entity {
-  "Auxiliary entity to avoid using arrays for many-to-many relation tracking. Compound ID of both entities."
-  id: ID!
-
-  dayStart: BigInt!
-
-  dayEnd: BigInt!
-
-  dayNumber: Int!
-
-  indexer: Indexer!
-
-  delegator: Delegator!
-
-  stake: DelegatedStake!
-
-  indexerDailyData: IndexerDailyData!
-  delegatedStakeDailyData: DelegatedStakeDailyData!
 }
 
 type DelegatorDelegatedStakeDailyRelation @entity {

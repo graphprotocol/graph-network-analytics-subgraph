@@ -41,11 +41,8 @@ import {
   updateDelegationExchangeRate,
   createOrLoadGraphNetwork,
   getAndUpdateIndexerDailyData,
-  getAndUpdateDelegatorDailyData,
-  getAndUpdateDelegatedStakeDailyData,
   calculatePricePerShare,
   getAndUpdateSubgraphDeploymentDailyData,
-  updateIndexerDelegatedStakeRelation,
   batchUpdateDelegatorsForIndexer,
 } from './helpers'
 
@@ -240,30 +237,14 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   graphNetwork.totalDelegatedTokens = graphNetwork.totalDelegatedTokens.plus(event.params.tokens)
   graphNetwork.save()
 
+  batchUpdateDelegatorsForIndexer(indexer as Indexer, event.block.timestamp)
+
   // analytics
-  let stakeDailyData = getAndUpdateDelegatedStakeDailyData(
-    delegatedStake as DelegatedStake,
-    event.block.timestamp,
-  )
-
-  getAndUpdateDelegatorDailyData(
-    delegator as Delegator,
-    stakeDailyData as DelegatedStakeDailyData,
-    event.block.timestamp,
-  )
-
   let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   indexerDailyData.netDailyDelegatedTokens = indexerDailyData.netDailyDelegatedTokens.plus(
     event.params.tokens,
   )
   indexerDailyData.save()
-  // Update indexer-delegatedStake relation auxiliary entity or create it
-  updateIndexerDelegatedStakeRelation(
-    indexerDailyData as IndexerDailyData,
-    stakeDailyData as DelegatedStakeDailyData,
-  )
-
-  batchUpdateDelegatorsForIndexer(indexer as Indexer)
 }
 
 export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
@@ -317,30 +298,15 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   graphNetwork.totalDelegatedTokens = graphNetwork.totalDelegatedTokens.minus(event.params.tokens)
   graphNetwork.save()
 
+  // batch update delegs
+  batchUpdateDelegatorsForIndexer(indexer as Indexer, event.block.timestamp)
+
   // analytics
-  let stakeDailyData = getAndUpdateDelegatedStakeDailyData(
-    delegatedStake as DelegatedStake,
-    event.block.timestamp,
-  )
-
-  getAndUpdateDelegatorDailyData(
-    delegator as Delegator,
-    stakeDailyData as DelegatedStakeDailyData,
-    event.block.timestamp,
-  )
-
   let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   indexerDailyData.netDailyDelegatedTokens = indexerDailyData.netDailyDelegatedTokens.minus(
     event.params.tokens,
   )
   indexerDailyData.save()
-
-  updateIndexerDelegatedStakeRelation(
-    indexerDailyData as IndexerDailyData,
-    stakeDailyData as DelegatedStakeDailyData,
-  )
-
-  batchUpdateDelegatorsForIndexer(indexer as Indexer)
 }
 
 export function handleStakeDelegatedWithdrawn(event: StakeDelegatedWithdrawn): void {
@@ -359,25 +325,10 @@ export function handleStakeDelegatedWithdrawn(event: StakeDelegatedWithdrawn): v
   delegatedStake.lockedUntil = 0
   delegatedStake.save()
 
+  batchUpdateDelegatorsForIndexer(indexer as Indexer, event.block.timestamp)
+
   // analytics
-  let stakeDailyData = getAndUpdateDelegatedStakeDailyData(
-    delegatedStake as DelegatedStake,
-    event.block.timestamp,
-  )
-
-  getAndUpdateDelegatorDailyData(
-    delegator as Delegator,
-    stakeDailyData as DelegatedStakeDailyData,
-    event.block.timestamp,
-  )
-
   let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
-  updateIndexerDelegatedStakeRelation(
-    indexerDailyData as IndexerDailyData,
-    stakeDailyData as DelegatedStakeDailyData,
-  )
-
-  batchUpdateDelegatorsForIndexer(indexer as Indexer)
 }
 
 /**
@@ -639,13 +590,13 @@ export function handleRebateClaimed(event: RebateClaimed): void {
   )
   graphNetwork.save()
 
+  batchUpdateDelegatorsForIndexer(indexer as Indexer, event.block.timestamp)
+
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   getAndUpdateSubgraphDeploymentDailyData(
     subgraphDeployment as SubgraphDeployment,
     event.block.timestamp,
   )
-
-  batchUpdateDelegatorsForIndexer(indexer as Indexer)
 }
 
 /**

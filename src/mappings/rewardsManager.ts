@@ -88,13 +88,13 @@ export function handleRewardsAssigned(event: RewardsAssigned): void {
   )
   graphNetwork.save()
 
+  batchUpdateDelegatorsForIndexer(indexer as Indexer, event.block.timestamp)
+
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   getAndUpdateSubgraphDeploymentDailyData(
     subgraphDeployment as SubgraphDeployment,
     event.block.timestamp,
   )
-
-  batchUpdateDelegatorsForIndexer(indexer as Indexer)
 }
 
 /**
