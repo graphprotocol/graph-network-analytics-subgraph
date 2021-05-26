@@ -652,9 +652,8 @@ export function compoundId(idA: string, idB: string): string {
 export function batchUpdateDelegatorsForIndexer(indexer: Indexer, timestamp: BigInt): void {
   // pre-calculates a lot of data for all delegators that exists for a specific indexer
   // using already existing links with the indexer-delegatedStake relations
-  let dailyDataId = indexer.latestDailyData
   for (let i = 0; i < indexer.delegatorsCount.toI32(); i++) {
-    let relationId = compoundId(dailyDataId, BigInt.fromI32(i).toString())
+    let relationId = compoundId(indexer.id, BigInt.fromI32(i).toString())
     let relation = IndexerDelegatedStakeRelation.load(relationId)
     let delegatedStake = DelegatedStake.load(relation.stake)
     let delegator = Delegator.load(delegatedStake.delegator)
