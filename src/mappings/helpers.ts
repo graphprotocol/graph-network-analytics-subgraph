@@ -179,6 +179,8 @@ export function createOrLoadDelegator(id: string, timestamp: BigInt): Delegator 
     delegator.createdAt = timestamp.toI32()
     delegator.totalRealizedRewards = BigDecimal.fromString('0')
     delegator.totalUnrealizedRewards = BigDecimal.fromString('0')
+    delegator.originalDelegation = BigDecimal.fromString('0')
+    delegator.currentDelegation = BigDecimal.fromString('0')
     delegator.stakesCount = BigInt.fromI32(0)
     delegator.save()
 
@@ -198,6 +200,9 @@ export function createOrLoadDelegatedStake(
   let delegatedStake = DelegatedStake.load(id)
 
   if (delegatedStake == null) {
+    let indexerEntity = Indexer.load(indexer)
+    let relationId = compoundId(indexer, indexerEntity.delegatorsCount.toString())
+
     delegatedStake = new DelegatedStake(id)
     delegatedStake.indexer = indexer
     delegatedStake.delegator = delegator
@@ -214,16 +219,15 @@ export function createOrLoadDelegatedStake(
     delegatedStake.originalDelegation = BigDecimal.fromString('0')
     delegatedStake.currentDelegation = BigDecimal.fromString('0')
     delegatedStake.createdAt = timestamp
+    delegatedStake.relation = relationId
     delegatedStake.save()
 
-    let indexerEntity = Indexer.load(indexer)
-    let relation = new IndexerDelegatedStakeRelation(
-      compoundId(indexer, indexerEntity.delegatorsCount.toString()),
-    )
+    let relation = new IndexerDelegatedStakeRelation(relationId)
 
     relation.indexer = indexerEntity.id
     relation.stake = delegatedStake.id
     relation.delegator = delegator
+    relation.active = true
     relation.save()
 
     indexerEntity.delegatorsCount = indexerEntity.delegatorsCount.plus(BigInt.fromI32(1))
@@ -655,27 +659,30 @@ export function batchUpdateDelegatorsForIndexer(indexer: Indexer, timestamp: Big
   for (let i = 0; i < indexer.delegatorsCount.toI32(); i++) {
     let relationId = compoundId(indexer.id, BigInt.fromI32(i).toString())
     let relation = IndexerDelegatedStakeRelation.load(relationId)
-    let delegatedStake = DelegatedStake.load(relation.stake)
-    let delegator = Delegator.load(delegatedStake.delegator)
-    let oldUnrealizedRewards = delegatedStake.unrealizedRewards
+    if (relation.active) {
+      let delegatedStake = DelegatedStake.load(relation.stake)
+      let delegator = Delegator.load(delegatedStake.delegator)
+      // Only update core entities if there's a change in the exchange rate
+      if(delegatedStake.latestIndexerExchangeRate != indexer.delegationExchangeRate) {
+        let oldUnrealizedRewards = delegatedStake.unrealizedRewards
 
-    delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate
-    delegatedStake.currentDelegation =
-      delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
-    delegatedStake.currentDelegation = delegatedStake.currentDelegation.truncate(18)
-    delegatedStake.unrealizedRewards =
-      delegatedStake.currentDelegation - delegatedStake.originalDelegation
-    delegatedStake.unrealizedRewards = delegatedStake.unrealizedRewards.truncate(18)
+        delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate
+        delegatedStake.currentDelegation =
+        delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
+        delegatedStake.unrealizedRewards =
+        delegatedStake.currentDelegation - delegatedStake.originalDelegation
+        delegatedStake.save()
 
-    delegatedStake.save()
+        let diffUnrealized = delegatedStake.unrealizedRewards - oldUnrealizedRewards
 
-    delegator.totalUnrealizedRewards = delegator.totalUnrealizedRewards.plus(
-      delegatedStake.unrealizedRewards - oldUnrealizedRewards,
-    )
-    delegator.save()
+        delegator.totalUnrealizedRewards = delegator.totalUnrealizedRewards.plus(diffUnrealized)
+        delegator.currentDelegation = delegator.currentDelegation.plus(diffUnrealized)
+        delegator.save()
+      }
 
-    getAndUpdateDelegatedStakeDailyData(delegatedStake as DelegatedStake, timestamp)
-    getAndUpdateDelegatorDailyData(delegator as Delegator, timestamp)
+      getAndUpdateDelegatedStakeDailyData(delegatedStake as DelegatedStake, timestamp)
+      getAndUpdateDelegatorDailyData(delegator as Delegator, timestamp)
+    }
   }
 }
 
@@ -693,9 +700,6 @@ export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt)
     dailyData.indexer = entity.id
     dailyData.netDailyDelegatedTokens = BigInt.fromI32(0)
     dailyData.delegatorsCount = BigInt.fromI32(0)
-
-    entity.latestDailyData = dailyData.id
-    entity.save()
   }
 
   dailyData.stakedTokens = entity.stakedTokens
@@ -748,6 +752,7 @@ export function getAndUpdateDelegatedStakeDailyData(
   stakeDailyData.personalExchangeRate = stakeEntity.personalExchangeRate
   stakeDailyData.latestIndexerExchangeRate = stakeEntity.latestIndexerExchangeRate
   stakeDailyData.unrealizedRewards = stakeEntity.unrealizedRewards
+  stakeDailyData.realizedRewards = stakeEntity.realizedRewards
   stakeDailyData.originalDelegation = stakeEntity.originalDelegation
   stakeDailyData.currentDelegation = stakeEntity.currentDelegation
 

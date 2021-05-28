@@ -28,6 +28,7 @@ import {
   DelegatedStake,
   DelegatedStakeDailyData,
   IndexerDailyData,
+  IndexerDelegatedStakeRelation,
 } from '../types/schema'
 
 import {
@@ -200,7 +201,6 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   let delegator = createOrLoadDelegator(delegatorID, event.block.timestamp)
   delegator.totalStakedTokens = delegator.totalStakedTokens.plus(event.params.tokens)
   delegator.stakedTokens = delegator.stakedTokens.plus(event.params.tokens)
-  delegator.save()
 
   // update delegated stake
   let delegatedStake = createOrLoadDelegatedStake(
@@ -208,6 +208,10 @@ export function handleStakeDelegated(event: StakeDelegated): void {
     indexerID,
     event.block.timestamp.toI32(),
   )
+  let oldOriginalDelegation = delegatedStake.originalDelegation
+  let oldCurrentDelegation = delegatedStake.currentDelegation
+  let oldUnrealizedRewards = delegatedStake.unrealizedRewards
+
   if (!zeroShares) {
     let previousExchangeRate = delegatedStake.personalExchangeRate
     let previousShares = delegatedStake.shareAmount
@@ -226,11 +230,34 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   delegatedStake.totalStakedTokens = delegatedStake.totalStakedTokens.plus(event.params.tokens)
   delegatedStake.shareAmount = delegatedStake.shareAmount.plus(event.params.shares)
   delegatedStake.lastDelegatedAt = event.block.timestamp.toI32()
-  delegatedStake.originalDelegation = delegatedStake.personalExchangeRate * delegatedStake.shareAmount.toBigDecimal()
-  delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate;
-  delegatedStake.currentDelegation = delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
-  delegatedStake.unrealizedRewards =  delegatedStake.currentDelegation - delegatedStake.originalDelegation
+  delegatedStake.originalDelegation =
+    delegatedStake.personalExchangeRate * delegatedStake.shareAmount.toBigDecimal()
+  delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate
+  delegatedStake.currentDelegation =
+    delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
+  delegatedStake.unrealizedRewards =
+    delegatedStake.currentDelegation - delegatedStake.originalDelegation
   delegatedStake.save()
+
+  delegator.lastDelegatedAt = event.block.timestamp.toI32()
+  delegator.lastDelegation = delegatedStake.id
+  delegator.originalDelegation = delegator.originalDelegation.plus(
+    delegatedStake.originalDelegation - oldOriginalDelegation,
+  )
+  delegator.currentDelegation = delegator.currentDelegation.plus(
+    delegatedStake.currentDelegation - oldCurrentDelegation,
+  )
+  delegator.totalUnrealizedRewards = delegator.totalUnrealizedRewards.plus(
+    delegatedStake.unrealizedRewards - oldUnrealizedRewards,
+  )
+  delegator.save()
+
+  // Re-activate relation with indexer before batch update, so new datapoints are created properly
+  if (!delegatedStake.shareAmount.equals(BigInt.fromI32(0))) {
+    let relation = IndexerDelegatedStakeRelation.load(delegatedStake.relation)
+    relation.active = true
+    relation.save()
+  }
 
   // upgrade graph network
   let graphNetwork = createOrLoadGraphNetwork()
@@ -279,18 +306,25 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   let realizedRewards = currentBalance.minus(oldBalance)
 
   delegatedStake.realizedRewards = delegatedStake.realizedRewards.plus(realizedRewards)
-  delegatedStake.originalDelegation = delegatedStake.personalExchangeRate * delegatedStake.shareAmount.toBigDecimal()
-  delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate;
-  delegatedStake.currentDelegation = delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
-  delegatedStake.unrealizedRewards =  delegatedStake.currentDelegation - delegatedStake.originalDelegation
+  delegatedStake.originalDelegation =
+    delegatedStake.personalExchangeRate * delegatedStake.shareAmount.toBigDecimal()
+  delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate
+  delegatedStake.currentDelegation =
+    delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
+  delegatedStake.unrealizedRewards =
+    delegatedStake.currentDelegation - delegatedStake.originalDelegation
   delegatedStake.save()
 
   // update delegator
   let delegator = Delegator.load(delegatorID)
   delegator.totalUnstakedTokens = delegator.totalUnstakedTokens.plus(event.params.tokens)
   delegator.totalRealizedRewards = delegator.totalRealizedRewards.plus(realizedRewards)
+  delegator.totalUnrealizedRewards = delegator.totalUnrealizedRewards.minus(realizedRewards)
+  delegator.currentDelegation = delegator.currentDelegation.minus(currentBalance)
   delegator.stakedTokens = delegator.stakedTokens.minus(event.params.tokens)
   delegator.lockedTokens = delegator.lockedTokens.plus(event.params.tokens)
+  delegator.lastUndelegatedAt = event.block.timestamp.toI32()
+  delegator.lastUndelegation = delegatedStake.id
   delegator.save()
 
   // upgrade graph network
@@ -307,6 +341,13 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
     event.params.tokens,
   )
   indexerDailyData.save()
+
+  // De-activate relation with indexer after batch update, so last datapoints are created properly
+  if (delegatedStake.shareAmount.equals(BigInt.fromI32(0))) {
+    let relation = IndexerDelegatedStakeRelation.load(delegatedStake.relation)
+    relation.active = false
+    relation.save()
+  }
 }
 
 export function handleStakeDelegatedWithdrawn(event: StakeDelegatedWithdrawn): void {
