@@ -25,11 +25,7 @@ import { ENS } from '../types/GNS/ENS'
 import { addresses } from '../../config/addresses'
 import { LAUNCH_DAY, SECONDS_PER_DAY } from './utils'
 
-export function createOrLoadGraphAccount(
-  id: string,
-  owner: Bytes,
-  timeStamp: BigInt,
-): GraphAccount {
+export function createOrLoadGraphAccount(id: string, timeStamp: BigInt): GraphAccount {
   let graphAccount = GraphAccount.load(id)
   if (graphAccount == null) {
     graphAccount = new GraphAccount(id)
@@ -116,9 +112,11 @@ export function createOrLoadSubgraphDeployment(
 export function createOrLoadIndexer(id: string, timestamp: BigInt): Indexer {
   let indexer = Indexer.load(id)
   if (indexer == null) {
+    createOrLoadGraphAccount(id, timestamp)
     indexer = new Indexer(id)
     indexer.createdAt = timestamp.toI32()
-    // indexer.account = id
+    indexer.account = id
+    indexer.defaultDisplayName = ''
 
     indexer.stakedTokens = BigInt.fromI32(0)
     indexer.allocatedTokens = BigInt.fromI32(0)
@@ -171,7 +169,9 @@ export function createOrLoadIndexer(id: string, timestamp: BigInt): Indexer {
 export function createOrLoadDelegator(id: string, timestamp: BigInt): Delegator {
   let delegator = Delegator.load(id)
   if (delegator == null) {
+    createOrLoadGraphAccount(id, timestamp)
     delegator = new Delegator(id)
+    delegator.account = id
     delegator.stakedTokens = BigInt.fromI32(0)
     delegator.lockedTokens = BigInt.fromI32(0)
     delegator.totalStakedTokens = BigInt.fromI32(0)
@@ -663,14 +663,14 @@ export function batchUpdateDelegatorsForIndexer(indexer: Indexer, timestamp: Big
       let delegatedStake = DelegatedStake.load(relation.stake)
       let delegator = Delegator.load(delegatedStake.delegator)
       // Only update core entities if there's a change in the exchange rate
-      if(delegatedStake.latestIndexerExchangeRate != indexer.delegationExchangeRate) {
+      if (delegatedStake.latestIndexerExchangeRate != indexer.delegationExchangeRate) {
         let oldUnrealizedRewards = delegatedStake.unrealizedRewards
 
         delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate
         delegatedStake.currentDelegation =
-        delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
+          delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
         delegatedStake.unrealizedRewards =
-        delegatedStake.currentDelegation - delegatedStake.originalDelegation
+          delegatedStake.currentDelegation - delegatedStake.originalDelegation
         delegatedStake.save()
 
         let diffUnrealized = delegatedStake.unrealizedRewards - oldUnrealizedRewards

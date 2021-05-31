@@ -29,6 +29,7 @@ import {
   DelegatedStakeDailyData,
   IndexerDailyData,
   IndexerDelegatedStakeRelation,
+  GraphAccount,
 } from '../types/schema'
 
 import {
@@ -49,7 +50,6 @@ import {
 
 export function handleDelegationParametersUpdated(event: DelegationParametersUpdated): void {
   let id = event.params.indexer.toHexString()
-  // Quick fix to avoid creating new Indexer entities if they don't exist yet.
   let indexer = createOrLoadIndexer(id, event.block.timestamp)
   indexer.indexingRewardCut = event.params.indexingRewardCut.toI32()
   indexer.queryFeeCut = event.params.queryFeeCut.toI32()

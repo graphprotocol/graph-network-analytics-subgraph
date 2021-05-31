@@ -327,6 +327,9 @@ type Indexer @entity {
   "Time this indexer was created"
   createdAt: Int!
 
+  account: GraphAccount!
+  defaultDisplayName: String!
+
   # Staking data
   "CURRENT tokens staked in the protocol. Decreases on withdraw, not on lock"
   stakedTokens: BigInt!
@@ -503,6 +506,7 @@ Delegator with all their delegated stakes towards Indexers
 type Delegator @entity {
   "Delegator address"
   id: ID!
+  account: GraphAccount!
   "Stakes of this delegator"
   stakes: [DelegatedStake!]! @derivedFrom(field: "delegator")
   "Time created at"
