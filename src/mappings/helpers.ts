@@ -7,7 +7,6 @@ import {
   Indexer,
   Pool,
   Curator,
-  Epoch,
   Signal,
   SubgraphVersion,
   Subgraph,
@@ -18,16 +17,14 @@ import {
   DelegatorDailyData,
   DelegatedStakeDailyData,
   SubgraphDeploymentDailyData,
+  DelegatorDelegatedStakeDailyRelation,
+  IndexerDelegatedStakeRelation,
 } from '../types/schema'
 import { ENS } from '../types/GNS/ENS'
 import { addresses } from '../../config/addresses'
 import { LAUNCH_DAY, SECONDS_PER_DAY } from './utils'
 
-export function createOrLoadGraphAccount(
-  id: string,
-  owner: Bytes,
-  timeStamp: BigInt,
-): GraphAccount {
+export function createOrLoadGraphAccount(id: string, timeStamp: BigInt): GraphAccount {
   let graphAccount = GraphAccount.load(id)
   if (graphAccount == null) {
     graphAccount = new GraphAccount(id)
@@ -114,9 +111,11 @@ export function createOrLoadSubgraphDeployment(
 export function createOrLoadIndexer(id: string, timestamp: BigInt): Indexer {
   let indexer = Indexer.load(id)
   if (indexer == null) {
+    createOrLoadGraphAccount(id, timestamp)
     indexer = new Indexer(id)
     indexer.createdAt = timestamp.toI32()
-    // indexer.account = id
+    indexer.account = id
+    indexer.defaultDisplayName = ''
 
     indexer.stakedTokens = BigInt.fromI32(0)
     indexer.allocatedTokens = BigInt.fromI32(0)
@@ -155,6 +154,8 @@ export function createOrLoadIndexer(id: string, timestamp: BigInt): Indexer {
     indexer.annualizedReturn = BigDecimal.fromString('0')
     indexer.stakingEfficiency = BigDecimal.fromString('0')
 
+    indexer.delegatorsCount = BigInt.fromI32(0)
+
     let graphNetwork = createOrLoadGraphNetwork()
     graphNetwork.indexerCount = graphNetwork.indexerCount + 1
     graphNetwork.save()
@@ -167,13 +168,19 @@ export function createOrLoadIndexer(id: string, timestamp: BigInt): Indexer {
 export function createOrLoadDelegator(id: string, timestamp: BigInt): Delegator {
   let delegator = Delegator.load(id)
   if (delegator == null) {
+    createOrLoadGraphAccount(id, timestamp)
     delegator = new Delegator(id)
+    delegator.account = id
     delegator.stakedTokens = BigInt.fromI32(0)
     delegator.lockedTokens = BigInt.fromI32(0)
     delegator.totalStakedTokens = BigInt.fromI32(0)
     delegator.totalUnstakedTokens = BigInt.fromI32(0)
     delegator.createdAt = timestamp.toI32()
     delegator.totalRealizedRewards = BigDecimal.fromString('0')
+    delegator.totalUnrealizedRewards = BigDecimal.fromString('0')
+    delegator.originalDelegation = BigDecimal.fromString('0')
+    delegator.currentDelegation = BigDecimal.fromString('0')
+    delegator.stakesCount = BigInt.fromI32(0)
     delegator.save()
 
     let graphNetwork = createOrLoadGraphNetwork()
@@ -190,7 +197,11 @@ export function createOrLoadDelegatedStake(
 ): DelegatedStake {
   let id = joinID([delegator, indexer])
   let delegatedStake = DelegatedStake.load(id)
+
   if (delegatedStake == null) {
+    let indexerEntity = Indexer.load(indexer)
+    let relationId = compoundId(indexer, indexerEntity.delegatorsCount.toString())
+
     delegatedStake = new DelegatedStake(id)
     delegatedStake.indexer = indexer
     delegatedStake.delegator = delegator
@@ -201,11 +212,31 @@ export function createOrLoadDelegatedStake(
     delegatedStake.lockedUntil = 0
     delegatedStake.shareAmount = BigInt.fromI32(0)
     delegatedStake.personalExchangeRate = BigDecimal.fromString('1')
+    delegatedStake.latestIndexerExchangeRate = BigDecimal.fromString('1')
     delegatedStake.realizedRewards = BigDecimal.fromString('0')
+    delegatedStake.unrealizedRewards = BigDecimal.fromString('0')
+    delegatedStake.originalDelegation = BigDecimal.fromString('0')
+    delegatedStake.currentDelegation = BigDecimal.fromString('0')
     delegatedStake.createdAt = timestamp
-
+    delegatedStake.relation = relationId
     delegatedStake.save()
+
+    let relation = new IndexerDelegatedStakeRelation(relationId)
+
+    relation.indexer = indexerEntity.id
+    relation.stake = delegatedStake.id
+    relation.delegator = delegator
+    relation.active = true
+    relation.save()
+
+    indexerEntity.delegatorsCount = indexerEntity.delegatorsCount.plus(BigInt.fromI32(1))
+    indexerEntity.save()
+
+    let delegatorEntity = Delegator.load(delegator)
+    delegatorEntity.stakesCount = delegatorEntity.stakesCount.plus(BigInt.fromI32(1))
+    delegatorEntity.save()
   }
+
   return delegatedStake as DelegatedStake
 }
 export function createOrLoadCurator(id: string, timestamp: BigInt): Curator {
@@ -278,26 +309,6 @@ export function createOrLoadNameSignal(
   return nameSignal as NameSignal
 }
 
-// export function createOrLoadGraphAccount(
-//   id: string,
-//   owner: Bytes,
-//   timeStamp: BigInt,
-// ): GraphAccount {
-//   let graphAccount = GraphAccount.load(id)
-//   if (graphAccount == null) {
-//     graphAccount = new GraphAccount(id)
-//     graphAccount.createdAt = timeStamp.toI32()
-//     graphAccount.operators = []
-//     graphAccount.balance = BigInt.fromI32(0)
-//     graphAccount.curationApproval = BigInt.fromI32(0)
-//     graphAccount.stakingApproval = BigInt.fromI32(0)
-//     graphAccount.gnsApproval = BigInt.fromI32(0)
-//     graphAccount.subgraphQueryFees = BigInt.fromI32(0)
-//     graphAccount.save()
-//   }
-//   return graphAccount as GraphAccount
-// }
-
 export function createOrLoadPool(id: BigInt): Pool {
   let pool = Pool.load(id.toString())
   if (pool == null) {
@@ -310,37 +321,6 @@ export function createOrLoadPool(id: BigInt): Pool {
   }
   return pool as Pool
 }
-
-// export function createOrLoadEpoch(blockNumber: BigInt): Epoch {
-//   let graphNetwork = createOrLoadGraphNetwork()
-//   let epochsSinceLastUpdate = blockNumber
-//     .minus(BigInt.fromI32(graphNetwork.lastLengthUpdateBlock))
-//     .div(BigInt.fromI32(graphNetwork.epochLength))
-//   let epoch: Epoch
-//
-//   // true if we need to create
-//   // it is checking if at least 1 epoch has passed since the last creation
-//   let needsCreating =
-//     epochsSinceLastUpdate.toI32() > graphNetwork.currentEpoch - graphNetwork.lastLengthUpdateEpoch
-//
-//   if (needsCreating) {
-//     let newEpoch = graphNetwork.lastLengthUpdateEpoch + epochsSinceLastUpdate.toI32()
-//
-//     // Need to get the start block according to the contracts, not just the start block this
-//     // entity was created in the subgraph
-//     let startBlock =
-//       graphNetwork.lastLengthUpdateBlock + epochsSinceLastUpdate.toI32() * graphNetwork.epochLength
-//     epoch = createEpoch(startBlock, graphNetwork.epochLength, newEpoch)
-//     graphNetwork.epochCount = graphNetwork.epochCount + 1
-//     graphNetwork.currentEpoch = newEpoch
-//     graphNetwork.save()
-//
-//     // If there is no need to create a new epoch, just return the current one
-//   } else {
-//     epoch = Epoch.load(BigInt.fromI32(graphNetwork.currentEpoch).toString()) as Epoch
-//   }
-//   return epoch
-// }
 
 export function createEpoch(startBlock: i32, epochLength: i32, epochNumber: i32): Epoch {
   let epoch = new Epoch(BigInt.fromI32(epochNumber).toString())
@@ -617,13 +597,46 @@ export function updateDelegationExchangeRate(indexer: Indexer): Indexer {
   return indexer as Indexer
 }
 
-function dailyEntityId(entityId: string, dayId: string): string {
-  return entityId.concat('-').concat(dayId)
+export function compoundId(idA: string, idB: string): string {
+  return idA.concat('-').concat(idB)
+}
+
+export function batchUpdateDelegatorsForIndexer(indexer: Indexer, timestamp: BigInt): void {
+  // pre-calculates a lot of data for all delegators that exists for a specific indexer
+  // using already existing links with the indexer-delegatedStake relations
+  for (let i = 0; i < indexer.delegatorsCount.toI32(); i++) {
+    let relationId = compoundId(indexer.id, BigInt.fromI32(i).toString())
+    let relation = IndexerDelegatedStakeRelation.load(relationId)
+    if (relation.active) {
+      let delegatedStake = DelegatedStake.load(relation.stake)
+      let delegator = Delegator.load(delegatedStake.delegator)
+      // Only update core entities if there's a change in the exchange rate
+      if (delegatedStake.latestIndexerExchangeRate != indexer.delegationExchangeRate) {
+        let oldUnrealizedRewards = delegatedStake.unrealizedRewards
+
+        delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate
+        delegatedStake.currentDelegation =
+          delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
+        delegatedStake.unrealizedRewards =
+          delegatedStake.currentDelegation - delegatedStake.originalDelegation
+        delegatedStake.save()
+
+        let diffUnrealized = delegatedStake.unrealizedRewards - oldUnrealizedRewards
+
+        delegator.totalUnrealizedRewards = delegator.totalUnrealizedRewards.plus(diffUnrealized)
+        delegator.currentDelegation = delegator.currentDelegation.plus(diffUnrealized)
+        delegator.save()
+      }
+
+      getAndUpdateDelegatedStakeDailyData(delegatedStake as DelegatedStake, timestamp)
+      getAndUpdateDelegatorDailyData(delegator as Delegator, timestamp)
+    }
+  }
 }
 
 export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt): IndexerDailyData {
-  let dayId = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
-  let id = dailyEntityId(entity.id, BigInt.fromI32(dayId).toString())
+  let dayNumber = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
+  let id = compoundId(entity.id, BigInt.fromI32(dayNumber).toString())
   let dailyData = IndexerDailyData.load(id)
 
   if (dailyData == null) {
@@ -631,9 +644,10 @@ export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt)
 
     dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
     dailyData.dayEnd = dailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
-    dailyData.dayNumber = dayId
+    dailyData.dayNumber = dayNumber
     dailyData.indexer = entity.id
     dailyData.netDailyDelegatedTokens = BigInt.fromI32(0)
+    dailyData.delegatorsCount = BigInt.fromI32(0)
   }
 
   dailyData.stakedTokens = entity.stakedTokens
@@ -653,12 +667,54 @@ export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt)
   return dailyData as IndexerDailyData
 }
 
+export function compareDelegatedStakeDailyDataID(idStakeA: String, idStakeB: String): boolean {
+  let arrayA = idStakeA.split('-')
+  let arrayB = idStakeB.split('-')
+  return arrayA[0] == arrayB[0] && arrayA[1] == arrayB[1]
+}
+
+export function getAndUpdateDelegatedStakeDailyData(
+  stakeEntity: DelegatedStake,
+  timestamp: BigInt,
+): DelegatedStakeDailyData {
+  let dayNumber = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
+  let stakeId = compoundId(stakeEntity.id, BigInt.fromI32(dayNumber).toString())
+  let stakeDailyData = DelegatedStakeDailyData.load(stakeId)
+
+  if (stakeDailyData == null) {
+    stakeDailyData = new DelegatedStakeDailyData(stakeId)
+
+    stakeDailyData.dayStart = BigInt.fromI32(
+      (timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY,
+    )
+    stakeDailyData.dayEnd = stakeDailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
+    stakeDailyData.dayNumber = dayNumber
+    stakeDailyData.stake = stakeEntity.id
+    stakeDailyData.delegator = stakeEntity.delegator
+    stakeDailyData.indexer = stakeEntity.indexer
+  }
+
+  stakeDailyData.stakedTokens = stakeEntity.stakedTokens
+  stakeDailyData.lockedTokens = stakeEntity.lockedTokens
+  stakeDailyData.shareAmount = stakeEntity.shareAmount
+  stakeDailyData.personalExchangeRate = stakeEntity.personalExchangeRate
+  stakeDailyData.latestIndexerExchangeRate = stakeEntity.latestIndexerExchangeRate
+  stakeDailyData.unrealizedRewards = stakeEntity.unrealizedRewards
+  stakeDailyData.realizedRewards = stakeEntity.realizedRewards
+  stakeDailyData.originalDelegation = stakeEntity.originalDelegation
+  stakeDailyData.currentDelegation = stakeEntity.currentDelegation
+
+  stakeDailyData.save()
+
+  return stakeDailyData as DelegatedStakeDailyData
+}
+
 export function getAndUpdateDelegatorDailyData(
   entity: Delegator,
   timestamp: BigInt,
 ): DelegatorDailyData {
-  let dayId = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
-  let id = dailyEntityId(entity.id, BigInt.fromI32(dayId).toString())
+  let dayNumber = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
+  let id = compoundId(entity.id, BigInt.fromI32(dayNumber).toString())
   let dailyData = DelegatorDailyData.load(id)
 
   if (dailyData == null) {
@@ -666,47 +722,19 @@ export function getAndUpdateDelegatorDailyData(
 
     dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
     dailyData.dayEnd = dailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
-    dailyData.dayNumber = dayId
+    dailyData.dayNumber = dayNumber
     dailyData.delegator = entity.id
   }
 
+  dailyData.stakesCount = entity.stakesCount
   dailyData.stakedTokens = entity.stakedTokens
   dailyData.lockedTokens = entity.lockedTokens
+  dailyData.totalUnrealizedRewards = entity.totalUnrealizedRewards
+  dailyData.totalRealizedRewards = entity.totalRealizedRewards
 
   dailyData.save()
 
   return dailyData as DelegatorDailyData
-}
-
-export function getAndUpdateDelegatedStakeDailyData(
-  entity: DelegatedStake,
-  timestamp: BigInt,
-  delegatorDailyAggregator: DelegatorDailyData,
-  indexerDailyData: IndexerDailyData,
-): DelegatedStakeDailyData {
-  let dayId = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
-  let id = dailyEntityId(entity.id, BigInt.fromI32(dayId).toString())
-  let dailyData = DelegatedStakeDailyData.load(id)
-
-  if (dailyData == null) {
-    dailyData = new DelegatedStakeDailyData(id)
-
-    dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
-    dailyData.dayEnd = dailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
-    dailyData.dayNumber = dayId
-    dailyData.stake = entity.id
-    dailyData.delegatorDailyAggregator = delegatorDailyAggregator.id
-    dailyData.indexerDailyData = indexerDailyData.id
-  }
-
-  dailyData.stakedTokens = entity.stakedTokens
-  dailyData.lockedTokens = entity.lockedTokens
-  dailyData.shareAmount = entity.shareAmount
-  dailyData.personalExchangeRate = entity.personalExchangeRate
-
-  dailyData.save()
-
-  return dailyData as DelegatedStakeDailyData
 }
 
 export function getAndUpdateSubgraphDeploymentDailyData(
@@ -714,7 +742,7 @@ export function getAndUpdateSubgraphDeploymentDailyData(
   timestamp: BigInt,
 ): SubgraphDeploymentDailyData {
   let dayId = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
-  let id = dailyEntityId(entity.id, BigInt.fromI32(dayId).toString())
+  let id = compoundId(entity.id, BigInt.fromI32(dayId).toString())
   let dailyData = SubgraphDeploymentDailyData.load(id)
 
   if (dailyData == null) {

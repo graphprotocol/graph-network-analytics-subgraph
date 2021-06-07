@@ -37,7 +37,6 @@ import {
 export function handleSetDefaultName(event: SetDefaultName): void {
   let graphAccount = createOrLoadGraphAccount(
     event.params.graphAccount.toHexString(),
-    event.params.graphAccount,
     event.block.timestamp,
   )
 
@@ -61,13 +60,13 @@ export function handleSetDefaultName(event: SetDefaultName): void {
     graphAccount.defaultName = newDefaultName
     graphAccount.defaultDisplayName = event.params.name
 
-    // // And if the GraphAccount changes default name, we should change it on the indexer too.
-    // // Indexer also has a defaultDisplayName because it helps with filtering.
-    // let indexer = Indexer.load(event.params.graphAccount.toHexString())
-    // if (indexer != null) {
-    //   indexer.defaultDisplayName = graphAccount.defaultDisplayName
-    //   indexer.save()
-    // }
+    // And if the GraphAccount changes default name, we should change it on the indexer too.
+    // Indexer also has a defaultDisplayName because it helps with filtering.
+    let indexer = Indexer.load(event.params.graphAccount.toHexString())
+    if (indexer != null) {
+      indexer.defaultDisplayName = graphAccount.defaultDisplayName
+      indexer.save()
+    }
   }
   graphAccount.save()
 }
@@ -144,7 +143,7 @@ export function handleSubgraphPublished(event: SubgraphPublished): void {
   subgraph.currentVersion = versionID
 
   // Creates Graph Account, if needed
-  createOrLoadGraphAccount(graphAccountID, event.params.graphAccount, event.block.timestamp)
+  createOrLoadGraphAccount(graphAccountID, event.block.timestamp)
   subgraph.updatedAt = event.block.timestamp.toI32()
   subgraph.save()
 

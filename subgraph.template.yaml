@@ -1,6 +1,6 @@
 specVersion: 0.0.2
-description: The Graph Network Smart Contracts on Ethereum
-repository: https://github.com/graphprotocol/contracts/graph-network-subgraph
+description: Graph Network analytics subgraph
+repository: https://github.com/graphprotocol/graph-network-analytics-subgraph
 schema:
   file: ./schema.graphql
 dataSources:
@@ -76,28 +76,6 @@ dataSources:
           handler: handleNameSignalDisabled
         - event: GRTWithdrawn(indexed address,indexed uint256,indexed address,uint256,uint256)
           handler: handleGRTWithdrawn
-  # - kind: ethereum/contract
-  #   name: ServiceRegistry
-  #   network: {{network}}
-  #   source:
-  #     address: '{{serviceRegistry}}'
-  #     abi: ServiceRegistry
-  #     startBlock: {{blockNumber}}
-  #   mapping:
-  #     kind: ethereum/events
-  #     apiVersion: 0.0.4
-  #     language: wasm/assemblyscript
-  #     file: ./src/mappings/serviceRegistry.ts
-  #     entities:
-  #       - Indexer
-  #     abis:
-  #       - name: ServiceRegistry
-  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/ServiceRegistry.json
-  #     eventHandlers:
-  #       - event: ServiceRegistered(indexed address,string,string)
-  #         handler: handleServiceRegistered
-  #       - event: ServiceUnregistered(indexed address)
-  #         handler: handleServiceUnregistered
   - kind: ethereum/contract
     name: Staking
     network: {{network}}
@@ -196,29 +174,6 @@ dataSources:
         #   handler: handleParameterUpdated
         # - event: ImplementationUpdated(address,address)
         #   handler: handleImplementationUpdated
-  # - kind: ethereum/contract
-  #   name: GraphToken
-  #   network: {{network}}
-  #   source:
-  #     address: '{{graphToken}}'
-  #     abi: GraphToken
-  #     startBlock: {{blockNumber}}
-  #   mapping:
-  #     kind: ethereum/events
-  #     apiVersion: 0.0.4
-  #     language: wasm/assemblyscript
-  #     file: ./src/mappings/graphToken.ts
-  #     entities:
-  #       - GraphAccount
-  #       - GraphNetwork
-  #     abis:
-  #       - name: GraphToken
-  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/GraphToken.json
-  #     eventHandlers:
-  #       - event: Transfer(indexed address,indexed address,uint256)
-  #         handler: handleTransfer
-  #       - event: Approval(indexed address,indexed address,uint256)
-  #         handler: handleApproval
   - kind: ethereum/contract
     name: EthereumDIDRegistry
     network: {{network}}
@@ -239,31 +194,6 @@ dataSources:
       eventHandlers:
         - event: DIDAttributeChanged(indexed address,bytes32,bytes,uint256,uint256)
           handler: handleDIDAttributeChanged
-  # - kind: ethereum/contract
-  #   name: EpochManager
-  #   network: {{network}}
-  #   source:
-  #     address: '{{epochManager}}'
-  #     abi: EpochManager
-  #     startBlock: {{blockNumber}}
-  #   mapping:
-  #     kind: ethereum/events
-  #     apiVersion: 0.0.4
-  #     language: wasm/assemblyscript
-  #     file: ./src/mappings/epochManager.ts
-  #     entities:
-  #       - Epoch
-  #       - GraphNetwork
-  #     abis:
-  #       - name: EpochManager
-  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/EpochManager.json
-  #     eventHandlers:
-  #       - event: EpochRun(indexed uint256,address)
-  #         handler: handleEpochRun
-  #       - event: EpochLengthUpdate(indexed uint256,uint256)
-  #         handler: handleEpochLengthUpdate
-  #       # - event: ImplementationUpdated(address,address)
-  #       #   handler: handleImplementationUpdated
   - kind: ethereum/contract
     name: RewardsManager
     network: {{network}}
@@ -292,35 +222,3 @@ dataSources:
         #   handler: handleImplementationUpdated
         # - event: ParameterUpdated(string)
         #   handler: handleParameterUpdated
-  # - kind: ethereum/contract
-  #   name: DisputeManager
-  #   network: {{network}}
-  #   source:
-  #     address: '{{disputeManager}}'
-  #     abi: DisputeManager
-  #     startBlock: {{blockNumber}}
-  #   mapping:
-  #     kind: ethereum/events
-  #     apiVersion: 0.0.4
-  #     language: wasm/assemblyscript
-  #     file: ./src/mappings/disputeManager.ts
-  #     entities:
-  #       - TODO
-  #     abis:
-  #       - name: DisputeManager
-  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/DisputeManager.json
-  #     eventHandlers:
-  #       - event: QueryDisputeCreated(indexed bytes32,indexed address,indexed address,uint256,bytes32,bytes)
-  #         handler: handleQueryDisputeCreated
-  #       - event: IndexingDisputeCreated(indexed bytes32,indexed address,indexed address,uint256,address)
-  #         handler: handleIndexingDisputeCreated
-  #       - event: DisputeAccepted(indexed bytes32,indexed address,indexed address,uint256)
-  #         handler: handleDisputeAccepted
-  #       - event: DisputeRejected(indexed bytes32,indexed address,indexed address,uint256)
-  #         handler: handleDisputeRejected
-  #       - event: DisputeDrawn(indexed bytes32,indexed address,indexed address,uint256)
-  #         handler: handleDisputeDrawn
-  #       - event: DisputeLinked(indexed bytes32,indexed bytes32)
-  #         handler: handleDisputeLinked
-  #       - event: ParameterUpdated(string)
-  #         handler: handleParameterUpdated

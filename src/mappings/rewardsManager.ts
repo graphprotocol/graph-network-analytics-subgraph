@@ -1,5 +1,5 @@
 import { Address, BigDecimal, BigInt } from '@graphprotocol/graph-ts'
-import { Indexer, Allocation, GraphNetwork, Epoch, SubgraphDeployment } from '../types/schema'
+import { Indexer, Allocation, GraphNetwork, SubgraphDeployment } from '../types/schema'
 import {
   RewardsAssigned,
   ParameterUpdated,
@@ -13,6 +13,7 @@ import {
   createOrLoadGraphNetwork,
   getAndUpdateIndexerDailyData,
   getAndUpdateSubgraphDeploymentDailyData,
+  batchUpdateDelegatorsForIndexer
 } from './helpers'
 
 export function handleRewardsAssigned(event: RewardsAssigned): void {
@@ -52,13 +53,6 @@ export function handleRewardsAssigned(event: RewardsAssigned): void {
   )
   allocation.save()
 
-  // // Update epoch
-  // let epoch = createOrLoadEpoch(event.block.number)
-  // epoch.totalRewards = epoch.totalRewards.plus(event.params.amount)
-  // epoch.totalIndexerRewards = epoch.totalIndexerRewards.plus(indexerIndexingRewards)
-  // epoch.totalDelegatorRewards = epoch.totalDelegatorRewards.plus(delegatorIndexingRewards)
-  // epoch.save()
-
   // update subgraph deployment
   let subgraphDeploymentID = allocation.subgraphDeployment
   let subgraphDeployment = createOrLoadSubgraphDeployment(
@@ -86,6 +80,8 @@ export function handleRewardsAssigned(event: RewardsAssigned): void {
     delegatorIndexingRewards,
   )
   graphNetwork.save()
+
+  batchUpdateDelegatorsForIndexer(indexer as Indexer, event.block.timestamp)
 
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   getAndUpdateSubgraphDeploymentDailyData(
