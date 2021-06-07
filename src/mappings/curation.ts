@@ -54,11 +54,6 @@ export function handleSignalled(event: Signalled): void {
   deployment.reserveRatio = curation.pools(event.params.subgraphDeploymentID).value1.toI32()
   deployment.save()
 
-  // Update epoch
-  // let epoch = createOrLoadEpoch(event.block.number)
-  // epoch.signalledTokens = epoch.signalledTokens.plus(event.params.tokens)
-  // epoch.save()
-
   // Update graph network
   let graphNetwork = createOrLoadGraphNetwork()
   graphNetwork.totalTokensSignalled = graphNetwork.totalTokensSignalled.plus(event.params.tokens)
@@ -108,8 +103,6 @@ export function handleBurned(event: Burned): void {
   deployment.signalAmount = deployment.signalAmount.minus(event.params.signal)
   deployment.pricePerShare = calculatePricePerShare(deployment as SubgraphDeployment)
   deployment.save()
-
-  // Update epoch - none
 
   // Update graph network
   let graphNetwork = createOrLoadGraphNetwork()

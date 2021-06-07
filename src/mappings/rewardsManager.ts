@@ -1,5 +1,5 @@
 import { Address, BigDecimal, BigInt } from '@graphprotocol/graph-ts'
-import { Indexer, Allocation, GraphNetwork, Epoch, SubgraphDeployment } from '../types/schema'
+import { Indexer, Allocation, GraphNetwork, SubgraphDeployment } from '../types/schema'
 import {
   RewardsAssigned,
   ParameterUpdated,
@@ -52,13 +52,6 @@ export function handleRewardsAssigned(event: RewardsAssigned): void {
     delegatorIndexingRewards,
   )
   allocation.save()
-
-  // // Update epoch
-  // let epoch = createOrLoadEpoch(event.block.number)
-  // epoch.totalRewards = epoch.totalRewards.plus(event.params.amount)
-  // epoch.totalIndexerRewards = epoch.totalIndexerRewards.plus(indexerIndexingRewards)
-  // epoch.totalDelegatorRewards = epoch.totalDelegatorRewards.plus(delegatorIndexingRewards)
-  // epoch.save()
 
   // update subgraph deployment
   let subgraphDeploymentID = allocation.subgraphDeployment

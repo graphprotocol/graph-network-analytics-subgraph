@@ -7,7 +7,6 @@ import {
   Indexer,
   Pool,
   Curator,
-  Epoch,
   Signal,
   SubgraphVersion,
   Subgraph,
@@ -310,26 +309,6 @@ export function createOrLoadNameSignal(
   return nameSignal as NameSignal
 }
 
-// export function createOrLoadGraphAccount(
-//   id: string,
-//   owner: Bytes,
-//   timeStamp: BigInt,
-// ): GraphAccount {
-//   let graphAccount = GraphAccount.load(id)
-//   if (graphAccount == null) {
-//     graphAccount = new GraphAccount(id)
-//     graphAccount.createdAt = timeStamp.toI32()
-//     graphAccount.operators = []
-//     graphAccount.balance = BigInt.fromI32(0)
-//     graphAccount.curationApproval = BigInt.fromI32(0)
-//     graphAccount.stakingApproval = BigInt.fromI32(0)
-//     graphAccount.gnsApproval = BigInt.fromI32(0)
-//     graphAccount.subgraphQueryFees = BigInt.fromI32(0)
-//     graphAccount.save()
-//   }
-//   return graphAccount as GraphAccount
-// }
-
 export function createOrLoadPool(id: BigInt): Pool {
   let pool = Pool.load(id.toString())
   if (pool == null) {
@@ -342,37 +321,6 @@ export function createOrLoadPool(id: BigInt): Pool {
   }
   return pool as Pool
 }
-
-// export function createOrLoadEpoch(blockNumber: BigInt): Epoch {
-//   let graphNetwork = createOrLoadGraphNetwork()
-//   let epochsSinceLastUpdate = blockNumber
-//     .minus(BigInt.fromI32(graphNetwork.lastLengthUpdateBlock))
-//     .div(BigInt.fromI32(graphNetwork.epochLength))
-//   let epoch: Epoch
-//
-//   // true if we need to create
-//   // it is checking if at least 1 epoch has passed since the last creation
-//   let needsCreating =
-//     epochsSinceLastUpdate.toI32() > graphNetwork.currentEpoch - graphNetwork.lastLengthUpdateEpoch
-//
-//   if (needsCreating) {
-//     let newEpoch = graphNetwork.lastLengthUpdateEpoch + epochsSinceLastUpdate.toI32()
-//
-//     // Need to get the start block according to the contracts, not just the start block this
-//     // entity was created in the subgraph
-//     let startBlock =
-//       graphNetwork.lastLengthUpdateBlock + epochsSinceLastUpdate.toI32() * graphNetwork.epochLength
-//     epoch = createEpoch(startBlock, graphNetwork.epochLength, newEpoch)
-//     graphNetwork.epochCount = graphNetwork.epochCount + 1
-//     graphNetwork.currentEpoch = newEpoch
-//     graphNetwork.save()
-//
-//     // If there is no need to create a new epoch, just return the current one
-//   } else {
-//     epoch = Epoch.load(BigInt.fromI32(graphNetwork.currentEpoch).toString()) as Epoch
-//   }
-//   return epoch
-// }
 
 export function createEpoch(startBlock: i32, epochLength: i32, epochNumber: i32): Epoch {
   let epoch = new Epoch(BigInt.fromI32(epochNumber).toString())

@@ -194,31 +194,6 @@ dataSources:
       eventHandlers:
         - event: DIDAttributeChanged(indexed address,bytes32,bytes,uint256,uint256)
           handler: handleDIDAttributeChanged
-  # - kind: ethereum/contract
-  #   name: EpochManager
-  #   network: {{network}}
-  #   source:
-  #     address: '{{epochManager}}'
-  #     abi: EpochManager
-  #     startBlock: {{blockNumber}}
-  #   mapping:
-  #     kind: ethereum/events
-  #     apiVersion: 0.0.4
-  #     language: wasm/assemblyscript
-  #     file: ./src/mappings/epochManager.ts
-  #     entities:
-  #       - Epoch
-  #       - GraphNetwork
-  #     abis:
-  #       - name: EpochManager
-  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/EpochManager.json
-  #     eventHandlers:
-  #       - event: EpochRun(indexed uint256,address)
-  #         handler: handleEpochRun
-  #       - event: EpochLengthUpdate(indexed uint256,uint256)
-  #         handler: handleEpochLengthUpdate
-  #       # - event: ImplementationUpdated(address,address)
-  #       #   handler: handleImplementationUpdated
   - kind: ethereum/contract
     name: RewardsManager
     network: {{network}}
@@ -247,35 +222,3 @@ dataSources:
         #   handler: handleImplementationUpdated
         # - event: ParameterUpdated(string)
         #   handler: handleParameterUpdated
-  # - kind: ethereum/contract
-  #   name: DisputeManager
-  #   network: {{network}}
-  #   source:
-  #     address: '{{disputeManager}}'
-  #     abi: DisputeManager
-  #     startBlock: {{blockNumber}}
-  #   mapping:
-  #     kind: ethereum/events
-  #     apiVersion: 0.0.4
-  #     language: wasm/assemblyscript
-  #     file: ./src/mappings/disputeManager.ts
-  #     entities:
-  #       - TODO
-  #     abis:
-  #       - name: DisputeManager
-  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/DisputeManager.json
-  #     eventHandlers:
-  #       - event: QueryDisputeCreated(indexed bytes32,indexed address,indexed address,uint256,bytes32,bytes)
-  #         handler: handleQueryDisputeCreated
-  #       - event: IndexingDisputeCreated(indexed bytes32,indexed address,indexed address,uint256,address)
-  #         handler: handleIndexingDisputeCreated
-  #       - event: DisputeAccepted(indexed bytes32,indexed address,indexed address,uint256)
-  #         handler: handleDisputeAccepted
-  #       - event: DisputeRejected(indexed bytes32,indexed address,indexed address,uint256)
-  #         handler: handleDisputeRejected
-  #       - event: DisputeDrawn(indexed bytes32,indexed address,indexed address,uint256)
-  #         handler: handleDisputeDrawn
-  #       - event: DisputeLinked(indexed bytes32,indexed bytes32)
-  #         handler: handleDisputeLinked
-  #       - event: ParameterUpdated(string)
-  #         handler: handleParameterUpdated

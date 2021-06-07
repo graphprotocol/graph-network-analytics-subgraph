@@ -83,11 +83,6 @@ export function handleStakeDeposited(event: StakeDeposited): void {
   }
   graphNetwork.save()
 
-  // // Update epoch
-  // let epoch = createOrLoadEpoch(event.block.number)
-  // epoch.stakeDeposited = epoch.stakeDeposited.plus(event.params.tokens)
-  // epoch.save()
-
   // analytics
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
 }
@@ -253,6 +248,8 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   delegator.save()
 
   // Re-activate relation with indexer before batch update, so new datapoints are created properly
+  // We check for 0 shares, in case there's a minimal signalling that doesn't really mint Shares
+  // We wouldn't want to re-activate the relation in that case
   if (!delegatedStake.shareAmount.equals(BigInt.fromI32(0))) {
     let relation = IndexerDelegatedStakeRelation.load(delegatedStake.relation)
     relation.active = true
@@ -536,11 +533,6 @@ export function handleAllocationClosed(event: AllocationClosed): void {
   allocation.poi = event.params.poi
   allocation.save()
 
-  // // update epoch - We do it here to have more epochs created, instead of seeing none created
-  // // Likely this problem would go away with a live network with long epochs
-  // // But we keep it here anyway. We might think of adding data in the future, like epoch.tokensClosed
-  // let epoch = createOrLoadEpoch(event.block.number)
-  // epoch.save()
   // update pool
   let pool = createOrLoadPool(event.params.epoch)
   // effective allocation is the value stored in contracts, so we use it here
@@ -599,11 +591,6 @@ export function handleRebateClaimed(event: RebateClaimed): void {
   allocation.delegationFees = event.params.delegationFees
   allocation.status = 'Claimed'
   allocation.save()
-
-  // // Update epoch
-  // let epoch = createOrLoadEpoch(event.block.number)
-  // epoch.queryFeeRebates = epoch.queryFeeRebates.plus(event.params.tokens)
-  // epoch.save()
 
   // update pool
   let pool = Pool.load(event.params.forEpoch.toString())

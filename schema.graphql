@@ -296,28 +296,6 @@ type SubgraphDeployment @entity {
   # dataSources: [DataSource!]
 }
 
-# TODO - add when we have the ability to parse data sources
-# """Data source obtained from the subgraph manifest"""
-# type DataSource @entity {
-#   "Unique identifier of the data source. Such as contract address"
-#   id: ID!
-#   "Data source name in the manifest"
-#   name: String!
-#   "Networks that the subgraph deployment is indexing"
-#   networks: [String!]!
-#   "Contract"
-#   contract: Contract!
-#   "ABI of the contract"
-#   abi: String!
-# }
-
-# type Contract @entity {
-#   "Address of the contract"
-#   id: ID!
-#   "Contract name"
-#   name: String
-# }
-
 """
 Metadata for the Indexer along with parameters and staking data
 """
@@ -533,6 +511,7 @@ type Delegator @entity {
   "CUMULATIVE unstaked tokens in DelegatorStakes of this Delegator"
   totalUnstakedTokens: BigInt!
 
+  "Amount of DelegatedStake entities. Used for batch updating and linkage on daily data"
   stakesCount: BigInt!
 
   "Last time this delegator delegated towards any indexer"
@@ -570,9 +549,13 @@ type DelegatedStake @entity {
   realizedRewards: BigDecimal!
 
   # Pre-calculated data
+  "[CURRENT] Latest known value for share exchange rate. Should reflect the same value as 'delegationExchangeRate' on the related Indexer"
   latestIndexerExchangeRate: BigDecimal!
+  "[CURRENT] Rewards not yet withdrawn, but already distributed."
   unrealizedRewards: BigDecimal!
+  "[CURRENT] Original value of the delegation shares. Should be sharesAmount * personalExchangeRate"
   originalDelegation: BigDecimal!
+  "[CURRENT] Current value of the delegation shares. Should be sharesAmount * latestIndexerExchangeRate"
   currentDelegation: BigDecimal!
 
   "CUMULATIVE tokens delegated"
@@ -587,6 +570,7 @@ type DelegatedStake @entity {
   "Last time this delegator undelegated from this indexer"
   lastUndelegatedAt: Int
 
+  "Auxiliary entity used for batch updates"
   relation: IndexerDelegatedStakeRelation!
 }
 
@@ -692,100 +676,6 @@ type NameSignal @entity {
 }
 
 """
-Dispute of a query. Includes single query, conflicting attestation, and indexing disputes
-"""
-type Dispute @entity {
-  "Dispute ID"
-  id: ID!
-  "Subgraph deployment being disputed"
-  subgraphDeployment: SubgraphDeployment!
-  "Fisherman deposit"
-  deposit: BigInt!
-
-  "Time dispute was created"
-  createdAt: Int!
-  "Time dispute was closed at"
-  closedAt: Int!
-  "Status of the dispute. Accepted means the Indexer was slashed"
-  status: DisputeStatus!
-  "Tokens slashed"
-  tokensSlashed: BigDecimal!
-  "Tokens rewarded"
-  tokensRewarded: BigInt!
-
-  # Type specific data
-  "Type of dispute"
-  type: DisputeType!
-  "Attestation. Only for single query and conflicting attestations"
-  attestation: Attestation
-  "Linked dispute of other Indexer. Only for conflicting attestation"
-  linkedDispute: Dispute
-  "Allocation ID. Only for Indexing Disputes"
-  allocation: Allocation
-}
-
-"""
-Attestation of a dispute
-"""
-type Attestation @entity {
-  "Concatenation of the requestCID and responseCID"
-  id: ID!
-  "Subgraph deployment being disputed"
-  subgraphDeployment: SubgraphDeployment!
-  "RequestCID"
-  requestCID: String!
-  "ResponseCID"
-  responseCID: String!
-  "NOT IMPLEMENTED - Gas used by the attested query"
-  gasUsed: BigInt # Get from Allocation metadata when available
-  "NOT IMPLEMENTED - Bytes of attested query"
-  responseNumBytes: BigInt # Get from Allocation metadata when available
-  "V of the indexers signature"
-  v: Int!
-  "R of the indexers signature"
-  r: String!
-  "S of the indexers signature"
-  s: String!
-}
-
-enum DisputeType {
-  SingleQuery
-  Conflicting
-  Indexing
-}
-
-enum DisputeStatus {
-  Undecided
-  Accepted
-  Rejected
-  Draw
-}
-
-"""
-Epoch aggregate data for network statistics on signaling, rewards, and query fees
-"""
-type Epoch @entity {
-  "Epoch number"
-  id: ID!
-  "Start block of the epoch"
-  startBlock: Int!
-  "End block of the epoch"
-  endBlock: Int!
-  "Signaled tokens during this epoch"
-  signalledTokens: BigInt!
-  "Stake deposited during this epoch"
-  stakeDeposited: BigInt!
-  "Rebate amount claimed from the protocol through cobbs douglas"
-  queryFeeRebates: BigInt!
-  "Total indexing rewards earned in this epoch. Includes both delegator and indexer rewards"
-  totalRewards: BigInt!
-  "Total indexing rewards earned in this epoch by indexers"
-  totalIndexerRewards: BigInt!
-  "Total indexing rewards earned in this epoch by delegators"
-  totalDelegatorRewards: BigInt!
-}
-
-"""
 A generic transaction in The Graph Network
 """
 interface Transaction {
@@ -856,12 +746,16 @@ type IndexerDelegatedStakeRelation @entity {
   "Auxiliary entity to DelegatedStake to make it easier to batch update those delegations"
   id: ID!
 
+  "Indexer entity where the delegation resides"
   indexer: Indexer!
 
+  "Delegator entity owner of said delegation stake"
   delegator: Delegator!
 
+  "DelegatedStake entity that represents the delegation"
   stake: DelegatedStake!
 
+  "Whether the delegation is active or not. Useful to avoid updating non-active delegations without deleting the entity."
   active: Boolean!
 }
 
@@ -869,12 +763,16 @@ type IndexerDailyData @entity {
   "<INDEXER ADDRESS>-<DAY NUMBER>"
   id: ID!
 
+  "Timestamp for the start of the day that this entity represents. UTC+0"
   dayStart: BigInt!
 
+  "Timestamp for the end of the day that this entity represents. UTC+0"
   dayEnd: BigInt!
 
+  "Number of the day this entity represents. Day 0 is the network launch day."
   dayNumber: Int!
 
+  "Original entity that this daily data tracks"
   indexer: Indexer!
 
   "[CURRENT] Value of stakedTokens for that day"
@@ -914,12 +812,16 @@ type DelegatorDailyData @entity {
   "<DELEGATOR ADDRESS>-<DAY NUMBER>"
   id: ID!
 
+  "Timestamp for the start of the day that this entity represents. UTC+0"
   dayStart: BigInt!
 
+  "Timestamp for the end of the day that this entity represents. UTC+0"
   dayEnd: BigInt!
 
+  "Number of the day this entity represents. Day 0 is the network launch day."
   dayNumber: Int!
 
+  "Original entity that this daily data tracks"
   delegator: Delegator!
 
   "[CURRENT] Amount of staked tokens for this day across all stakes"
@@ -928,10 +830,13 @@ type DelegatorDailyData @entity {
   "[CURRENT] Amount of locked (undelegating) tokens for this day across all stakes"
   lockedTokens: BigInt!
 
+  "[CURRENT] Aggregation of unrealized rewards across all stakes"
   totalUnrealizedRewards: BigDecimal!
 
+  "[CURRENT] Aggregation of realized rewards across all stakes"
   totalRealizedRewards: BigDecimal!
 
+  "[CURRENT] Amount of DelegatedStake entities this entity tracks"
   stakesCount: BigInt!
 }
 
@@ -939,16 +844,22 @@ type DelegatedStakeDailyData @entity {
   "<DELEGATOR ADDRESS>-<INDEXER ADDRESS>-<DAY NUMBER>"
   id: ID!
 
+  "Timestamp for the start of the day that this entity represents. UTC+0"
   dayStart: BigInt!
 
+  "Timestamp for the end of the day that this entity represents. UTC+0"
   dayEnd: BigInt!
 
+  "Number of the day this entity represents. Day 0 is the network launch day."
   dayNumber: Int!
 
+  "Original entity that this daily data tracks"
   stake: DelegatedStake!
 
+  "Delegator entity that owns the original entity"
   delegator: Delegator!
 
+  "Indexer entity where the delegation resides"
   indexer: Indexer!
 
   "[CURRENT] Amount of staked tokens for this day and this indexer"
@@ -980,20 +891,28 @@ type DelegatedStakeDailyData @entity {
 }
 
 type DelegatorDelegatedStakeDailyRelation @entity {
-  "Auxiliary entity to avoid using arrays for many-to-many relation tracking. Compound ID of both entities."
+  "Auxiliary entity to avoid using arrays for many-to-many relation tracking. Compounds the delegator id with an autoincremental number."
   id: ID!
 
+  "Timestamp for the start of the day that this entity represents. UTC+0"
   dayStart: BigInt!
 
+  "Timestamp for the end of the day that this entity represents. UTC+0"
   dayEnd: BigInt!
 
+  "Number of the day this entity represents. Day 0 is the network launch day."
   dayNumber: Int!
 
+  "Delegator entity that forms the relation."
   delegator: Delegator!
 
+  "DelegatedStake entity that forms the relation"
   stake: DelegatedStake!
 
+  "DailyData entity that tracks the Delegator for this specific day"
   delegatorDailyData: DelegatorDailyData!
+
+  "DailyData entity that tracks the DelegatedStake for this specific day"
   delegatedStakeDailyData: DelegatedStakeDailyData!
 }
 
@@ -1001,16 +920,22 @@ type SubgraphDeploymentDailyData @entity {
   "<SUBGRAPH ID>-<DAY NUMBER>"
   id: ID!
 
+  "Timestamp for the start of the day that this entity represents. UTC+0"
   dayStart: BigInt!
 
+  "Timestamp for the end of the day that this entity represents. UTC+0"
   dayEnd: BigInt!
 
+  "Number of the day this entity represents. Day 0 is the network launch day."
   dayNumber: Int!
 
+  "[CURRENT] Value of signalledTokens for the original entity at this specific day"
   signalledTokens: BigInt!
 
+  "[CURRENT] Value of signalAmount for the original entity at this specific day"
   signalAmount: BigInt!
 
+  "[CURRENT] Value of pricePerShare for the original entity at this specific day"
   pricePerShare: BigDecimal!
 
   "[CUMULATIVE] Total rewards accrued all time by this Subgraph Deployment. Includes delegator and indexer rewards"
@@ -1028,29 +953,3 @@ type SubgraphDeploymentDailyData @entity {
   "[CUMULATIVE] Total curator rewards from fees"
   curatorFeeRewards: BigInt!
 }
-
-type GraphAccountDailyData @entity {
-  "<ACCOUNT ADDRESS>-<DAY NUMBER>"
-  id: ID!
-
-  dayStart: BigInt!
-
-  dayEnd: BigInt!
-
-  dayNumber: Int!
-
-  latestIndexerDailyData: IndexerDailyData
-
-  latestDelegatorDailyData: DelegatorDailyData
-}
-
-# """
-# Full test search for displayName and description on the Subgraph Entity
-# """
-# type _Schema_
-#   @fulltext(
-#     name: "subgraphSearch"
-#     language: en
-#     algorithm: rank
-#     include: [{ entity: "Subgraph", fields: [{ name: "displayName" }, { name: "description" }] }]
-#   )
