@@ -751,8 +751,10 @@ export function getAndUpdateSubgraphDeploymentDailyData(
     dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
     dailyData.dayEnd = dailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
     dailyData.dayNumber = dayId
+    dailyData.subgraphDeployment = entity.id
   }
 
+  dailyData.stakedTokens = entity.stakedTokens
   dailyData.signalledTokens = entity.signalledTokens
   dailyData.signalAmount = entity.signalAmount
   dailyData.pricePerShare = entity.pricePerShare
