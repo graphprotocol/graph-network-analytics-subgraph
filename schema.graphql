@@ -1052,6 +1052,9 @@ type DelegatorDailyData @entity {
   "[CURRENT] Aggregation of realized rewards across all stakes"
   totalRealizedRewards: BigDecimal!
 
+  "[CURRENT] Current delegation for the delegator across all stakes"
+  currentDelegation: BigDecimal!
+
   "[CURRENT] Amount of DelegatedStake entities this entity tracks"
   stakesCount: BigInt!
 }

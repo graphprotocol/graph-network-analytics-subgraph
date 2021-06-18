@@ -261,7 +261,7 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   graphNetwork.totalDelegatedTokens = graphNetwork.totalDelegatedTokens.plus(event.params.tokens)
   graphNetwork.save()
 
-  batchUpdateDelegatorsForIndexer(indexer as Indexer, event.block.timestamp)
+  batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
 
   // analytics
   let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
@@ -330,7 +330,7 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   graphNetwork.save()
 
   // batch update delegs
-  batchUpdateDelegatorsForIndexer(indexer as Indexer, event.block.timestamp)
+  batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
 
   // analytics
   let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
@@ -363,7 +363,7 @@ export function handleStakeDelegatedWithdrawn(event: StakeDelegatedWithdrawn): v
   delegatedStake.lockedUntil = 0
   delegatedStake.save()
 
-  batchUpdateDelegatorsForIndexer(indexer as Indexer, event.block.timestamp)
+  batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
 
   // analytics
   let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
@@ -618,7 +618,7 @@ export function handleRebateClaimed(event: RebateClaimed): void {
   )
   graphNetwork.save()
 
-  batchUpdateDelegatorsForIndexer(indexer as Indexer, event.block.timestamp)
+  batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
 
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   getAndUpdateSubgraphDeploymentDailyData(
