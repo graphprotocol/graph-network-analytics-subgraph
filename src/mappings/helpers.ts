@@ -322,20 +322,6 @@ export function createOrLoadPool(id: BigInt): Pool {
   return pool as Pool
 }
 
-export function createEpoch(startBlock: i32, epochLength: i32, epochNumber: i32): Epoch {
-  let epoch = new Epoch(BigInt.fromI32(epochNumber).toString())
-  epoch.startBlock = startBlock
-  epoch.endBlock = startBlock + epochLength
-  epoch.signalledTokens = BigInt.fromI32(0)
-  epoch.stakeDeposited = BigInt.fromI32(0)
-  epoch.queryFeeRebates = BigInt.fromI32(0)
-  epoch.totalRewards = BigInt.fromI32(0)
-  epoch.totalIndexerRewards = BigInt.fromI32(0)
-  epoch.totalDelegatorRewards = BigInt.fromI32(0)
-  epoch.save()
-  return epoch
-}
-
 export function createOrLoadGraphNetwork(): GraphNetwork {
   let graphNetwork = GraphNetwork.load('1')
   if (graphNetwork == null) {
@@ -601,7 +587,9 @@ export function compoundId(idA: string, idB: string): string {
   return idA.concat('-').concat(idB)
 }
 
-export function batchUpdateDelegatorsForIndexer(indexer: Indexer, timestamp: BigInt): void {
+export function batchUpdateDelegatorsForIndexer(indexerId: string, timestamp: BigInt): void {
+  // Loading it again here to make sure we have the latest up to date data on the entity.
+  let indexer = Indexer.load(indexerId)
   // pre-calculates a lot of data for all delegators that exists for a specific indexer
   // using already existing links with the indexer-delegatedStake relations
   for (let i = 0; i < indexer.delegatorsCount.toI32(); i++) {
@@ -728,6 +716,7 @@ export function getAndUpdateDelegatorDailyData(
 
   dailyData.stakesCount = entity.stakesCount
   dailyData.stakedTokens = entity.stakedTokens
+  dailyData.currentDelegation = entity.currentDelegation
   dailyData.lockedTokens = entity.lockedTokens
   dailyData.totalUnrealizedRewards = entity.totalUnrealizedRewards
   dailyData.totalRealizedRewards = entity.totalRealizedRewards
