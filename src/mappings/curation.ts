@@ -135,7 +135,7 @@ export function handleBurned(event: Burned): void {
    let parameter = event.params.param
 
    if (parameter == 'defaultReserveRatio') {
-     let graphNetwork = GraphNetwork.load('1')
+     let graphNetwork = createOrLoadGraphNetwork()
      let curation = Curation.bind(event.address)
      graphNetwork.defaultReserveRatio = curation.defaultReserveRatio().toI32()
      graphNetwork.save()
