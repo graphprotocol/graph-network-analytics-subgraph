@@ -65,6 +65,9 @@ type GraphNetwork @entity {
   "Graph Token supply"
   totalSupply: BigInt!
 
+  "Default reserve ratio for all subgraphs. In parts per million"
+  defaultReserveRatio: Int!
+
   # Count aggregate values. Note, deprecated subgraphs or inactive users not removed from counts
   "Total indexers"
   indexerCount: Int!

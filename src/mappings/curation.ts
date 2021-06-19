@@ -131,29 +131,16 @@ export function handleBurned(event: Burned): void {
  * - updates all parameters of curation, depending on string passed. We then can
  *   call the contract directly to get the updated value
  */
-// export function handleParameterUpdated(event: ParameterUpdated): void {
-//   let parameter = event.params.param
-//   let graphNetwork = createOrLoadGraphNetwork()
-//   let curation = Curation.bind(event.address)
-//
-//   if (parameter == 'defaultReserveRatio') {
-//     graphNetwork.defaultReserveRatio = curation.defaultReserveRatio().toI32()
-//   } else if (parameter == 'curationTaxPercentage') {
-//     graphNetwork.curationTaxPercentage = curation.curationTaxPercentage().toI32()
-//     // TODO - i Hard coded this since these are set on deployment. Should fix this
-//     // maybe emit an event in the constructor
-//     graphNetwork.minimumCurationDeposit = curation.minimumCurationDeposit()
-//     graphNetwork.defaultReserveRatio = curation.defaultReserveRatio().toI32()
-//   } else if (parameter == 'staking') {
-//     // Not in use now, we are waiting till we have a controller contract that
-//     // houses all the addresses of all contracts. So that there aren't a bunch
-//     // of different instances of the contract addresses across all contracts
-//     // graphNetwork.staking = staking.staking()
-//   } else if (parameter == 'minimumCurationDeposit') {
-//     graphNetwork.minimumCurationDeposit = curation.minimumCurationDeposit()
-//   }
-//   graphNetwork.save()
-// }
+ export function handleParameterUpdated(event: ParameterUpdated): void {
+   let parameter = event.params.param
+
+   if (parameter == 'defaultReserveRatio') {
+     let graphNetwork = GraphNetwork.load('1')
+     let curation = Curation.bind(event.address)
+     graphNetwork.defaultReserveRatio = curation.defaultReserveRatio().toI32()
+     graphNetwork.save()
+   }
+ }
 
 // export function handleImplementationUpdated(event: ImplementationUpdated): void {
 //   let graphNetwork = createOrLoadGraphNetwork()

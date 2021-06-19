@@ -80,6 +80,7 @@ export function createOrLoadSubgraphDeployment(
   subgraphID: string,
   timestamp: BigInt,
 ): SubgraphDeployment {
+  let graphNetwork = createOrLoadGraphNetwork()
   let deployment = SubgraphDeployment.load(subgraphID)
   if (deployment == null) {
     deployment = new SubgraphDeployment(subgraphID)
@@ -97,11 +98,10 @@ export function createOrLoadSubgraphDeployment(
     deployment.unsignalledTokens = BigInt.fromI32(0)
     deployment.signalAmount = BigInt.fromI32(0)
     deployment.pricePerShare = BigDecimal.fromString('0')
-    deployment.reserveRatio = 0
+    deployment.reserveRatio = graphNetwork.defaultReserveRatio
     deployment.deniedAt = 0
     deployment.save()
 
-    let graphNetwork = createOrLoadGraphNetwork()
     graphNetwork.subgraphDeploymentCount = graphNetwork.subgraphDeploymentCount + 1
     graphNetwork.save()
   }
@@ -331,6 +331,7 @@ export function createOrLoadGraphNetwork(): GraphNetwork {
     // most of the parameters below are updated in the constructor, or else
     // right after deployment
     graphNetwork.delegationRatio = 0
+    graphNetwork.defaultReserveRatio = 0
 
     graphNetwork.totalTokensStaked = BigInt.fromI32(0)
     graphNetwork.totalTokensClaimable = BigInt.fromI32(0)
@@ -761,12 +762,23 @@ export function getAndUpdateSubgraphDeploymentDailyData(
 }
 
 export function calculatePricePerShare(deployment: SubgraphDeployment): BigDecimal {
+  // TODO check why there's a deviation from the values of the bancor formula
+  // Ideally this would be a 1 to 1 recreation of the share sell formula, but due to
+  // implementation issues for that formula on AssemblyScript (mainly BigDecimal missing pow implementation)
+  // I decided to use an approximation derived from testing.
+
+  // This value could be wrong unfortunately, so we should ideally find a workaround later
+  // to implement the actual sell share formula for 1 share.
+
+  // reserve ratio multiplier = MAX_WEIGHT / reserveRatio = 1M (ppm) / reserveRatio
+  let reserveRatioMultiplier = 1000000 / deployment.reserveRatio
   let pricePerShare =
     deployment.signalAmount == BigInt.fromI32(0)
       ? BigDecimal.fromString('0')
       : deployment.signalledTokens
           .toBigDecimal()
           .div(deployment.signalAmount.toBigDecimal())
+          .times(BigInt.fromI32(reserveRatioMultiplier).toBigDecimal())
           .truncate(18)
   return pricePerShare
 }
