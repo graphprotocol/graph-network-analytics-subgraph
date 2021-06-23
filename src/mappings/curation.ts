@@ -34,19 +34,25 @@ export function handleSignalled(event: Signalled): void {
   // Update curator
   let id = event.params.curator.toHexString()
   let curator = createOrLoadCurator(id, event.block.timestamp)
-  curator.totalSignalledTokens = curator.totalSignalledTokens.plus(event.params.tokens)
+  curator.totalSignalledTokens = curator.totalSignalledTokens.plus(
+    event.params.tokens.minus(event.params.curationTax),
+  )
   curator.save()
 
   // Update signal
   let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
   let signal = createOrLoadSignal(id, subgraphDeploymentID)
-  signal.signalledTokens = signal.signalledTokens.plus(event.params.tokens)
+  signal.signalledTokens = signal.signalledTokens.plus(
+    event.params.tokens.minus(event.params.curationTax),
+  )
   signal.signal = signal.signal.plus(event.params.signal)
   signal.save()
 
   // Update subgraph deployment
   let deployment = createOrLoadSubgraphDeployment(subgraphDeploymentID, event.block.timestamp)
-  deployment.signalledTokens = deployment.signalledTokens.plus(event.params.tokens)
+  deployment.signalledTokens = deployment.signalledTokens.plus(
+    event.params.tokens.minus(event.params.curationTax),
+  )
   deployment.signalAmount = deployment.signalAmount.plus(event.params.signal)
   deployment.pricePerShare = calculatePricePerShare(deployment as SubgraphDeployment)
 
@@ -56,7 +62,9 @@ export function handleSignalled(event: Signalled): void {
 
   // Update graph network
   let graphNetwork = createOrLoadGraphNetwork()
-  graphNetwork.totalTokensSignalled = graphNetwork.totalTokensSignalled.plus(event.params.tokens)
+  graphNetwork.totalTokensSignalled = graphNetwork.totalTokensSignalled.plus(
+    event.params.tokens.minus(event.params.curationTax),
+  )
   graphNetwork.save()
 
   // Create n signal tx
@@ -68,7 +76,7 @@ export function handleSignalled(event: Signalled): void {
   signalTransaction.signer = event.params.curator.toHexString()
   signalTransaction.type = 'MintSignal'
   signalTransaction.signal = event.params.signal
-  signalTransaction.tokens = event.params.tokens
+  signalTransaction.tokens = event.params.tokens.minus(event.params.curationTax)
   signalTransaction.withdrawalFees = BigInt.fromI32(0)
   signalTransaction.subgraphDeployment = event.params.subgraphDeploymentID.toHexString()
   signalTransaction.save()
