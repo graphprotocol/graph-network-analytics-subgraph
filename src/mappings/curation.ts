@@ -34,19 +34,25 @@ export function handleSignalled(event: Signalled): void {
   // Update curator
   let id = event.params.curator.toHexString()
   let curator = createOrLoadCurator(id, event.block.timestamp)
-  curator.totalSignalledTokens = curator.totalSignalledTokens.plus(event.params.tokens)
+  curator.totalSignalledTokens = curator.totalSignalledTokens.plus(
+    event.params.tokens.minus(event.params.curationTax),
+  )
   curator.save()
 
   // Update signal
   let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
   let signal = createOrLoadSignal(id, subgraphDeploymentID)
-  signal.signalledTokens = signal.signalledTokens.plus(event.params.tokens)
+  signal.signalledTokens = signal.signalledTokens.plus(
+    event.params.tokens.minus(event.params.curationTax),
+  )
   signal.signal = signal.signal.plus(event.params.signal)
   signal.save()
 
   // Update subgraph deployment
   let deployment = createOrLoadSubgraphDeployment(subgraphDeploymentID, event.block.timestamp)
-  deployment.signalledTokens = deployment.signalledTokens.plus(event.params.tokens)
+  deployment.signalledTokens = deployment.signalledTokens.plus(
+    event.params.tokens.minus(event.params.curationTax),
+  )
   deployment.signalAmount = deployment.signalAmount.plus(event.params.signal)
   deployment.pricePerShare = calculatePricePerShare(deployment as SubgraphDeployment)
 
@@ -56,7 +62,9 @@ export function handleSignalled(event: Signalled): void {
 
   // Update graph network
   let graphNetwork = createOrLoadGraphNetwork()
-  graphNetwork.totalTokensSignalled = graphNetwork.totalTokensSignalled.plus(event.params.tokens)
+  graphNetwork.totalTokensSignalled = graphNetwork.totalTokensSignalled.plus(
+    event.params.tokens.minus(event.params.curationTax),
+  )
   graphNetwork.save()
 
   // Create n signal tx
@@ -68,7 +76,7 @@ export function handleSignalled(event: Signalled): void {
   signalTransaction.signer = event.params.curator.toHexString()
   signalTransaction.type = 'MintSignal'
   signalTransaction.signal = event.params.signal
-  signalTransaction.tokens = event.params.tokens
+  signalTransaction.tokens = event.params.tokens.minus(event.params.curationTax)
   signalTransaction.withdrawalFees = BigInt.fromI32(0)
   signalTransaction.subgraphDeployment = event.params.subgraphDeploymentID.toHexString()
   signalTransaction.save()
@@ -131,29 +139,16 @@ export function handleBurned(event: Burned): void {
  * - updates all parameters of curation, depending on string passed. We then can
  *   call the contract directly to get the updated value
  */
-// export function handleParameterUpdated(event: ParameterUpdated): void {
-//   let parameter = event.params.param
-//   let graphNetwork = createOrLoadGraphNetwork()
-//   let curation = Curation.bind(event.address)
-//
-//   if (parameter == 'defaultReserveRatio') {
-//     graphNetwork.defaultReserveRatio = curation.defaultReserveRatio().toI32()
-//   } else if (parameter == 'curationTaxPercentage') {
-//     graphNetwork.curationTaxPercentage = curation.curationTaxPercentage().toI32()
-//     // TODO - i Hard coded this since these are set on deployment. Should fix this
-//     // maybe emit an event in the constructor
-//     graphNetwork.minimumCurationDeposit = curation.minimumCurationDeposit()
-//     graphNetwork.defaultReserveRatio = curation.defaultReserveRatio().toI32()
-//   } else if (parameter == 'staking') {
-//     // Not in use now, we are waiting till we have a controller contract that
-//     // houses all the addresses of all contracts. So that there aren't a bunch
-//     // of different instances of the contract addresses across all contracts
-//     // graphNetwork.staking = staking.staking()
-//   } else if (parameter == 'minimumCurationDeposit') {
-//     graphNetwork.minimumCurationDeposit = curation.minimumCurationDeposit()
-//   }
-//   graphNetwork.save()
-// }
+ export function handleParameterUpdated(event: ParameterUpdated): void {
+   let parameter = event.params.param
+
+   if (parameter == 'defaultReserveRatio') {
+     let graphNetwork = createOrLoadGraphNetwork()
+     let curation = Curation.bind(event.address)
+     graphNetwork.defaultReserveRatio = curation.defaultReserveRatio().toI32()
+     graphNetwork.save()
+   }
+ }
 
 // export function handleImplementationUpdated(event: ImplementationUpdated): void {
 //   let graphNetwork = createOrLoadGraphNetwork()
