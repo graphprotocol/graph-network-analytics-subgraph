@@ -383,7 +383,7 @@ type Indexer @entity {
   createdAt: Int!
 
   account: GraphAccount!
-  defaultDisplayName: String!
+  defaultDisplayName: String
 
   # Staking data
   "CURRENT tokens staked in the protocol. Decreases on withdraw, not on lock"
@@ -623,6 +623,7 @@ type Delegator @entity {
   id: ID!
 
   account: GraphAccount!
+  defaultDisplayName: String
 
   "Stakes of this delegator"
   stakes: [DelegatedStake!]! @derivedFrom(field: "delegator")
@@ -1187,3 +1188,14 @@ type SubgraphDeploymentDailyData @entity {
   "[CUMULATIVE] Total curator rewards from fees"
   curatorFeeRewards: BigInt!
 }
+
+"""
+Full text search
+"""
+type _Schema_
+  @fulltext(
+    name: "delegatorSearch"
+    language: en
+    algorithm: rank
+    include: [{ entity: "Delegator", fields: [{ name: "defaultDisplayName" }, { name: "id" }] }]
+  )
