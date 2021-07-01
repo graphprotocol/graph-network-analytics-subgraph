@@ -115,7 +115,6 @@ export function createOrLoadIndexer(id: string, timestamp: BigInt): Indexer {
     indexer = new Indexer(id)
     indexer.createdAt = timestamp.toI32()
     indexer.account = id
-    indexer.defaultDisplayName = ''
 
     indexer.stakedTokens = BigInt.fromI32(0)
     indexer.allocatedTokens = BigInt.fromI32(0)

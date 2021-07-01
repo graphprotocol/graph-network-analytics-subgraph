@@ -17,6 +17,7 @@ import {
   SubgraphVersion,
   NameSignalTransaction,
   Curator,
+  Delegator,
   Indexer,
   GraphAccountName,
   SubgraphDeployment,
@@ -62,10 +63,18 @@ export function handleSetDefaultName(event: SetDefaultName): void {
 
     // And if the GraphAccount changes default name, we should change it on the indexer too.
     // Indexer also has a defaultDisplayName because it helps with filtering.
-    let indexer = Indexer.load(event.params.graphAccount.toHexString())
+    let userAddress = event.params.graphAccount.toHexString()
+
+    let indexer = Indexer.load(userAddress)
     if (indexer != null) {
       indexer.defaultDisplayName = graphAccount.defaultDisplayName
       indexer.save()
+    }
+
+    let delegator = Delegator.load(userAddress)
+    if (delegator != null) {
+      delegator.defaultDisplayName = graphAccount.defaultDisplayName
+      delegator.save()
     }
   }
   graphAccount.save()
