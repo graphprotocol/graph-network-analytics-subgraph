@@ -301,6 +301,7 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   let currentBalance = event.params.shares.toBigDecimal().times(beforeUpdateDelegationExchangeRate)
   let oldBalance = event.params.shares.toBigDecimal().times(delegatedStake.personalExchangeRate)
   let realizedRewards = currentBalance.minus(oldBalance)
+  let oldOriginalDelegation = delegatedStake.originalDelegation
 
   delegatedStake.realizedRewards = delegatedStake.realizedRewards.plus(realizedRewards)
   delegatedStake.originalDelegation =
@@ -317,6 +318,9 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   delegator.totalUnstakedTokens = delegator.totalUnstakedTokens.plus(event.params.tokens)
   delegator.totalRealizedRewards = delegator.totalRealizedRewards.plus(realizedRewards)
   delegator.totalUnrealizedRewards = delegator.totalUnrealizedRewards.minus(realizedRewards)
+  delegator.originalDelegation = delegator.originalDelegation.plus(
+    delegatedStake.originalDelegation - oldOriginalDelegation,
+  )
   delegator.currentDelegation = delegator.currentDelegation.minus(currentBalance)
   delegator.stakedTokens = delegator.stakedTokens.minus(event.params.tokens)
   delegator.lockedTokens = delegator.lockedTokens.plus(event.params.tokens)
