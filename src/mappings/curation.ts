@@ -56,8 +56,6 @@ export function handleSignalled(event: Signalled): void {
   deployment.signalAmount = deployment.signalAmount.plus(event.params.signal)
   deployment.pricePerShare = calculatePricePerShare(deployment as SubgraphDeployment)
 
-  let curation = Curation.bind(event.address)
-  deployment.reserveRatio = curation.pools(event.params.subgraphDeploymentID).value1.toI32()
   deployment.save()
 
   // Update graph network
