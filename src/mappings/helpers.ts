@@ -179,7 +179,8 @@ export function createOrLoadDelegator(id: string, timestamp: BigInt): Delegator 
     delegator.totalUnrealizedRewards = BigDecimal.fromString('0')
     delegator.originalDelegation = BigDecimal.fromString('0')
     delegator.currentDelegation = BigDecimal.fromString('0')
-    delegator.stakesCount = BigInt.fromI32(0)
+    delegator.stakesCount = 0
+    delegator.activeStakesCount = 0
     delegator.save()
 
     let graphNetwork = createOrLoadGraphNetwork()
@@ -232,7 +233,7 @@ export function createOrLoadDelegatedStake(
     indexerEntity.save()
 
     let delegatorEntity = Delegator.load(delegator)
-    delegatorEntity.stakesCount = delegatorEntity.stakesCount.plus(BigInt.fromI32(1))
+    delegatorEntity.stakesCount = delegatorEntity.stakesCount + 1
     delegatorEntity.save()
   }
 
@@ -579,7 +580,6 @@ export function updateDelegationExchangeRate(indexer: Indexer): Indexer {
   indexer.delegationExchangeRate = indexer.delegatedTokens
     .toBigDecimal()
     .div(indexer.delegatorShares.toBigDecimal())
-    .truncate(18)
   return indexer as Indexer
 }
 
@@ -715,6 +715,7 @@ export function getAndUpdateDelegatorDailyData(
   }
 
   dailyData.stakesCount = entity.stakesCount
+  dailyData.activeStakesCount = entity.activeStakesCount
   dailyData.stakedTokens = entity.stakedTokens
   dailyData.currentDelegation = entity.currentDelegation
   dailyData.lockedTokens = entity.lockedTokens
@@ -771,7 +772,7 @@ export function calculatePricePerShare(deployment: SubgraphDeployment): BigDecim
 
   // reserve ratio multiplier = MAX_WEIGHT / reserveRatio = 1M (ppm) / reserveRatio
   // HOTFIX for now, if deployment.reserveRatio -> 0, use a known previous default
-  let reserveRatioMultiplier = deployment.reserveRatio == 0 ? 2 :  1000000 / deployment.reserveRatio
+  let reserveRatioMultiplier = deployment.reserveRatio == 0 ? 2 : 1000000 / deployment.reserveRatio
   let pricePerShare =
     deployment.signalAmount == BigInt.fromI32(0)
       ? BigDecimal.fromString('0')
