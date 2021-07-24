@@ -199,7 +199,7 @@ export function handleStakeDelegated(event: StakeDelegated): void {
 
   // update delegated stake
   let delegatedStake = createOrLoadDelegatedStake(
-    delegatorID,
+    delegator as Delegator,
     indexerID,
     event.block.timestamp.toI32(),
   )
