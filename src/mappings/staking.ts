@@ -206,6 +206,7 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   let oldOriginalDelegation = delegatedStake.originalDelegation
   let oldCurrentDelegation = delegatedStake.currentDelegation
   let oldUnrealizedRewards = delegatedStake.unrealizedRewards
+  let isStakeBecomingActive = delegatedStake.shareAmount.isZero() && !event.params.shares.isZero()
 
   if (!zeroShares) {
     let previousExchangeRate = delegatedStake.personalExchangeRate
@@ -215,9 +216,9 @@ export function handleStakeDelegated(event: StakeDelegated): void {
       .plus(event.params.tokens.toBigDecimal())
     let averageCostBasisShares = previousShares.plus(event.params.shares)
     if (averageCostBasisShares.gt(BigInt.fromI32(0))) {
-      delegatedStake.personalExchangeRate = averageCostBasisTokens
-        .div(averageCostBasisShares.toBigDecimal())
-        .truncate(18)
+      delegatedStake.personalExchangeRate = averageCostBasisTokens.div(
+        averageCostBasisShares.toBigDecimal(),
+      )
     }
   }
 
@@ -245,6 +246,11 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   delegator.totalUnrealizedRewards = delegator.totalUnrealizedRewards.plus(
     delegatedStake.unrealizedRewards - oldUnrealizedRewards,
   )
+
+  if (isStakeBecomingActive) {
+    delegator.activeStakesCount = delegator.activeStakesCount + 1
+  }
+
   delegator.save()
 
   // Re-activate relation with indexer before batch update, so new datapoints are created properly
@@ -291,6 +297,8 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   let delegatorID = event.params.delegator.toHexString()
   let id = joinID([delegatorID, indexerID])
   let delegatedStake = DelegatedStake.load(id)
+  let isStakeBecomingInactive =
+    !delegatedStake.shareAmount.isZero() && delegatedStake.shareAmount == event.params.shares
   delegatedStake.totalUnstakedTokens = delegatedStake.totalUnstakedTokens.plus(event.params.tokens)
   delegatedStake.stakedTokens = delegatedStake.stakedTokens.minus(event.params.tokens)
   delegatedStake.shareAmount = delegatedStake.shareAmount.minus(event.params.shares)
@@ -326,6 +334,11 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   delegator.lockedTokens = delegator.lockedTokens.plus(event.params.tokens)
   delegator.lastUndelegatedAt = event.block.timestamp.toI32()
   delegator.lastUndelegation = delegatedStake.id
+
+  if (isStakeBecomingInactive) {
+    delegator.activeStakesCount = delegator.activeStakesCount - 1
+  }
+
   delegator.save()
 
   // upgrade graph network

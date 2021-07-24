@@ -659,8 +659,11 @@ type Delegator @entity {
   "CUMULATIVE unstaked tokens in DelegatorStakes of this Delegator"
   totalUnstakedTokens: BigInt!
 
-  "Amount of DelegatedStake entities. Used for batch updating and linkage on daily data"
-  stakesCount: BigInt!
+  "Total DelegatedStake entity count (Active and inactive)"
+  stakesCount: Int!
+
+  "Active DelegatedStake entity count. Active means it still has GRT delegated"
+  activeStakesCount: Int!
 
   "Last time this delegator delegated towards any indexer"
   lastDelegatedAt: Int
@@ -1059,8 +1062,11 @@ type DelegatorDailyData @entity {
   "[CURRENT] Current delegation for the delegator across all stakes"
   currentDelegation: BigDecimal!
 
-  "[CURRENT] Amount of DelegatedStake entities this entity tracks"
-  stakesCount: BigInt!
+  "[CURRENT] Total amount of DelegatedStake entities this Delegator historically had at this point in time"
+  stakesCount: Int!
+
+  "[CURRENT] Amount of active DelegatedStake entities this Delegator had at this point in time"
+  activeStakesCount: Int!
 }
 
 type DelegatedStakeDailyData @entity {
