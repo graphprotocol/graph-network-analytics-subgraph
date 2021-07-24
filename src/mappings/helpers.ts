@@ -191,11 +191,11 @@ export function createOrLoadDelegator(id: string, timestamp: BigInt): Delegator 
 }
 
 export function createOrLoadDelegatedStake(
-  delegator: string,
+  delegator: Delegator,
   indexer: string,
   timestamp: i32,
 ): DelegatedStake {
-  let id = joinID([delegator, indexer])
+  let id = joinID([delegator.id, indexer])
   let delegatedStake = DelegatedStake.load(id)
 
   if (delegatedStake == null) {
@@ -204,7 +204,7 @@ export function createOrLoadDelegatedStake(
 
     delegatedStake = new DelegatedStake(id)
     delegatedStake.indexer = indexer
-    delegatedStake.delegator = delegator
+    delegatedStake.delegator = delegator.id
     delegatedStake.stakedTokens = BigInt.fromI32(0)
     delegatedStake.totalStakedTokens = BigInt.fromI32(0)
     delegatedStake.totalUnstakedTokens = BigInt.fromI32(0)
@@ -225,16 +225,15 @@ export function createOrLoadDelegatedStake(
 
     relation.indexer = indexerEntity.id
     relation.stake = delegatedStake.id
-    relation.delegator = delegator
+    relation.delegator = delegator.id
     relation.active = true
     relation.save()
 
     indexerEntity.delegatorsCount = indexerEntity.delegatorsCount.plus(BigInt.fromI32(1))
     indexerEntity.save()
 
-    let delegatorEntity = Delegator.load(delegator)
-    delegatorEntity.stakesCount = delegatorEntity.stakesCount + 1
-    delegatorEntity.save()
+    delegator.stakesCount = delegator.stakesCount + 1
+    delegator.save()
   }
 
   return delegatedStake as DelegatedStake
