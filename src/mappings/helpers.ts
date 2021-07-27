@@ -579,6 +579,7 @@ export function updateDelegationExchangeRate(indexer: Indexer): Indexer {
   indexer.delegationExchangeRate = indexer.delegatedTokens
     .toBigDecimal()
     .div(indexer.delegatorShares.toBigDecimal())
+    .truncate(18)
   return indexer as Indexer
 }
 
