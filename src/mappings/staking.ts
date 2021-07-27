@@ -216,9 +216,9 @@ export function handleStakeDelegated(event: StakeDelegated): void {
       .plus(event.params.tokens.toBigDecimal())
     let averageCostBasisShares = previousShares.plus(event.params.shares)
     if (averageCostBasisShares.gt(BigInt.fromI32(0))) {
-      delegatedStake.personalExchangeRate = averageCostBasisTokens.div(
-        averageCostBasisShares.toBigDecimal(),
-      )
+      delegatedStake.personalExchangeRate = averageCostBasisTokens
+        .div(averageCostBasisShares.toBigDecimal())
+        .truncate(18)
     }
   }
 
