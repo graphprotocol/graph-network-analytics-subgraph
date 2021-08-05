@@ -67,12 +67,6 @@ export function handleSetDefaultName(event: SetDefaultName): void {
         indexer.save()
       }
 
-      let curator = Curator.load(event.params.graphAccount.toHexString())
-      if (curator != null) {
-        curator.defaultDisplayName = graphAccount.defaultDisplayName
-        curator.save()
-      }
-
       let delegator = Delegator.load(event.params.graphAccount.toHexString())
       if (delegator != null) {
         delegator.defaultDisplayName = graphAccount.defaultDisplayName
@@ -101,12 +95,6 @@ export function handleSetDefaultName(event: SetDefaultName): void {
     if (indexer != null) {
       indexer.defaultDisplayName = graphAccount.defaultDisplayName
       indexer.save()
-    }
-
-    let curator = Curator.load(userAddress)
-    if (curator != null) {
-      curator.defaultDisplayName = graphAccount.defaultDisplayName
-      curator.save()
     }
 
     let delegator = Delegator.load(userAddress)
