@@ -22,7 +22,7 @@ import {
 } from '../types/schema'
 import { ENS } from '../types/GNS/ENS'
 import { addresses } from '../../config/addresses'
-import { LAUNCH_DAY, SECONDS_PER_DAY } from './utils'
+import { LAUNCH_DAY, SECONDS_PER_DAY, avoidNegativeRoundingError } from './utils'
 
 export function createOrLoadGraphAccount(id: string, timeStamp: BigInt): GraphAccount {
   let graphAccount = GraphAccount.load(id)
@@ -605,13 +605,16 @@ export function batchUpdateDelegatorsForIndexer(indexerId: string, timestamp: Bi
         delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate
         delegatedStake.currentDelegation =
           delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
-        delegatedStake.unrealizedRewards =
-          delegatedStake.currentDelegation - delegatedStake.originalDelegation
+        delegatedStake.unrealizedRewards = avoidNegativeRoundingError(
+          delegatedStake.currentDelegation - delegatedStake.originalDelegation,
+        )
         delegatedStake.save()
 
         let diffUnrealized = delegatedStake.unrealizedRewards - oldUnrealizedRewards
 
-        delegator.totalUnrealizedRewards = delegator.totalUnrealizedRewards.plus(diffUnrealized)
+        delegator.totalUnrealizedRewards = avoidNegativeRoundingError(
+          delegator.totalUnrealizedRewards.plus(diffUnrealized),
+        )
         delegator.currentDelegation = delegator.currentDelegation.plus(diffUnrealized)
         delegator.save()
       }

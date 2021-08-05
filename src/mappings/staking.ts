@@ -47,6 +47,7 @@ import {
   getAndUpdateSubgraphDeploymentDailyData,
   batchUpdateDelegatorsForIndexer,
 } from './helpers'
+import { avoidNegativeRoundingError } from './utils'
 
 export function handleDelegationParametersUpdated(event: DelegationParametersUpdated): void {
   let id = event.params.indexer.toHexString()
@@ -231,8 +232,9 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate
   delegatedStake.currentDelegation =
     delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
-  delegatedStake.unrealizedRewards =
-    delegatedStake.currentDelegation - delegatedStake.originalDelegation
+  delegatedStake.unrealizedRewards = avoidNegativeRoundingError(
+    delegatedStake.currentDelegation - delegatedStake.originalDelegation,
+  )
   delegatedStake.save()
 
   delegator.lastDelegatedAt = event.block.timestamp.toI32()
@@ -243,8 +245,8 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   delegator.currentDelegation = delegator.currentDelegation.plus(
     delegatedStake.currentDelegation - oldCurrentDelegation,
   )
-  delegator.totalUnrealizedRewards = delegator.totalUnrealizedRewards.plus(
-    delegatedStake.unrealizedRewards - oldUnrealizedRewards,
+  delegator.totalUnrealizedRewards = avoidNegativeRoundingError(
+    delegator.totalUnrealizedRewards.plus(delegatedStake.unrealizedRewards - oldUnrealizedRewards),
   )
 
   if (isStakeBecomingActive) {
@@ -317,15 +319,18 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate
   delegatedStake.currentDelegation =
     delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
-  delegatedStake.unrealizedRewards =
-    delegatedStake.currentDelegation - delegatedStake.originalDelegation
+  delegatedStake.unrealizedRewards = avoidNegativeRoundingError(
+    delegatedStake.currentDelegation - delegatedStake.originalDelegation,
+  )
   delegatedStake.save()
 
   // update delegator
   let delegator = Delegator.load(delegatorID)
   delegator.totalUnstakedTokens = delegator.totalUnstakedTokens.plus(event.params.tokens)
   delegator.totalRealizedRewards = delegator.totalRealizedRewards.plus(realizedRewards)
-  delegator.totalUnrealizedRewards = delegator.totalUnrealizedRewards.minus(realizedRewards)
+  delegator.totalUnrealizedRewards = avoidNegativeRoundingError(
+    delegator.totalUnrealizedRewards.minus(realizedRewards),
+  )
   delegator.originalDelegation = delegator.originalDelegation.plus(
     delegatedStake.originalDelegation - oldOriginalDelegation,
   )
