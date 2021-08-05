@@ -41,14 +41,46 @@ export function handleSetDefaultName(event: SetDefaultName): void {
     event.block.timestamp,
   )
 
-  // A name has already been registered
   if (graphAccount.defaultName != null) {
     let graphAccountName = GraphAccountName.load(graphAccount.defaultName)
     // If trying to set the same name, do nothing
     if (graphAccountName.name == event.params.name) {
       return
     }
+
+    // A user is resetting their name. This is done by passing nameIdentifier = bytes32(0)
+    // String can be anything, but in front end we should just do a blank string
+    if (
+      event.params.nameIdentifier.toHex() ==
+      '0x0000000000000000000000000000000000000000000000000000000000000000'
+    ) {
+      graphAccountName.graphAccount = null
+      graphAccountName.save()
+
+      graphAccount.defaultName = null
+      graphAccount.defaultDisplayName = null
+      graphAccount.save()
+
+      let indexer = Indexer.load(event.params.graphAccount.toHexString())
+      if (indexer != null) {
+        indexer.defaultDisplayName = graphAccount.defaultDisplayName
+        indexer.save()
+      }
+
+      let curator = Curator.load(event.params.graphAccount.toHexString())
+      if (curator != null) {
+        curator.defaultDisplayName = graphAccount.defaultDisplayName
+        curator.save()
+      }
+
+      let delegator = Delegator.load(event.params.graphAccount.toHexString())
+      if (delegator != null) {
+        delegator.defaultDisplayName = graphAccount.defaultDisplayName
+        delegator.save()
+      }
+    }
   }
+
   let newDefaultName = resolveName(
     event.params.graphAccount,
     event.params.name,
@@ -69,6 +101,12 @@ export function handleSetDefaultName(event: SetDefaultName): void {
     if (indexer != null) {
       indexer.defaultDisplayName = graphAccount.defaultDisplayName
       indexer.save()
+    }
+
+    let curator = Curator.load(userAddress)
+    if (curator != null) {
+      curator.defaultDisplayName = graphAccount.defaultDisplayName
+      curator.save()
     }
 
     let delegator = Delegator.load(userAddress)
