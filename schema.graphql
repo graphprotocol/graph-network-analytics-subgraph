@@ -61,10 +61,6 @@ type GraphNetwork @entity {
   "The total amount of GRT signalled in the Curation contract"
   totalTokensSignalled: BigInt!
 
-  # Graph Token global variables
-  "Graph Token supply"
-  totalSupply: BigInt!
-
   "Default reserve ratio for all subgraphs. In parts per million"
   defaultReserveRatio: Int!
 
@@ -86,9 +82,6 @@ type GraphNetwork @entity {
 
   "Total subgraphs"
   subgraphDeploymentCount: Int!
-
-  "Total epochs"
-  epochCount: Int!
 }
 
 """
@@ -381,6 +374,10 @@ type Indexer @entity {
   id: ID!
   "Time this indexer was created"
   createdAt: Int!
+  "Service registry URL for the indexer"
+  url: String
+  "Geohash of the indexer. Shows where their indexer is located in the world"
+  geoHash: String
 
   account: GraphAccount!
   defaultDisplayName: String
@@ -486,16 +483,6 @@ type Indexer @entity {
 
   "Count of how many times this indexer has been forced to close an allocation"
   forcedClosures: Int!
-
-  # Metrics
-  "NOT IMPLEMENTED - Total return this indexer has earned"
-  totalReturn: BigDecimal!
-
-  "NOT IMPLEMENTED - Annualized rate of return for the indexer"
-  annualizedReturn: BigDecimal! # You must multiple by 100 to get percentage
-
-  "NOT IMPLEMENTED - Staking efficiency of the indexer"
-  stakingEfficiency: BigDecimal!
 
   delegatorsCount: BigInt!
 
@@ -1193,6 +1180,98 @@ type SubgraphDeploymentDailyData @entity {
 
   "[CUMULATIVE] Total curator rewards from fees"
   curatorFeeRewards: BigInt!
+}
+
+type GraphNetworkDailyData @entity {
+  "<SUBGRAPH ID>-<DAY NUMBER>"
+  id: ID!
+
+  "Timestamp for the start of the day that this entity represents. UTC+0"
+  dayStart: BigInt!
+
+  "Timestamp for the end of the day that this entity represents. UTC+0"
+  dayEnd: BigInt!
+
+  "Number of the day this entity represents. Day 0 is the network launch day."
+  dayNumber: Int!
+
+  "Original entity that the daily data entity tracks"
+  network: GraphNetwork!
+
+  "[CUMULATIVE] Ratio of max staked delegation tokens to indexers stake that earns rewards"
+  delegationRatio: Int!
+
+  # Staking global aggregate values
+  "[CUMULATIVE] The total amount of GRT staked in the staking contract"
+  totalTokensStaked: BigInt!
+
+  "[CUMULATIVE] Total tokens that are currently locked or withdrawable in the network from unstaking"
+  totalUnstakedTokensLocked: BigInt!
+
+  "[CUMULATIVE] Total GRT currently in allocation"
+  totalTokensAllocated: BigInt!
+
+  "[CUMULATIVE] Total delegated tokens in the protocol"
+  totalDelegatedTokens: BigInt!
+
+  # Query fees globals
+  "[CUMULATIVE] Total query fees generated in the network"
+  totalQueryFees: BigInt!
+
+  "[CUMULATIVE] Total query fees collected by indexers"
+  totalIndexerQueryFeesCollected: BigInt!
+
+  "[CUMULATIVE] Total query fees rebates claimed by indexers"
+  totalIndexerQueryFeeRebates: BigInt!
+
+  "[CUMULATIVE] Total query fees rebates claimed by delegators"
+  totalDelegatorQueryFeeRebates: BigInt!
+
+  "[CUMULATIVE] Total query fees payed to curators"
+  totalCuratorQueryFees: BigInt!
+
+  "[CUMULATIVE] Total protocol taxes applied to the query fees"
+  totalTaxedQueryFees: BigInt!
+
+  # It is hard to separate the unclaimed and rebates lost
+  "[CUMULATIVE] Total unclaimed rebates. Includes unclaimed rebates and rebates lost in cobbs douglas "
+  totalUnclaimedQueryFeeRebates: BigInt!
+
+  # Indexing rewards globals
+  "[CUMULATIVE] Total indexing rewards minted"
+  totalIndexingRewards: BigInt!
+
+  "[CUMULATIVE] Total indexing rewards minted to Delegators"
+  totalIndexingDelegatorRewards: BigInt!
+
+  "[CUMULATIVE] Total indexing rewards minted to Indexers"
+  totalIndexingIndexerRewards: BigInt!
+
+  # Curation global aggregate values
+  "[CUMULATIVE] The total amount of GRT signalled in the Curation contract"
+  totalTokensSignalled: BigInt!
+
+  "[CUMULATIVE] Default reserve ratio for all subgraphs. In parts per million"
+  defaultReserveRatio: Int!
+
+  # Count aggregate values. Note, deprecated subgraphs or inactive users not removed from counts
+  "[CUMULATIVE] Total indexers"
+  indexerCount: Int!
+
+  "[CUMULATIVE] Number of indexers that currently have some stake in the protocol"
+  stakedIndexersCount: Int!
+
+  "[CUMULATIVE] Total delegators"
+  delegatorCount: Int!
+
+  "[CUMULATIVE] Total curators"
+  curatorCount: Int!
+
+  "[CUMULATIVE] Total subgraphs"
+  subgraphCount: Int!
+
+  "[CUMULATIVE] Total subgraphs"
+  subgraphDeploymentCount: Int!
 }
 
 """

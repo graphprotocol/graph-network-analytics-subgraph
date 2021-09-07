@@ -19,6 +19,7 @@ import {
   SubgraphDeploymentDailyData,
   DelegatorDelegatedStakeDailyRelation,
   IndexerDelegatedStakeRelation,
+  GraphNetworkDailyData,
 } from '../types/schema'
 import { ENS } from '../types/GNS/ENS'
 import { addresses } from '../../config/addresses'
@@ -148,10 +149,6 @@ export function createOrLoadIndexer(id: string, timestamp: BigInt): Indexer {
     indexer.forcedClosures = 0
     indexer.allocationCount = 0
     indexer.totalAllocationCount = BigInt.fromI32(0)
-
-    indexer.totalReturn = BigDecimal.fromString('0')
-    indexer.annualizedReturn = BigDecimal.fromString('0')
-    indexer.stakingEfficiency = BigDecimal.fromString('0')
 
     indexer.delegatorsCount = BigInt.fromI32(0)
 
@@ -351,10 +348,6 @@ export function createOrLoadGraphNetwork(): GraphNetwork {
     graphNetwork.totalIndexingDelegatorRewards = BigInt.fromI32(0)
 
     graphNetwork.totalTokensSignalled = BigInt.fromI32(0)
-
-    graphNetwork.totalSupply = BigInt.fromI32(0) // gets set by mint
-
-    graphNetwork.epochCount = 0
 
     graphNetwork.indexerCount = 0
     graphNetwork.stakedIndexersCount = 0
@@ -623,6 +616,49 @@ export function batchUpdateDelegatorsForIndexer(indexerId: string, timestamp: Bi
       getAndUpdateDelegatorDailyData(delegator as Delegator, timestamp)
     }
   }
+}
+
+export function getAndUpdateNetworkDailyData(entity: GraphNetwork, timestamp: BigInt): GraphNetworkDailyData {
+  let dayNumber = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
+  let id = compoundId(entity.id, BigInt.fromI32(dayNumber).toString())
+  let dailyData = GraphNetworkDailyData.load(id)
+
+  if (dailyData == null) {
+    dailyData = new GraphNetworkDailyData(id)
+
+    dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
+    dailyData.dayEnd = dailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
+    dailyData.dayNumber = dayNumber
+    dailyData.network = entity.id
+  }
+
+  dailyData.delegationRatio = entity.delegationRatio
+  dailyData.totalTokensStaked = entity.totalTokensStaked
+  dailyData.totalUnstakedTokensLocked = entity.totalUnstakedTokensLocked
+  dailyData.totalTokensAllocated = entity.totalTokensAllocated
+  dailyData.totalDelegatedTokens = entity.totalDelegatedTokens
+  dailyData.totalQueryFees = entity.totalQueryFees
+  dailyData.totalIndexerQueryFeesCollected = entity.totalIndexerQueryFeesCollected
+  dailyData.totalIndexerQueryFeeRebates = entity.totalIndexerQueryFeeRebates
+  dailyData.totalDelegatorQueryFeeRebates = entity.totalDelegatorQueryFeeRebates
+  dailyData.totalCuratorQueryFees = entity.totalCuratorQueryFees
+  dailyData.totalTaxedQueryFees = entity.totalTaxedQueryFees
+  dailyData.totalUnclaimedQueryFeeRebates = entity.totalUnclaimedQueryFeeRebates
+  dailyData.totalIndexingRewards = entity.totalIndexingRewards
+  dailyData.totalIndexingDelegatorRewards = entity.totalIndexingDelegatorRewards
+  dailyData.totalIndexingIndexerRewards = entity.totalIndexingIndexerRewards
+  dailyData.totalTokensSignalled = entity.totalTokensSignalled
+  dailyData.defaultReserveRatio = entity.defaultReserveRatio
+  dailyData.indexerCount = entity.indexerCount
+  dailyData.stakedIndexersCount = entity.stakedIndexersCount
+  dailyData.delegatorCount = entity.delegatorCount
+  dailyData.curatorCount = entity.curatorCount
+  dailyData.subgraphCount = entity.subgraphCount
+  dailyData.subgraphDeploymentCount = entity.subgraphDeploymentCount
+
+  dailyData.save()
+
+  return dailyData as GraphNetworkDailyData
 }
 
 export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt): IndexerDailyData {

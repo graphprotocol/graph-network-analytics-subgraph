@@ -77,6 +77,28 @@ dataSources:
         - event: GRTWithdrawn(indexed address,indexed uint256,indexed address,uint256,uint256)
           handler: handleGRTWithdrawn
   - kind: ethereum/contract
+    name: ServiceRegistry
+    network: {{network}}
+    source:
+      address: '{{serviceRegistry}}'
+      abi: ServiceRegistry
+      startBlock: {{blockNumber}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      file: ./src/mappings/serviceRegistry.ts
+      entities:
+        - Indexer
+      abis:
+        - name: ServiceRegistry
+          file: ./node_modules/@graphprotocol/contracts/dist/abis/ServiceRegistry.json
+      eventHandlers:
+        - event: ServiceRegistered(indexed address,string,string)
+          handler: handleServiceRegistered
+        - event: ServiceUnregistered(indexed address)
+          handler: handleServiceUnregistered
+  - kind: ethereum/contract
     name: Staking
     network: {{network}}
     source:
