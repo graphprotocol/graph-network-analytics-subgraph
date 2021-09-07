@@ -13,7 +13,8 @@ import {
   createOrLoadGraphNetwork,
   getAndUpdateIndexerDailyData,
   getAndUpdateSubgraphDeploymentDailyData,
-  batchUpdateDelegatorsForIndexer
+  batchUpdateDelegatorsForIndexer,
+  getAndUpdateNetworkDailyData
 } from './helpers'
 
 export function handleRewardsAssigned(event: RewardsAssigned): void {
@@ -88,6 +89,7 @@ export function handleRewardsAssigned(event: RewardsAssigned): void {
     subgraphDeployment as SubgraphDeployment,
     event.block.timestamp,
   )
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 
 /**

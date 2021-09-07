@@ -22,6 +22,7 @@ import {
   joinID,
   getAndUpdateSubgraphDeploymentDailyData,
   calculatePricePerShare,
+  getAndUpdateNetworkDailyData,
 } from './helpers'
 
 /**
@@ -80,6 +81,7 @@ export function handleSignalled(event: Signalled): void {
   signalTransaction.save()
 
   getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 /**
  * @dev handleRedeemed
@@ -130,6 +132,7 @@ export function handleBurned(event: Burned): void {
   signalTransaction.save()
 
   getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 
 /**
@@ -145,6 +148,7 @@ export function handleBurned(event: Burned): void {
      let curation = Curation.bind(event.address)
      graphNetwork.defaultReserveRatio = curation.defaultReserveRatio().toI32()
      graphNetwork.save()
+     getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
    }
  }
 
