@@ -46,6 +46,7 @@ import {
   calculatePricePerShare,
   getAndUpdateSubgraphDeploymentDailyData,
   batchUpdateDelegatorsForIndexer,
+  getAndUpdateNetworkDailyData,
 } from './helpers'
 import { avoidNegativeRoundingError } from './utils'
 
@@ -86,6 +87,7 @@ export function handleStakeDeposited(event: StakeDeposited): void {
 
   // analytics
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 
 /**
@@ -116,6 +118,7 @@ export function handleStakeLocked(event: StakeLocked): void {
 
   // analytics
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 
 /**
@@ -144,6 +147,7 @@ export function handleStakeWithdrawn(event: StakeWithdrawn): void {
 
   // analytics
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 
 /**
@@ -173,6 +177,7 @@ export function handleStakeSlashed(event: StakeSlashed): void {
 
   // analytics
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
   // Also update net slashed stake?
 }
 
@@ -277,6 +282,7 @@ export function handleStakeDelegated(event: StakeDelegated): void {
     event.params.tokens,
   )
   indexerDailyData.save()
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 
 export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
@@ -367,6 +373,7 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
     relation.active = false
     relation.save()
   }
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 
 export function handleStakeDelegatedWithdrawn(event: StakeDelegatedWithdrawn): void {
@@ -388,7 +395,7 @@ export function handleStakeDelegatedWithdrawn(event: StakeDelegatedWithdrawn): v
   batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
 
   // analytics
-  let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
 }
 
 /**
@@ -447,6 +454,8 @@ export function handleAllocationCreated(event: AllocationCreated): void {
   allocation.annualizedReturn = BigDecimal.fromString('0')
   allocation.createdAt = event.block.timestamp.toI32()
   allocation.save()
+
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 
 // Transfers tokens from a state channel to the staking contract
@@ -518,6 +527,7 @@ export function handleAllocationCollected(event: AllocationCollected): void {
 
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 
 /**
@@ -581,6 +591,7 @@ export function handleAllocationClosed(event: AllocationClosed): void {
 
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 
 /**
@@ -647,6 +658,7 @@ export function handleRebateClaimed(event: RebateClaimed): void {
     subgraphDeployment as SubgraphDeployment,
     event.block.timestamp,
   )
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 
 /**
@@ -663,6 +675,7 @@ export function handleParameterUpdated(event: ParameterUpdated): void {
     graphNetwork.delegationRatio = staking.delegationRatio().toI32()
   }
   graphNetwork.save()
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 //
 // export function handleSetOperator(event: SetOperator): void {
