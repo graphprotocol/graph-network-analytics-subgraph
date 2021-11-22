@@ -92,13 +92,13 @@ export function handleSignalled(event: Signalled): void {
 export function handleBurned(event: Burned): void {
   // Update curator
   let id = event.params.curator.toHexString()
-  let curator = Curator.load(id)
+  let curator = Curator.load(id)!
   curator.totalUnsignalledTokens = curator.totalUnsignalledTokens.plus(event.params.tokens)
 
   // Update signal
   let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
   let signalID = joinID([id, subgraphDeploymentID])
-  let signal = Signal.load(signalID)
+  let signal = Signal.load(signalID)!
   // Note - if you immediately deposited and then withdrew, you would lose 5%, and you were
   // realize this loss by seeing unsignaled tokens being 95 and signalled 100
   signal.unsignalledTokens = signal.unsignalledTokens.plus(event.params.tokens)
@@ -106,7 +106,7 @@ export function handleBurned(event: Burned): void {
   signal.save()
 
   // Update subgraph
-  let deployment = SubgraphDeployment.load(subgraphDeploymentID)
+  let deployment = SubgraphDeployment.load(subgraphDeploymentID)!
   deployment.signalledTokens = deployment.signalledTokens.minus(event.params.tokens)
   deployment.signalAmount = deployment.signalAmount.minus(event.params.signal)
   deployment.pricePerShare = calculatePricePerShare(deployment as SubgraphDeployment)
