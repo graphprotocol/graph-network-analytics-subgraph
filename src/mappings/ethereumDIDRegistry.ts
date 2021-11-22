@@ -20,7 +20,7 @@ export function handleDIDAttributeChanged(event: DIDAttributeChanged): void {
     graphAccount.metadataHash = event.params.value
 
     let ipfsData = ipfs.cat(base58Hash)
-    if (ipfsData != null) {
+    if (ipfsData !== null) {
       let data = json.fromBytes(ipfsData as Bytes).toObject()
       graphAccount.codeRepository = jsonToString(data.get('codeRepository'))
       graphAccount.description = jsonToString(data.get('description'))

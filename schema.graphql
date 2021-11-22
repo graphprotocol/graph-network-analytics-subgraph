@@ -14,7 +14,6 @@ type GraphNetwork @entity {
 
   "NOT IMPLEMENTED - Total tokens that are settled and waiting to be claimed"
   totalTokensClaimable: BigInt! # TODO - see https://github.com/graphprotocol/graph-network-subgraph/issues/89
-
   "Total tokens that are currently locked or withdrawable in the network from unstaking"
   totalUnstakedTokensLocked: BigInt!
 
@@ -97,7 +96,6 @@ type GraphAccount @entity {
 
   "Default name the graph account has chosen"
   defaultName: GraphAccountName # Can optimize in future by checking ENS & others to make sure they still own the name
-
   "Time the account was created"
   createdAt: Int!
 
@@ -165,7 +163,7 @@ type GraphAccount @entity {
 
   # Transactions / activity feed
   "Name signal transactions created by this GraphAccount"
-  nameSignalTransactions: [NameSignalTransaction]! @derivedFrom(field: "signer")
+  nameSignalTransactions: [NameSignalTransaction!]! @derivedFrom(field: "signer")
 }
 
 """
@@ -205,17 +203,41 @@ type Subgraph @entity {
   "Graph account that owns this subgraph"
   owner: GraphAccount!
 
-  "Current version. Null if the subgraph is deprecated"
+  "Current version"
   currentVersion: SubgraphVersion
 
-  "Past versions"
-  pastVersions: [SubgraphVersion!]!
+  "[DEPRECATED] Past versions. Has the same data as 'versions' but keeps the old naming for backwards compatibility"
+  pastVersions: [SubgraphVersion!]! @derivedFrom(field: "subgraph")
+
+  "List of all the subgraph versions included the current one"
+  versions: [SubgraphVersion!]! @derivedFrom(field: "subgraph")
+
+  "Version counter"
+  versionCount: BigInt!
 
   "Creation timestamp"
   createdAt: Int!
 
   "Updated timestamp"
   updatedAt: Int!
+
+  "Whether the subgraph is active or deprecated"
+  active: Boolean!
+
+  "Whether the subgraph has been migrated to the NFT implementation"
+  migrated: Boolean!
+
+  "The actual ID of the subgraph on the contracts subgraph NFT implementation. BigInt represented as a String. It's only actually valid once the subgraph is migrated (migrated == true)"
+  nftID: String!
+
+  "ID of the subgraph that was used on the old version of this The Graph Network Subgraph. Null for Subgraphs created with the new GNS implementation"
+  oldID: String
+
+  "Address used to create the ID. Only available for Subgraphs created pre-migration"
+  creatorAddress: Bytes
+
+  "Subgraph number used to create the ID. Only available for Subgraphs created pre-migration"
+  subgraphNumber: BigInt
 
   # Name curation data for bonding curve
   # Note that the Subgraphs V signal is actually stored in a Signal entity, which
@@ -347,7 +369,6 @@ type SubgraphDeployment @entity {
 
   "NOT IMPLEMENTED - CURRENT signalled tokens in the bonding curve"
   unsignalledTokens: BigInt! # Will be used for rewards
-
   "CURRENT curation signal for this subgraph deployment"
   signalAmount: BigInt!
 
@@ -363,7 +384,7 @@ type SubgraphDeployment @entity {
   # From Subgraph Manifest
   # dataSources: [DataSource!]
 
-  dailyData: [SubgraphDeploymentDailyData!]! @derivedFrom(field:"subgraphDeployment")
+  dailyData: [SubgraphDeploymentDailyData!]! @derivedFrom(field: "subgraphDeployment")
 }
 
 """
@@ -391,7 +412,6 @@ type Indexer @entity {
 
   "NOT IMPLEMENTED - Tokens that have been unstaked and withdrawn"
   unstakedTokens: BigInt! # will be used for return % calcs
-
   "CURRENT tokens locked"
   lockedTokens: BigInt!
 
@@ -637,7 +657,7 @@ type Delegator @entity {
   currentDelegation: BigDecimal!
 
   "List of all the daily data entities that exists for this delegator"
-  dailyData: [DelegatorDailyData!]! @derivedFrom(field:"delegator")
+  dailyData: [DelegatorDailyData!]! @derivedFrom(field: "delegator")
 
   # Old probably not very useful metrics
   "CUMULATIVE staked tokens in DelegatorStakes of this Delegator"
@@ -853,7 +873,6 @@ type NameSignal @entity {
 
   "Curator average cost basis for this name signal on this subgraph"
   averageCostBasis: BigDecimal! # note this is ONLY name signal. This is okay for the protocol for now
-
   "averageCostBasis / nameSignal"
   averageCostBasisPerSignal: BigDecimal!
 }

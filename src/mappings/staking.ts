@@ -99,7 +99,7 @@ export function handleStakeDeposited(event: StakeDeposited): void {
 export function handleStakeLocked(event: StakeLocked): void {
   // update indexer
   let id = event.params.indexer.toHexString()
-  let indexer = Indexer.load(id)
+  let indexer = Indexer.load(id)!
   indexer.lockedTokens = event.params.tokens
   indexer.tokensLockedUntil = event.params.until.toI32()
   indexer = updateAdvancedIndexerMetrics(indexer as Indexer)
@@ -129,7 +129,7 @@ export function handleStakeLocked(event: StakeLocked): void {
 export function handleStakeWithdrawn(event: StakeWithdrawn): void {
   // update indexer
   let id = event.params.indexer.toHexString()
-  let indexer = Indexer.load(id)
+  let indexer = Indexer.load(id)!
   indexer.stakedTokens = indexer.stakedTokens.minus(event.params.tokens)
   indexer.lockedTokens = indexer.lockedTokens.minus(event.params.tokens)
   indexer.tokensLockedUntil = 0 // always set to 0 when withdrawn
@@ -156,7 +156,7 @@ export function handleStakeWithdrawn(event: StakeWithdrawn): void {
  */
 export function handleStakeSlashed(event: StakeSlashed): void {
   let id = event.params.indexer.toHexString()
-  let indexer = Indexer.load(id)
+  let indexer = Indexer.load(id)!
 
   indexer.stakedTokens = indexer.stakedTokens.minus(event.params.tokens)
 
@@ -264,7 +264,7 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   // We check for 0 shares, in case there's a minimal signalling that doesn't really mint Shares
   // We wouldn't want to re-activate the relation in that case
   if (!delegatedStake.shareAmount.equals(BigInt.fromI32(0))) {
-    let relation = IndexerDelegatedStakeRelation.load(delegatedStake.relation)
+    let relation = IndexerDelegatedStakeRelation.load(delegatedStake.relation)!
     relation.active = true
     relation.save()
   }
@@ -288,7 +288,7 @@ export function handleStakeDelegated(event: StakeDelegated): void {
 export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   // update indexer
   let indexerID = event.params.indexer.toHexString()
-  let indexer = Indexer.load(indexerID)
+  let indexer = Indexer.load(indexerID)!
   indexer.delegatedTokens = indexer.delegatedTokens.minus(event.params.tokens)
   indexer.delegatorShares = indexer.delegatorShares.minus(event.params.shares)
 
@@ -304,7 +304,7 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   // update delegated stake
   let delegatorID = event.params.delegator.toHexString()
   let id = joinID([delegatorID, indexerID])
-  let delegatedStake = DelegatedStake.load(id)
+  let delegatedStake = DelegatedStake.load(id)!
   let isStakeBecomingInactive =
     !delegatedStake.shareAmount.isZero() && delegatedStake.shareAmount == event.params.shares
   delegatedStake.totalUnstakedTokens = delegatedStake.totalUnstakedTokens.plus(event.params.tokens)
@@ -331,7 +331,7 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   delegatedStake.save()
 
   // update delegator
-  let delegator = Delegator.load(delegatorID)
+  let delegator = Delegator.load(delegatorID)!
   delegator.totalUnstakedTokens = delegator.totalUnstakedTokens.plus(event.params.tokens)
   delegator.totalRealizedRewards = delegator.totalRealizedRewards.plus(realizedRewards)
   delegator.totalUnrealizedRewards = avoidNegativeRoundingError(
@@ -369,7 +369,7 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
 
   // De-activate relation with indexer after batch update, so last datapoints are created properly
   if (delegatedStake.shareAmount.equals(BigInt.fromI32(0))) {
-    let relation = IndexerDelegatedStakeRelation.load(delegatedStake.relation)
+    let relation = IndexerDelegatedStakeRelation.load(delegatedStake.relation)!
     relation.active = false
     relation.save()
   }
@@ -378,11 +378,11 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
 
 export function handleStakeDelegatedWithdrawn(event: StakeDelegatedWithdrawn): void {
   let indexerID = event.params.indexer.toHexString()
-  let indexer = Indexer.load(indexerID)
+  let indexer = Indexer.load(indexerID)!
   let delegatorID = event.params.delegator.toHexString()
-  let delegator = Delegator.load(delegatorID)
+  let delegator = Delegator.load(delegatorID)!
   let id = joinID([delegatorID, indexerID])
-  let delegatedStake = DelegatedStake.load(id)
+  let delegatedStake = DelegatedStake.load(id)!
   let lockedBefore = delegatedStake.lockedTokens
 
   delegator.lockedTokens = delegatedStake.lockedTokens.minus(lockedBefore)
@@ -413,7 +413,7 @@ export function handleAllocationCreated(event: AllocationCreated): void {
   let allocationID = channelID
 
   // update indexer
-  let indexer = Indexer.load(indexerID)
+  let indexer = Indexer.load(indexerID)!
   indexer.allocatedTokens = indexer.allocatedTokens.plus(event.params.tokens)
   indexer.totalAllocationCount = indexer.totalAllocationCount.plus(BigInt.fromI32(1))
   indexer.allocationCount = indexer.allocationCount + 1
@@ -472,13 +472,13 @@ export function handleAllocationCollected(event: AllocationCollected): void {
   let allocationID = event.params.allocationID.toHexString()
 
   // update indexer
-  let indexer = Indexer.load(indexerID)
+  let indexer = Indexer.load(indexerID)!
   indexer.queryFeesCollected = indexer.queryFeesCollected.plus(event.params.rebateFees)
   indexer.save()
 
   // update allocation
   // rebateFees is the total token value minus the curation and protocol fees, as can be seen in the contracts
-  let allocation = Allocation.load(allocationID)
+  let allocation = Allocation.load(allocationID)!
   allocation.queryFeesCollected = allocation.queryFeesCollected.plus(event.params.rebateFees)
   allocation.curatorRewards = allocation.curatorRewards.plus(event.params.curationFees)
   allocation.save()
@@ -499,7 +499,7 @@ export function handleAllocationCollected(event: AllocationCollected): void {
   pool.save()
 
   // update subgraph deployment
-  let deployment = SubgraphDeployment.load(subgraphDeploymentID)
+  let deployment = SubgraphDeployment.load(subgraphDeploymentID)!
   deployment.queryFeesAmount = deployment.queryFeesAmount.plus(event.params.rebateFees)
   deployment.signalledTokens = deployment.signalledTokens.plus(event.params.curationFees)
   deployment.curatorFeeRewards = deployment.curatorFeeRewards.plus(event.params.curationFees)
@@ -543,7 +543,7 @@ export function handleAllocationClosed(event: AllocationClosed): void {
   let allocationID = event.params.allocationID.toHexString()
 
   // update indexer
-  let indexer = Indexer.load(indexerID)
+  let indexer = Indexer.load(indexerID)!
   if (event.params.sender != event.params.indexer) {
     indexer.forcedClosures = indexer.forcedClosures + 1
   }
@@ -554,7 +554,7 @@ export function handleAllocationClosed(event: AllocationClosed): void {
   indexer.save()
 
   // update allocation
-  let allocation = Allocation.load(allocationID)
+  let allocation = Allocation.load(allocationID)!
   allocation.poolClosedIn = event.params.epoch.toString()
   allocation.activeForIndexer = null
   allocation.closedAtEpoch = event.params.epoch.toI32()
@@ -608,7 +608,7 @@ export function handleRebateClaimed(event: RebateClaimed): void {
   let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
 
   // update indexer
-  let indexer = Indexer.load(indexerID)
+  let indexer = Indexer.load(indexerID)!
   indexer.queryFeeRebates = indexer.queryFeeRebates.plus(event.params.tokens)
   indexer.delegatorQueryFees = indexer.delegatorQueryFees.plus(event.params.delegationFees)
   indexer.delegatedTokens = indexer.delegatedTokens.plus(event.params.delegationFees)
@@ -619,19 +619,19 @@ export function handleRebateClaimed(event: RebateClaimed): void {
   indexer = updateAdvancedIndexerMetrics(indexer as Indexer)
   indexer.save()
   // update allocation
-  let allocation = Allocation.load(allocationID)
+  let allocation = Allocation.load(allocationID)!
   allocation.queryFeeRebates = event.params.tokens
   allocation.delegationFees = event.params.delegationFees
   allocation.status = 'Claimed'
   allocation.save()
 
   // update pool
-  let pool = Pool.load(event.params.forEpoch.toString())
+  let pool = Pool.load(event.params.forEpoch.toString())!
   pool.claimedFees = pool.claimedFees.plus(event.params.tokens)
   pool.save()
 
   // update subgraph deployment
-  let subgraphDeployment = SubgraphDeployment.load(subgraphDeploymentID)
+  let subgraphDeployment = SubgraphDeployment.load(subgraphDeploymentID)!
   subgraphDeployment.queryFeeRebates = subgraphDeployment.queryFeeRebates.plus(event.params.tokens)
   subgraphDeployment.delegatorQueryFees = subgraphDeployment.delegatorQueryFees.plus(
     event.params.delegationFees,

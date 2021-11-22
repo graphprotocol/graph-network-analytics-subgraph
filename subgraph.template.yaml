@@ -13,7 +13,7 @@ dataSources:
   #     startBlock: {{blockNumber}}
   #   mapping:
   #     kind: ethereum/events
-  #     apiVersion: 0.0.4
+  #     apiVersion: 0.0.5
   #     language: wasm/assemblyscript
   #     file: ./src/mappings/controller.ts
   #     entities:
@@ -41,7 +41,7 @@ dataSources:
       startBlock: {{blockNumber}}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.4
+      apiVersion: 0.0.5
       language: wasm/assemblyscript
       file: ./src/mappings/gns.ts
       entities:
@@ -52,12 +52,13 @@ dataSources:
         - NameSignal
       abis:
         - name: GNS
-          file: ./node_modules/@graphprotocol/contracts/dist/abis/GNS.json
+          file: ./abis/GNSStitched.json
         - name: ENS
           file: ./node_modules/@graphprotocol/contracts/dist/abis/IENS.json
         - name: ENSPublicResolver
           file: ./node_modules/@graphprotocol/contracts/dist/abis/IPublicResolver.json
       eventHandlers:
+          # v1
         - event: SubgraphPublished(indexed address,indexed uint256,indexed bytes32,bytes32)
           handler: handleSubgraphPublished
         - event: SubgraphDeprecated(indexed address,indexed uint256)
@@ -68,6 +69,8 @@ dataSources:
           handler: handleSubgraphMetadataUpdated
         - event: NameSignalEnabled(indexed address,indexed uint256,indexed bytes32,uint32)
           handler: handleNameSignalEnabled
+        - event: NameSignalUpgrade(indexed address,indexed uint256,uint256,uint256,indexed bytes32)
+          handler: handleNameSignalUpgrade
         - event: NSignalMinted(indexed address,indexed uint256,indexed address,uint256,uint256,uint256)
           handler: handleNSignalMinted
         - event: NSignalBurned(indexed address,indexed uint256,indexed address,uint256,uint256,uint256)
@@ -76,6 +79,25 @@ dataSources:
           handler: handleNameSignalDisabled
         - event: GRTWithdrawn(indexed address,indexed uint256,indexed address,uint256,uint256)
           handler: handleGRTWithdrawn
+          # v2
+        - event: SubgraphPublished(indexed uint256,indexed bytes32,uint32)
+          handler: handleSubgraphPublishedV2
+        - event: SubgraphDeprecated(indexed uint256,uint256)
+          handler: handleSubgraphDeprecatedV2
+        - event: SubgraphMetadataUpdated(indexed uint256,bytes32)
+          handler: handleSubgraphMetadataUpdatedV2
+        - event: SignalMinted(indexed uint256,indexed address,uint256,uint256,uint256)
+          handler: handleNSignalMintedV2
+        - event: SignalBurned(indexed uint256,indexed address,uint256,uint256,uint256)
+          handler: handleNSignalBurnedV2
+        - event: GRTWithdrawn(indexed uint256,indexed address,uint256,uint256)
+          handler: handleGRTWithdrawnV2
+        - event: SubgraphUpgraded(indexed uint256,uint256,uint256,indexed bytes32)
+          handler: handleSubgraphUpgraded
+        - event: SubgraphVersionUpdated(indexed uint256,indexed bytes32,bytes32)
+          handler: handleSubgraphVersionUpdated
+        - event: LegacySubgraphClaimed(indexed address,uint256)
+          handler: handleLegacySubgraphClaimed
   - kind: ethereum/contract
     name: ServiceRegistry
     network: {{network}}
@@ -85,7 +107,7 @@ dataSources:
       startBlock: {{blockNumber}}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.4
+      apiVersion: 0.0.5
       language: wasm/assemblyscript
       file: ./src/mappings/serviceRegistry.ts
       entities:
@@ -107,7 +129,7 @@ dataSources:
       startBlock: {{blockNumber}}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.4
+      apiVersion: 0.0.5
       language: wasm/assemblyscript
       file: ./src/mappings/staking.ts
       entities:
@@ -173,7 +195,7 @@ dataSources:
       startBlock: {{blockNumber}}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.4
+      apiVersion: 0.0.5
       language: wasm/assemblyscript
       file: ./src/mappings/curation.ts
       entities:
@@ -205,7 +227,7 @@ dataSources:
       startBlock: {{blockNumber}}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.3
+      apiVersion: 0.0.5
       language: wasm/assemblyscript
       file: ./src/mappings/ethereumDIDRegistry.ts
       entities:
@@ -225,7 +247,7 @@ dataSources:
       startBlock: {{blockNumber}}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.4
+      apiVersion: 0.0.5
       language: wasm/assemblyscript
       file: ./src/mappings/rewardsManager.ts
       entities:

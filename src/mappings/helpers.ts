@@ -42,17 +42,21 @@ export function createOrLoadGraphAccount(id: string, timeStamp: BigInt): GraphAc
 }
 
 export function createOrLoadSubgraph(
-  subgraphID: string,
+  bigIntID: BigInt,
   owner: Address,
   timestamp: BigInt,
 ): Subgraph {
+  let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
   let subgraph = Subgraph.load(subgraphID)
   if (subgraph == null) {
     subgraph = new Subgraph(subgraphID)
     subgraph.owner = owner.toHexString()
-    subgraph.pastVersions = []
     subgraph.createdAt = timestamp.toI32()
     subgraph.updatedAt = timestamp.toI32()
+    subgraph.versionCount = BigInt.fromI32(0)
+    subgraph.active = true
+    subgraph.migrated = false
+    subgraph.nftID = bigIntID.toString()
 
     subgraph.signalledTokens = BigInt.fromI32(0)
     subgraph.unsignalledTokens = BigInt.fromI32(0)
@@ -196,7 +200,7 @@ export function createOrLoadDelegatedStake(
   let delegatedStake = DelegatedStake.load(id)
 
   if (delegatedStake == null) {
-    let indexerEntity = Indexer.load(indexer)
+    let indexerEntity = Indexer.load(indexer)!
     let relationId = compoundId(indexer, indexerEntity.delegatorsCount.toString())
 
     delegatedStake = new DelegatedStake(id)
@@ -585,15 +589,15 @@ export function compoundId(idA: string, idB: string): string {
 
 export function batchUpdateDelegatorsForIndexer(indexerId: string, timestamp: BigInt): void {
   // Loading it again here to make sure we have the latest up to date data on the entity.
-  let indexer = Indexer.load(indexerId)
+  let indexer = Indexer.load(indexerId)!
   // pre-calculates a lot of data for all delegators that exists for a specific indexer
   // using already existing links with the indexer-delegatedStake relations
   for (let i = 0; i < indexer.delegatorsCount.toI32(); i++) {
     let relationId = compoundId(indexer.id, BigInt.fromI32(i).toString())
-    let relation = IndexerDelegatedStakeRelation.load(relationId)
+    let relation = IndexerDelegatedStakeRelation.load(relationId)!
     if (relation.active) {
-      let delegatedStake = DelegatedStake.load(relation.stake)
-      let delegator = Delegator.load(delegatedStake.delegator)
+      let delegatedStake = DelegatedStake.load(relation.stake)!
+      let delegator = Delegator.load(delegatedStake.delegator)!
       // Only update core entities if there's a change in the exchange rate
       if (delegatedStake.latestIndexerExchangeRate != indexer.delegationExchangeRate) {
         let oldUnrealizedRewards = delegatedStake.unrealizedRewards
@@ -621,7 +625,10 @@ export function batchUpdateDelegatorsForIndexer(indexerId: string, timestamp: Bi
   }
 }
 
-export function getAndUpdateNetworkDailyData(entity: GraphNetwork, timestamp: BigInt): GraphNetworkDailyData {
+export function getAndUpdateNetworkDailyData(
+  entity: GraphNetwork,
+  timestamp: BigInt,
+): GraphNetworkDailyData {
   let dayNumber = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
   let id = compoundId(entity.id, BigInt.fromI32(dayNumber).toString())
   let dailyData = GraphNetworkDailyData.load(id)
@@ -824,4 +831,29 @@ export function calculatePricePerShare(deployment: SubgraphDeployment): BigDecim
           .times(BigInt.fromI32(reserveRatioMultiplier).toBigDecimal())
           .truncate(18)
   return pricePerShare
+}
+
+export function convertBigIntSubgraphIDToBase58(bigIntRepresentation: BigInt): String {
+  // Might need to unpad the BigInt since `fromUnsignedBytes` pads one byte with a zero.
+  // Although for the events where the uint256 is provided, we probably don't need to unpad.
+  let hexString = bigIntRepresentation.toHexString()
+  if (hexString.length % 2 != 0) {
+    log.error('Hex string not even, hex: {}, original: {}. Padding it to even length', [
+      hexString,
+      bigIntRepresentation.toString(),
+    ])
+    hexString = '0x0' + hexString.slice(2)
+  }
+  let bytes = ByteArray.fromHexString(hexString)
+  return bytes.toBase58()
+}
+
+export function getSubgraphID(graphAccount: Address, subgraphNumber: BigInt): BigInt {
+  let graphAccountStr = graphAccount.toHexString()
+  let subgraphNumberStr = subgraphNumber.toHexString().slice(2)
+  let number = subgraphNumberStr.padStart(64, '0')
+  let unhashedSubgraphID = graphAccountStr.concat(number)
+  let hashedId = Bytes.fromByteArray(crypto.keccak256(ByteArray.fromHexString(unhashedSubgraphID)))
+  let bigIntRepresentation = BigInt.fromUnsignedBytes(changetype<Bytes>(hashedId.reverse()))
+  return bigIntRepresentation
 }
