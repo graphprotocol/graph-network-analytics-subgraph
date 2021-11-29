@@ -227,6 +227,9 @@ type Subgraph @entity {
   "Whether the subgraph has been migrated to the NFT implementation"
   migrated: Boolean!
 
+  "Auxiliary field to denote whether the subgraph is handling the initialization order on V2 events. Doesn't matter for V1 events."
+  initializing: Boolean!
+
   "The actual ID of the subgraph on the contracts subgraph NFT implementation. BigInt represented as a String. It's only actually valid once the subgraph is migrated (migrated == true)"
   nftID: String!
 
@@ -265,17 +268,7 @@ type Subgraph @entity {
 
   # # Metadata from IPFS linked in GNS
   "Subgraph metadata"
-  metadataHash: Bytes!
-  # "Short description of the subgraph"
-  # description: String!
-  # "Image in string format"
-  # image: String!
-  # "Location of the code for this project"
-  # codeRepository: String!
-  # "Projects website"
-  # website: String!
-  # "Display name"
-  # displayName: String!
+  metadataHash: Bytes
 }
 
 """
@@ -304,7 +297,7 @@ type SubgraphVersion @entity {
 
   # Metadata from IPFS linked in GNS
   "Subgraph version metadata content address"
-  metadataHash: Bytes!
+  metadataHash: Bytes
   # "Short description of the version"
   # description: String!
   # "Semantic versioning label"
