@@ -56,6 +56,7 @@ export function createOrLoadSubgraph(
     subgraph.versionCount = BigInt.fromI32(0)
     subgraph.active = true
     subgraph.migrated = false
+    subgraph.initializing = false
     subgraph.nftID = bigIntID.toString()
 
     subgraph.signalledTokens = BigInt.fromI32(0)
@@ -64,13 +65,6 @@ export function createOrLoadSubgraph(
     subgraph.reserveRatio = 0
     subgraph.withdrawableTokens = BigInt.fromI32(0)
     subgraph.withdrawnTokens = BigInt.fromI32(0)
-
-    subgraph.metadataHash = Bytes.fromI32(0) as Bytes
-    // subgraph.description = ''
-    // subgraph.image = ''
-    // subgraph.codeRepository = ''
-    // subgraph.website = ''
-    // subgraph.displayName = ''
 
     subgraph.save()
 
@@ -372,7 +366,7 @@ export function addQm(a: ByteArray): ByteArray {
   for (let i = 0; i < 32; i++) {
     out[i + 2] = a[i]
   }
-  return out as ByteArray
+  return changetype<ByteArray>(out)
 }
 
 // Helper for concatenating two byte arrays
@@ -384,7 +378,7 @@ export function concatByteArrays(a: ByteArray, b: ByteArray): ByteArray {
   for (let j = 0; j < b.length; j++) {
     out[a.length + j] = b[j]
   }
-  return out as ByteArray
+  return changetype<ByteArray>(out)
 }
 
 export function getVersionNumber(
@@ -448,7 +442,7 @@ function checkTLD(name: string, node: string): boolean {
  * @returns - true if name is verified
  */
 function verifyNameOwnership(graphAccount: string, node: Bytes): boolean {
-  let ens = ENS.bind(Address.fromHexString(addresses.ens) as Address)
+  let ens = ENS.bind(changetype<Address>(Address.fromHexString(addresses.ens)))
   let ownerOnENS = ens.try_owner(node)
   if (ownerOnENS.reverted == true) {
     log.warning('Try owner reverted for node: {}', [node.toHexString()])

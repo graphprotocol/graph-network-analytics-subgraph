@@ -72,13 +72,13 @@ export function handleSetDefaultName(event: SetDefaultName): void {
       graphAccount.defaultDisplayName = null
       graphAccount.save()
 
-      let indexer = Indexer.load(event.params.graphAccount.toHexString())!
+      let indexer = Indexer.load(event.params.graphAccount.toHexString())
       if (indexer != null) {
         indexer.defaultDisplayName = graphAccount.defaultDisplayName
         indexer.save()
       }
 
-      let delegator = Delegator.load(event.params.graphAccount.toHexString())!
+      let delegator = Delegator.load(event.params.graphAccount.toHexString())
       if (delegator != null) {
         delegator.defaultDisplayName = graphAccount.defaultDisplayName
         delegator.save()
@@ -102,13 +102,13 @@ export function handleSetDefaultName(event: SetDefaultName): void {
     // Indexer also has a defaultDisplayName because it helps with filtering.
     let userAddress = event.params.graphAccount.toHexString()
 
-    let indexer = Indexer.load(userAddress)!
+    let indexer = Indexer.load(userAddress)
     if (indexer != null) {
       indexer.defaultDisplayName = graphAccount.defaultDisplayName
       indexer.save()
     }
 
-    let delegator = Delegator.load(userAddress)!
+    let delegator = Delegator.load(userAddress)
     if (delegator != null) {
       delegator.defaultDisplayName = graphAccount.defaultDisplayName
       delegator.save()
@@ -121,8 +121,6 @@ export function handleSubgraphMetadataUpdated(event: SubgraphMetadataUpdated): v
   let subgraphID = getSubgraphID(event.params.graphAccount, event.params.subgraphNumber)
   let subgraph = createOrLoadSubgraph(subgraphID, event.params.graphAccount, event.block.timestamp)
 
-  let hexHash = addQm(event.params.subgraphMetadata) as Bytes
-  let base58Hash = hexHash.toBase58()
   subgraph.metadataHash = event.params.subgraphMetadata
   subgraph.updatedAt = event.block.timestamp.toI32()
   subgraph.save()
@@ -378,10 +376,34 @@ export function handleGRTWithdrawn(event: GRTWithdrawn): void {
 export function handleSubgraphPublishedV2(event: SubgraphPublished1): void {
   let bigIntID = event.params.subgraphID
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
-  let subgraph = Subgraph.load(subgraphID)!
+  let versionID: string
+  let versionNumber: number
 
+  // Update subgraph
+  let subgraph = createOrLoadSubgraph(
+    event.params.subgraphID,
+    event.transaction.from,
+    event.block.timestamp,
+  )
+  versionID = joinID([subgraph.id, subgraph.versionCount.toString()])
+  subgraph.currentVersion = versionID
+  subgraph.versionCount = subgraph.versionCount.plus(BigInt.fromI32(1))
+  subgraph.updatedAt = event.block.timestamp.toI32()
   subgraph.reserveRatio = event.params.reserveRatio.toI32()
+  subgraph.initializing = true
   subgraph.save()
+
+  // Create subgraph deployment, if needed. Can happen if the deployment has never been staked on
+  let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
+  let deployment = createOrLoadSubgraphDeployment(subgraphDeploymentID, event.block.timestamp)
+
+  // Create subgraph version
+  let subgraphVersion = new SubgraphVersion(versionID)
+  subgraphVersion.subgraph = subgraph.id
+  subgraphVersion.subgraphDeployment = subgraphDeploymentID
+  subgraphVersion.version = versionNumber as i32
+  subgraphVersion.createdAt = event.block.timestamp.toI32()
+  subgraphVersion.save()
 }
 
 // - event: SubgraphDeprecated(indexed uint256,uint256)
@@ -406,10 +428,7 @@ export function handleSubgraphMetadataUpdatedV2(event: SubgraphMetadataUpdated1)
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
   let subgraph = Subgraph.load(subgraphID)!
 
-  let hexHash = addQm(event.params.subgraphMetadata) as Bytes
-  let base58Hash = hexHash.toBase58()
   subgraph.metadataHash = event.params.subgraphMetadata
-
   subgraph.updatedAt = event.block.timestamp.toI32()
   subgraph.save()
 }
@@ -599,27 +618,42 @@ export function handleSubgraphVersionUpdated(event: SubgraphVersionUpdated): voi
 
   // Update subgraph
   let subgraph = Subgraph.load(subgraphID)!
-  versionID = joinID([subgraph.id, subgraph.versionCount.toString()])
-  subgraph.currentVersion = versionID
-  subgraph.versionCount = subgraph.versionCount.plus(BigInt.fromI32(1))
-  subgraph.updatedAt = event.block.timestamp.toI32()
-  subgraph.save()
 
-  // Create subgraph deployment, if needed. Can happen if the deployment has never been staked on
-  let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
-  let deployment = createOrLoadSubgraphDeployment(subgraphDeploymentID, event.block.timestamp)
+  if(subgraph.initializing) {
+    subgraph.initializing = false;
+    subgraph.save()
 
-  // Create subgraph version
-  let subgraphVersion = new SubgraphVersion(versionID)
-  subgraphVersion.subgraph = subgraph.id
-  subgraphVersion.subgraphDeployment = subgraphDeploymentID
-  subgraphVersion.version = versionNumber as i32
-  subgraphVersion.createdAt = event.block.timestamp.toI32()
-  let hexHash = changetype<Bytes>(addQm(event.params.versionMetadata))
-  let base58Hash = hexHash.toBase58()
-  subgraphVersion.metadataHash = event.params.versionMetadata
-  //subgraphVersion = fetchSubgraphVersionMetadata(subgraphVersion, base58Hash)
-  subgraphVersion.save()
+    // Update already initialized subgraph version
+    versionID = joinID([subgraph.id, subgraph.versionCount.minus(BigInt.fromI32(1)).toString()])
+    let subgraphVersion = SubgraphVersion.load(versionID)!
+    // let hexHash = changetype<Bytes>(addQm(event.params.versionMetadata))
+    // let base58Hash = hexHash.toBase58()
+    subgraphVersion.metadataHash = event.params.versionMetadata
+    //subgraphVersion = fetchSubgraphVersionMetadata(subgraphVersion, base58Hash)
+    subgraphVersion.save()
+  } else {
+    versionID = joinID([subgraph.id, subgraph.versionCount.toString()])
+    subgraph.currentVersion = versionID
+    subgraph.versionCount = subgraph.versionCount.plus(BigInt.fromI32(1))
+    subgraph.updatedAt = event.block.timestamp.toI32()
+    subgraph.save()
+
+    // Create subgraph deployment, if needed. Can happen if the deployment has never been staked on
+    let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
+    let deployment = createOrLoadSubgraphDeployment(subgraphDeploymentID, event.block.timestamp)
+
+    // Create subgraph version
+    let subgraphVersion = new SubgraphVersion(versionID)
+    subgraphVersion.subgraph = subgraph.id
+    subgraphVersion.subgraphDeployment = subgraphDeploymentID
+    subgraphVersion.version = versionNumber as i32
+    subgraphVersion.createdAt = event.block.timestamp.toI32()
+    let hexHash = changetype<Bytes>(addQm(event.params.versionMetadata))
+    let base58Hash = hexHash.toBase58()
+    subgraphVersion.metadataHash = event.params.versionMetadata
+    //subgraphVersion = fetchSubgraphVersionMetadata(subgraphVersion, base58Hash)
+    subgraphVersion.save()
+  }
 }
 
 // - event: LegacySubgraphClaimed(indexed address,uint256)
