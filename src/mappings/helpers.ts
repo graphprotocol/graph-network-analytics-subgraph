@@ -58,6 +58,7 @@ export function createOrLoadSubgraph(
     subgraph.migrated = false
     subgraph.initializing = false
     subgraph.nftID = bigIntID.toString()
+    subgraph.entityVersion = 2
 
     subgraph.signalledTokens = BigInt.fromI32(0)
     subgraph.unsignalledTokens = BigInt.fromI32(0)
@@ -288,6 +289,7 @@ export function createOrLoadNameSignal(
   if (nameSignal == null) {
     nameSignal = new NameSignal(nameSignalID)
     let underlyingCurator = createOrLoadCurator(curator, timestamp)
+    nameSignal.entityVersion = 2
     nameSignal.curator = underlyingCurator.id
     nameSignal.subgraph = subgraphID
     nameSignal.signalledTokens = BigInt.fromI32(0)
@@ -850,4 +852,79 @@ export function getSubgraphID(graphAccount: Address, subgraphNumber: BigInt): Bi
   let hashedId = Bytes.fromByteArray(crypto.keccak256(ByteArray.fromHexString(unhashedSubgraphID)))
   let bigIntRepresentation = BigInt.fromUnsignedBytes(changetype<Bytes>(hashedId.reverse()))
   return bigIntRepresentation
+}
+
+export function duplicateOrUpdateSubgraphWithNewID(entity: Subgraph, newID: String, newEntityVersion: i32): Subgraph {
+  let subgraph = Subgraph.load(newID)
+  if (subgraph == null) {
+    subgraph = new Subgraph(newID)
+  }
+
+  subgraph.owner = entity.owner
+  //subgraph.currentVersion = entity.currentVersion // currentVersion will have to be updated to be the duplicated SubgraphVersion entity afterwards
+  subgraph.versionCount = entity.versionCount
+  subgraph.createdAt = entity.createdAt
+  subgraph.updatedAt = entity.updatedAt
+  subgraph.active = entity.active
+  subgraph.migrated = entity.migrated
+  subgraph.nftID = entity.nftID
+  subgraph.oldID = entity.oldID
+  subgraph.creatorAddress = entity.creatorAddress
+  subgraph.subgraphNumber = entity.subgraphNumber
+  subgraph.initializing = entity.initializing
+  subgraph.signalledTokens = entity.signalledTokens
+  subgraph.unsignalledTokens = entity.unsignalledTokens
+  subgraph.nameSignalAmount = entity.nameSignalAmount
+  subgraph.reserveRatio = entity.reserveRatio
+  subgraph.withdrawableTokens = entity.withdrawableTokens
+  subgraph.withdrawnTokens = entity.withdrawnTokens
+  subgraph.metadataHash = entity.metadataHash
+  // subgraph.pastVersions = entity.pastVersions This is a derived field, we won't copy, but need to make sure NameSignals are duplicated too.
+  // subgraph.nameSignals = entity.nameSignals This is a derived field, we won't copy, but need to make sure NameSignals are duplicated too.
+  // subgraph.categories = entity.categories This is a derived field, we wont' copy, but need to make sure Categories auxiliary entities are properly duplicated too.
+
+  subgraph.entityVersion = newEntityVersion
+  subgraph.linkedEntity = entity.id // this is the entity id, since for the entity, this value will be this particular entity.
+
+  return subgraph as Subgraph
+}
+
+export function duplicateOrUpdateSubgraphVersionWithNewID(entity: SubgraphVersion, newID: String, newEntityVersion: i32): SubgraphVersion {
+  let version = SubgraphVersion.load(newID)
+  if (version == null) {
+    version = new SubgraphVersion(newID)
+  }
+
+  version.subgraphDeployment = entity.subgraphDeployment
+  version.version = entity.version
+  version.createdAt = entity.createdAt
+  version.metadataHash = entity.metadataHash
+
+  version.entityVersion = newEntityVersion
+  version.linkedEntity = entity.id
+
+  return version as SubgraphVersion
+}
+
+export function duplicateOrUpdateNameSignalWithNewID(entity: NameSignal, newID: String, newEntityVersion: i32): NameSignal {
+  let signal = NameSignal.load(newID)
+  if (signal == null) {
+    signal = new NameSignal(newID)
+  }
+
+  signal.curator = entity.curator
+  //signal.subgraph = entity.subgraph
+  signal.signalledTokens = entity.signalledTokens
+  signal.unsignalledTokens = entity.unsignalledTokens
+  signal.withdrawnTokens = entity.withdrawnTokens
+  signal.nameSignal = entity.nameSignal
+  signal.lastNameSignalChange = entity.lastNameSignalChange
+  signal.realizedRewards = entity.realizedRewards
+  signal.averageCostBasis = entity.averageCostBasis
+  signal.averageCostBasisPerSignal = entity.averageCostBasisPerSignal
+
+  signal.entityVersion = newEntityVersion
+  signal.linkedEntity = entity.id
+
+  return signal as NameSignal
 }

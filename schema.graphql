@@ -242,6 +242,12 @@ type Subgraph @entity {
   "Subgraph number used to create the ID. Only available for Subgraphs created pre-migration"
   subgraphNumber: BigInt
 
+  "Version of the entity. Subgraph entities are changing the way their ID is generated when the new GNS v2 rolls out so we need to differnetiate them"
+  entityVersion: Int!
+
+  "Subgraph entities might have 'duplicate' entities so that old IDs can be persisted and still queried properly. If that happens we have to link both duplicate entities to be able to update them properly."
+  linkedEntity: Subgraph
+
   # Name curation data for bonding curve
   # Note that the Subgraphs V signal is actually stored in a Signal entity, which
   # considers the GNS as a Curator
@@ -302,6 +308,10 @@ type SubgraphVersion @entity {
   # description: String!
   # "Semantic versioning label"
   # label: String!
+
+  entityVersion: Int!
+
+  linkedEntity: Subgraph
 }
 
 """
@@ -868,6 +878,10 @@ type NameSignal @entity {
   averageCostBasis: BigDecimal! # note this is ONLY name signal. This is okay for the protocol for now
   "averageCostBasis / nameSignal"
   averageCostBasisPerSignal: BigDecimal!
+
+  entityVersion: Int!
+
+  linkedEntity: Subgraph
 }
 
 """
