@@ -582,7 +582,7 @@ export function handleNSignalMintedV2(event: SignalMinted): void {
   }
   nameSignal.save()
 
-  if (subgraph.linkedEntity != null) {
+  if (subgraph.linkedEntity != null && nameSignal.linkedEntity) {
     let nameSignalDuplicate = duplicateOrUpdateNameSignalWithNewID(
       nameSignal,
       nameSignal.linkedEntity!,
@@ -664,7 +664,7 @@ export function handleNSignalBurnedV2(event: SignalBurned): void {
   }
   nameSignal.save()
 
-  if (subgraph.linkedEntity != null) {
+  if (subgraph.linkedEntity != null && nameSignal.linkedEntity) {
     let nameSignalDuplicate = duplicateOrUpdateNameSignalWithNewID(
       nameSignal,
       nameSignal.linkedEntity!,
@@ -732,7 +732,7 @@ export function handleGRTWithdrawnV2(event: GRTWithdrawn1): void {
   nameSignal.lastNameSignalChange = event.block.timestamp.toI32()
   nameSignal.save()
 
-  if (subgraph.linkedEntity != null) {
+  if (subgraph.linkedEntity != null && nameSignal.linkedEntity) {
     let nameSignalDuplicate = duplicateOrUpdateNameSignalWithNewID(
       nameSignal,
       nameSignal.linkedEntity!,
