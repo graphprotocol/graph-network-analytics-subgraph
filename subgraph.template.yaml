@@ -1,9 +1,6 @@
 specVersion: 0.0.2
 description: Graph Network analytics subgraph
 repository: https://github.com/graphprotocol/graph-network-analytics-subgraph
-graft:
-  base: QmQSrYeZdakpvHKUB8FFgjJipUiee25JSK3gXKYyjVEu7k
-  block: 13887937
 schema:
   file: ./schema.graphql
 dataSources:
