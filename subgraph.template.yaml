@@ -36,8 +36,8 @@ dataSources:
     name: GNS
     network: {{network}}
     source:
-      address: '{{gns}}'
-      abi: GNS
+      address: "{{gns}}"
+      abi: GNSStitched
       startBlock: {{blockNumber}}
     mapping:
       kind: ethereum/events
@@ -51,7 +51,7 @@ dataSources:
         - GraphAccount
         - NameSignal
       abis:
-        - name: GNS
+        - name: GNSStitched
           file: ./abis/GNSStitched.json
         - name: ENS
           file: ./node_modules/@graphprotocol/contracts/dist/abis/IENS.json
@@ -102,7 +102,7 @@ dataSources:
     name: SubgraphNFT
     network: {{network}}
     source:
-      address: '{{subgraphNFT}}'
+      address: "{{subgraphNFT}}"
       abi: SubgraphNFT
       startBlock: {{blockNumber}}
     mapping:
