@@ -311,7 +311,7 @@ type SubgraphVersion @entity {
 
   entityVersion: Int!
 
-  linkedEntity: Subgraph
+  linkedEntity: SubgraphVersion
 }
 
 """
@@ -881,7 +881,7 @@ type NameSignal @entity {
 
   entityVersion: Int!
 
-  linkedEntity: Subgraph
+  linkedEntity: NameSignal
 }
 
 """
