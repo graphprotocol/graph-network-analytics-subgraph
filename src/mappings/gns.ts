@@ -20,7 +20,7 @@ import {
   SubgraphVersionUpdated,
   LegacySubgraphClaimed,
   Transfer,
-} from '../types/GNS/GNS'
+} from '../types/GNS/GNSStitched'
 
 import {
   Subgraph,
