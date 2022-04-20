@@ -385,10 +385,10 @@
     "@ethersproject/properties" "^5.5.0"
     "@ethersproject/strings" "^5.5.0"
 
-"@graphprotocol/contracts@1.10.1":
-  version "1.10.1"
-  resolved "https://registry.yarnpkg.com/@graphprotocol/contracts/-/contracts-1.10.1.tgz#28936a4d534aa15c9a298553ff4e04d90ddcf524"
-  integrity sha512-anLOflY1FRIpSI5BulsYRm/ecU3Q/x1IompeGOXC6nSY4gZtvbPhwqfWo6dFGU+3ZveNyS/O0SEJVicjzXPDUQ==
+"@graphprotocol/contracts@1.10.2":
+  version "1.10.2"
+  resolved "https://registry.yarnpkg.com/@graphprotocol/contracts/-/contracts-1.10.2.tgz#ffbb9abf20e57d50a4b63d9a7933a091860a37cb"
+  integrity sha512-6jolf+4SLpssc0s/GS5f1ai539NXSLpE+rGUJEoFQZldtWlDe55LlLKKnOvzPn8rd+SIyACAUt6gJ8VeP9gjqw==
   dependencies:
     ethers "^5.4.4"
 

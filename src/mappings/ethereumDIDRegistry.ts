@@ -21,17 +21,20 @@ export function handleDIDAttributeChanged(event: DIDAttributeChanged): void {
 
     let ipfsData = ipfs.cat(base58Hash)
     if (ipfsData !== null) {
-      let data = json.fromBytes(ipfsData as Bytes).toObject()
-      graphAccount.codeRepository = jsonToString(data.get('codeRepository'))
-      graphAccount.description = jsonToString(data.get('description'))
-      graphAccount.image = jsonToString(data.get('image'))
-      graphAccount.displayName = jsonToString(data.get('displayName'))
-      let isOrganization = data.get('isOrganization')
-      if (isOrganization != null && isOrganization.kind === JSONValueKind.BOOL) {
-        graphAccount.isOrganization = isOrganization.toBool()
+      let tryData = json.try_fromBytes(ipfsData as Bytes)
+      if (tryData.isOk) {
+        let data = tryData.value.toObject()
+        graphAccount.codeRepository = jsonToString(data.get('codeRepository'))
+        graphAccount.description = jsonToString(data.get('description'))
+        graphAccount.image = jsonToString(data.get('image'))
+        graphAccount.displayName = jsonToString(data.get('displayName'))
+        let isOrganization = data.get('isOrganization')
+        if (isOrganization != null && isOrganization.kind === JSONValueKind.BOOL) {
+          graphAccount.isOrganization = isOrganization.toBool()
+        }
+        graphAccount.website = jsonToString(data.get('website'))
+        graphAccount.save()
       }
-      graphAccount.website = jsonToString(data.get('website'))
-      graphAccount.save()
     }
   }
 }
