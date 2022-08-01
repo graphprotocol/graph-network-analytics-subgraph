@@ -1,9 +1,9 @@
-name: Production Subgraph (Mainnet)
+name: Testnet Subgraph (Goerli)
 
 on:
   push:
-    tags:
-      - v*
+    branches:
+      - mainnet-staging
 
 jobs:
   deploy:
@@ -27,9 +27,9 @@ jobs:
           NODE_AUTH_TOKEN: ${{secrets.graphprotocol_npm_token}}
 
       # Run scripts
-      - name: Prepare addresses mainnet
-        run: ./node_modules/.bin/ts-node config/mainnetAddressScript.ts && ./node_modules/.bin/mustache ./config/generatedAddresses.json ./config/addresses.template.ts > ./config/addresses.ts
-      - name: Prepare mainnet
+      - name: Prepare addresses rinkeby
+        run: ./node_modules/.bin/ts-node config/rinkebyAddressScript.ts && ./node_modules/.bin/mustache ./config/generatedAddresses.json ./config/addresses.template.ts > ./config/addresses.ts
+      - name: Prepare rinkeby
         run: ./node_modules/.bin/mustache ./config/generatedAddresses.json subgraph.template.yaml > subgraph.yaml && ./node_modules/@graphprotocol/graph-cli/bin/graph codegen --output-dir src/types/
-      - name: Deploy to mainnet production
-        run: ./node_modules/@graphprotocol/graph-cli/bin/graph deploy graphprotocol/graph-network-analytics --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/ --access-token ${{secrets.access_token}}
+      - name: Deploy to testnet rinkeby
+        run: ./node_modules/@graphprotocol/graph-cli/bin/graph deploy graphprotocol/graph-network-analytics-testnet --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/ --access-token ${{secrets.access_token}}
