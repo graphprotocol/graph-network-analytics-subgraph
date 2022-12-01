@@ -387,10 +387,10 @@
     "@ethersproject/properties" "^5.7.0"
     "@ethersproject/strings" "^5.7.0"
 
-"@graphprotocol/contracts@2.0.1-testnet-scratch1":
-  version "2.0.1-testnet-scratch1"
-  resolved "https://registry.yarnpkg.com/@graphprotocol/contracts/-/contracts-2.0.1-testnet-scratch1.tgz#b5228be5f7cab217a75bc9001791c0e0c5660e4e"
-  integrity sha512-Cjs4sJIQ/OJNABUMuld0ZgS5Jil+L2zCnojYGMVZ1rtCQwH5XxTzVwr3Z5r2mtW2thDefrhF4+DrcELVp/u1wQ==
+"@graphprotocol/contracts@l2-testnet":
+  version "2.0.0-testnet"
+  resolved "https://registry.yarnpkg.com/@graphprotocol/contracts/-/contracts-2.0.0-testnet.tgz#95f3156a03bffc754f523240bf47801a4cbc7eca"
+  integrity sha512-ZJ/dxGeSnN4cFI7HGUcU2HBe7hZtNat/5UX2B4f27sQyfV9IJBcXy+6wBugn97rmZFPGj3yk7K1PMvJVVOFKpA==
   dependencies:
     ethers "^5.6.0"
 
