@@ -27,7 +27,7 @@ export let addresses: Addresses = {
 const main = (): void => {
   try {
     let output = JSON.parse(mustache.render(JSON.stringify(addresses), renameAddresses))
-    output.blockNumber = '10000' // Hardcoded from first contract deploy of the latest phase
+    output.blockNumber = '1023264' // Hardcoded from first contract deploy of the latest phase
     output.network = 'arbitrum-goerli'
     fs.writeFileSync(__dirname + '/generatedAddresses.json', JSON.stringify(output, null, 2))
   } catch (e) {
