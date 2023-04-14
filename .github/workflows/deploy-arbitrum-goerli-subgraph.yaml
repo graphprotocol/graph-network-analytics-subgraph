@@ -2,8 +2,8 @@ name: Testnet Subgraph L2 (Arbitrum-Goerli)
 
 on:
   push:
-    branches:
-      - mainnet-staging
+    tags:
+      - v*
 
 jobs:
   deploy:

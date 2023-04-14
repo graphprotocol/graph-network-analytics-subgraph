@@ -29,6 +29,9 @@ const main = (): void => {
     let output = JSON.parse(mustache.render(JSON.stringify(addresses), renameAddresses))
     output.blockNumber = '7210000' // Hardcoded from first contract deploy of the latest phase
     output.network = 'goerli'
+    if(output.ens == '') {
+      output.ens = '0x0000000000000000000000000000000000000000' // to avoid crashes due to bad config
+    }
     fs.writeFileSync(__dirname + '/generatedAddresses.json', JSON.stringify(output, null, 2))
   } catch (e) {
     console.log(`Error saving artifacts: ${e.message}`)
