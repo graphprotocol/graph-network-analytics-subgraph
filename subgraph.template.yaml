@@ -1,6 +1,8 @@
 specVersion: 0.0.2
 description: Graph Network analytics subgraph
 repository: https://github.com/graphprotocol/graph-network-analytics-subgraph
+features:
+  - fullTextSearch
 schema:
   file: ./schema.graphql
 dataSources:
@@ -13,7 +15,7 @@ dataSources:
   #     startBlock: {{blockNumber}}
   #   mapping:
   #     kind: ethereum/events
-  #     apiVersion: 0.0.5
+  #     apiVersion: 0.0.7
   #     language: wasm/assemblyscript
   #     file: ./src/mappings/controller.ts
   #     entities:
@@ -41,7 +43,7 @@ dataSources:
       startBlock: {{blockNumber}}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.7
       language: wasm/assemblyscript
       file: ./src/mappings/gns.ts
       entities:
@@ -107,7 +109,7 @@ dataSources:
       startBlock: {{blockNumber}}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.7
       language: wasm/assemblyscript
       file: ./src/mappings/gns.ts
       entities:
@@ -131,7 +133,7 @@ dataSources:
       startBlock: {{blockNumber}}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.7
       language: wasm/assemblyscript
       file: ./src/mappings/serviceRegistry.ts
       entities:
@@ -153,7 +155,7 @@ dataSources:
       startBlock: {{blockNumber}}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.7
       language: wasm/assemblyscript
       file: ./src/mappings/staking.ts
       entities:
@@ -219,7 +221,7 @@ dataSources:
       startBlock: {{blockNumber}}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.7
       language: wasm/assemblyscript
       file: ./src/mappings/curation.ts
       entities:
@@ -251,7 +253,7 @@ dataSources:
       startBlock: {{blockNumber}}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.7
       language: wasm/assemblyscript
       file: ./src/mappings/ethereumDIDRegistry.ts
       entities:
@@ -271,7 +273,7 @@ dataSources:
       startBlock: {{blockNumber}}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.7
       language: wasm/assemblyscript
       file: ./src/mappings/rewardsManager.ts
       entities:
@@ -290,3 +292,16 @@ dataSources:
         #   handler: handleImplementationUpdated
         # - event: ParameterUpdated(string)
         #   handler: handleParameterUpdated
+templates:
+  - name: GraphAccountMetadata
+    kind: file/ipfs
+    mapping:
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/ipfs.ts
+      handler: handleGraphAccountMetadata
+      entities:
+        - GraphAccountMetadata
+      abis:
+        - name: EpochManager
+          file: ./node_modules/@graphprotocol/contracts/dist/abis/EpochManager.json
