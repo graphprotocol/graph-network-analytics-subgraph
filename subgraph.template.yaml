@@ -3,7 +3,10 @@ description: Graph Network analytics subgraph
 repository: https://github.com/graphprotocol/graph-network-analytics-subgraph
 features:
   - fullTextSearch
+<<<<<<< HEAD
   - ipfsOnEthereumContracts
+=======
+>>>>>>> feat: FDS refactor
 schema:
   file: ./schema.graphql
 dataSources:
@@ -450,3 +453,16 @@ dataSources:
         #   handler: handleImplementationUpdated
         # - event: ParameterUpdated(string)
         #   handler: handleParameterUpdated
+templates:
+  - name: GraphAccountMetadata
+    kind: file/ipfs
+    mapping:
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/ipfs.ts
+      handler: handleGraphAccountMetadata
+      entities:
+        - GraphAccountMetadata
+      abis:
+        - name: EpochManager
+          file: ./node_modules/@graphprotocol/contracts/dist/abis/EpochManager.json
