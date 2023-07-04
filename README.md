@@ -15,8 +15,8 @@ This repository has three different configurations for the `testnet`, `mainnet`,
 `mainnet-staging` subgraphs. These can be seen in the npm scripts.
 
 We are using `mustache` to configure two different `subgraph.yaml` manifests. Each manifest
-will have different contract addresses populated depending on whether we are using rinkeby or
-mainnet. Ensure the npm package for `@graphprotocol/contracts` is set to the newest rinkeby
+will have different contract addresses populated depending on whether we are using goerli or
+mainnet. Ensure the npm package for `@graphprotocol/contracts` is set to the newest goerli
 or mainnet package, [which you can find here](https://www.npmjs.com/package/@graphprotocol/contracts).
 
 
@@ -77,8 +77,8 @@ to do if you are not part of the `graphprotocol` organization) you can run the f
 yarn deploy-testing
 ```
 Note that you will have to fill in your own subgraph name in the npm script, where it says
-`<INSERT_SUBGRAPH_NAME>`. Depending if you are deploying to rinkeby or mainnet, you will also
-have to fill in `prepare:rinkeby` or `prepare:mainnet` where it has `<INSERT_MAINNET_OR_RINKEBY>`.
+`<INSERT_SUBGRAPH_NAME>`. Depending if you are deploying to goerli or mainnet, you will also
+have to fill in `prepare:goerli` or `prepare:mainnet` where it has `<INSERT_MAINNET_OR_GOERLI>`.
 
 ## Automated deploy
 **Staging**
