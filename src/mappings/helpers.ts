@@ -32,6 +32,8 @@ export function createOrLoadGraphAccount(id: string, timeStamp: BigInt): GraphAc
     graphAccount.createdAt = timeStamp.toI32()
     graphAccount.operators = []
     graphAccount.balance = BigInt.fromI32(0)
+    graphAccount.balanceReceivedFromL1Delegation = BigInt.fromI32(0)
+    graphAccount.balanceReceivedFromL1Signalling = BigInt.fromI32(0)
     graphAccount.curationApproval = BigInt.fromI32(0)
     graphAccount.stakingApproval = BigInt.fromI32(0)
     graphAccount.gnsApproval = BigInt.fromI32(0)
@@ -55,6 +57,8 @@ export function createOrLoadSubgraph(
     subgraph.updatedAt = timestamp.toI32()
     subgraph.versionCount = BigInt.fromI32(0)
     subgraph.active = true
+    subgraph.startedTransferToL2 = false
+    subgraph.transferredToL2 = false
     subgraph.migrated = false
     subgraph.initializing = false
     subgraph.nftID = bigIntID.toString()
@@ -66,6 +70,8 @@ export function createOrLoadSubgraph(
     subgraph.reserveRatio = 0
     subgraph.withdrawableTokens = BigInt.fromI32(0)
     subgraph.withdrawnTokens = BigInt.fromI32(0)
+    subgraph.signalledTokensSentToL2 = BigInt.fromI32(0)
+    subgraph.signalledTokensReceivedOnL2 = BigInt.fromI32(0)
 
     subgraph.save()
 
@@ -93,6 +99,9 @@ export function createOrLoadSubgraphDeployment(
     deployment.queryFeeRebates = BigInt.fromI32(0)
     deployment.delegatorQueryFees = BigInt.fromI32(0)
     deployment.curatorFeeRewards = BigInt.fromI32(0)
+    deployment.transferredToL2 = false
+    deployment.signalledTokensSentToL2 = BigInt.fromI32(0)
+    deployment.signalledTokensReceivedOnL2 = BigInt.fromI32(0)
 
     deployment.signalledTokens = BigInt.fromI32(0)
     deployment.unsignalledTokens = BigInt.fromI32(0)
@@ -148,6 +157,9 @@ export function createOrLoadIndexer(id: string, timestamp: BigInt): Indexer {
     indexer.forcedClosures = 0
     indexer.allocationCount = 0
     indexer.totalAllocationCount = BigInt.fromI32(0)
+
+    indexer.transferredToL2 = false
+    indexer.stakedTokensTransferredToL2 = BigInt.fromI32(0)
 
     indexer.delegatorsCount = BigInt.fromI32(0)
 
@@ -207,6 +219,8 @@ export function createOrLoadDelegatedStake(
     delegatedStake.lockedTokens = BigInt.fromI32(0)
     delegatedStake.lockedUntil = 0
     delegatedStake.shareAmount = BigInt.fromI32(0)
+    delegatedStake.transferredToL2 = false
+    delegatedStake.stakedTokensTransferredToL2 = BigInt.fromI32(0)
     delegatedStake.personalExchangeRate = BigDecimal.fromString('1')
     delegatedStake.latestIndexerExchangeRate = BigDecimal.fromString('1')
     delegatedStake.realizedRewards = BigDecimal.fromString('0')
@@ -298,6 +312,9 @@ export function createOrLoadNameSignal(
     nameSignal.nameSignal = BigInt.fromI32(0)
     nameSignal.lastNameSignalChange = 0
     nameSignal.realizedRewards = BigInt.fromI32(0)
+    nameSignal.signalledTokensSentToL2 = BigInt.fromI32(0)
+    nameSignal.signalledTokensReceivedOnL2 = BigInt.fromI32(0)
+    nameSignal.transferredToL2 = false
     nameSignal.averageCostBasis = BigDecimal.fromString('0')
     nameSignal.averageCostBasisPerSignal = BigDecimal.fromString('0')
     nameSignal.save()
@@ -927,4 +944,30 @@ export function duplicateOrUpdateNameSignalWithNewID(entity: NameSignal, newID: 
   signal.linkedEntity = entity.id
 
   return signal as NameSignal
+}
+
+export function getAliasedL2SubgraphID(id: BigInt): BigInt {
+  // offset === 0x1111000000000000000000000000000000000000000000000000000000001111 or "7719354826016761135949426780745810995650277145449579228033297493447455805713"
+  // base === 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff + 1 or "115792089237316195423570985008687907853269984665640564039457584007913129639936"
+  // const expectedL2SubgraphId = l1SubgraphId.add(offset).mod(base)
+  let offset = BigInt.fromString("7719354826016761135949426780745810995650277145449579228033297493447455805713")
+  let base = BigInt.fromString("115792089237316195423570985008687907853269984665640564039457584007913129639936")
+  return (id.plus(offset)).mod(base)
+}
+
+// TODO - this is broken if we change the delegatio ratio
+// Need to remove, or find a fix
+export function calculateCapacities(indexer: Indexer): Indexer {
+  let graphNetwork = createOrLoadGraphNetwork()
+  let tokensDelegatedMax = indexer.stakedTokens.times(BigInt.fromI32(graphNetwork.delegationRatio))
+
+  // Eligible to add to the capacity
+  indexer.delegatedCapacity =
+    indexer.delegatedTokens < tokensDelegatedMax ? indexer.delegatedTokens : tokensDelegatedMax
+
+  indexer.tokenCapacity = indexer.stakedTokens.plus(indexer.delegatedCapacity)
+  indexer.availableStake = indexer.tokenCapacity
+    .minus(indexer.allocatedTokens)
+    .minus(indexer.lockedTokens)
+  return indexer
 }

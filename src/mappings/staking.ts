@@ -7,7 +7,6 @@ import {
   AllocationCreated,
   AllocationClosed,
   RebateClaimed,
-  ParameterUpdated,
   Staking,
   SetOperator,
   StakeDelegated,
@@ -18,6 +17,9 @@ import {
   SlasherUpdate,
   AssetHolderUpdate,
 } from '../types/Staking/Staking'
+import {
+  ParameterUpdated,
+} from '../types/StakingExtension/StakingExtension'
 import {
   Indexer,
   Allocation,
@@ -47,6 +49,7 @@ import {
   getAndUpdateSubgraphDeploymentDailyData,
   batchUpdateDelegatorsForIndexer,
   getAndUpdateNetworkDailyData,
+  calculateCapacities,
 } from './helpers'
 import { avoidNegativeRoundingError } from './utils'
 
@@ -166,7 +169,7 @@ export function handleStakeSlashed(event: StakeSlashed): void {
   let graphNetwork = createOrLoadGraphNetwork()
   let staking = Staking.bind(event.address)
   let indexerStored = staking.stakes(event.params.indexer)
-  indexer.lockedTokens = indexerStored.value2
+  indexer.lockedTokens = indexerStored.tokensLocked
   indexer = updateAdvancedIndexerMetrics(indexer as Indexer)
   indexer = calculateCapacities(indexer as Indexer)
   indexer.save()
@@ -768,20 +771,3 @@ export function handleParameterUpdated(event: ParameterUpdated): void {
 //   graphNetwork.stakingImplementations = implementations
 //   graphNetwork.save()
 // }
-
-// TODO - this is broken if we change the delegatio ratio
-// Need to remove, or find a fix
-function calculateCapacities(indexer: Indexer): Indexer {
-  let graphNetwork = createOrLoadGraphNetwork()
-  let tokensDelegatedMax = indexer.stakedTokens.times(BigInt.fromI32(graphNetwork.delegationRatio))
-
-  // Eligible to add to the capacity
-  indexer.delegatedCapacity =
-    indexer.delegatedTokens < tokensDelegatedMax ? indexer.delegatedTokens : tokensDelegatedMax
-
-  indexer.tokenCapacity = indexer.stakedTokens.plus(indexer.delegatedCapacity)
-  indexer.availableStake = indexer.tokenCapacity
-    .minus(indexer.allocatedTokens)
-    .minus(indexer.lockedTokens)
-  return indexer
-}

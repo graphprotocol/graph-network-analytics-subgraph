@@ -135,6 +135,11 @@ type GraphAccount @entity {
   "Graph token balance"
   balance: BigInt!
 
+  "Balance received due to failed signal transfer from L1"
+  balanceReceivedFromL1Signalling: BigInt!
+  "Balance received due to failed delegation transfer from L1"
+  balanceReceivedFromL1Delegation: BigInt!
+
   "Amount this account has approved staking to transfer their GRT"
   curationApproval: BigInt!
 
@@ -275,6 +280,31 @@ type Subgraph @entity {
   # # Metadata from IPFS linked in GNS
   "Subgraph metadata"
   metadataHash: Bytes
+
+  "Whether the subgraph has been transferred from L1 to L2. Subgraphs published on L2 will have this as false unless they were published through a transfer"
+  startedTransferToL2: Boolean!
+  "Timestamp for the L1 -> L2 Transfer. Null if the transfer hasn't started yet"
+  startedTransferToL2At: BigInt
+  "Block number for the L1 -> L2 Transfer. Null if the transfer hasn't started yet"
+  startedTransferToL2AtBlockNumber: BigInt
+  "Transaction hash for the L1 -> L2 Transfer. Null if the transfer hasn't started yet"
+  startedTransferToL2AtTx: String
+  "Whether the subgraph has been fully transferred from L1 to L2. Subgraphs published on L2 will have this as false unless they were published through a transfer"
+  transferredToL2: Boolean!
+  "Timestamp for the L1 -> L2 Transfer. Null if it's not fully transferred or if it's an L1 deployment"
+  transferredToL2At: BigInt
+  "Block number for the L1 -> L2 Transfer. Null if it's not fully transferred or if it's an L1 deployment"
+  transferredToL2AtBlockNumber: BigInt
+  "Transaction hash for the L1 -> L2 Transfer. Null if it's not fully transferred or if it's an L1 deployment"
+  transferredToL2AtTx: String
+  "Amount of GRT transferred to L2"
+  signalledTokensSentToL2: BigInt!
+  "Amount of GRT received on L2"
+  signalledTokensReceivedOnL2: BigInt!
+  "ID of the subgraph on L2. Null if it's not transferred"
+  idOnL2: String
+  "ID of the subgraph on L1. Null if it's not transferred"
+  idOnL1: String
 }
 
 """
@@ -388,6 +418,19 @@ type SubgraphDeployment @entity {
   # dataSources: [DataSource!]
 
   dailyData: [SubgraphDeploymentDailyData!]! @derivedFrom(field: "subgraphDeployment")
+
+  "Whether the deployment has been transferred from L1 to L2. Subgraphs published on L2 will have this as false unless they were published through a transfer"
+  transferredToL2: Boolean!
+  "Timestamp for the L1 -> L2 Transfer. Null if it's not fully transferred or if it's an L1 deployment"
+  transferredToL2At: BigInt
+  "Block number for the L1 -> L2 Transfer. Null if it's not fully transferred or if it's an L1 deployment"
+  transferredToL2AtBlockNumber: BigInt
+  "Transaction hash for the L1 -> L2 Transfer. Null if it's not fully transferred or if it's an L1 deployment"
+  transferredToL2AtTx: String
+  "Amount of GRT transferred to L2"
+  signalledTokensSentToL2: BigInt!
+  "Amount of GRT received on L2"
+  signalledTokensReceivedOnL2: BigInt!
 }
 
 """
@@ -510,6 +553,27 @@ type Indexer @entity {
   delegatorsCount: BigInt!
 
   dailyData: [IndexerDailyData!]! @derivedFrom(field: "indexer")
+
+  "Whether the indexer has been transferred from L1 to L2 partially or fully"
+  transferredToL2: Boolean!
+  "Timestamp for the FIRST L1 -> L2 Transfer"
+  firstTransferredToL2At: BigInt
+  "Block number for the FIRST L1 -> L2 Transfer"
+  firstTransferredToL2AtBlockNumber: BigInt
+  "Transaction hash for the FIRST L1 -> L2 Transfer"
+  firstTransferredToL2AtTx: String
+  "Timestamp for the latest L1 -> L2 Transfer"
+  lastTransferredToL2At: BigInt
+  "Block number for the latest L1 -> L2 Transfer"
+  lastTransferredToL2AtBlockNumber: BigInt
+  "Transaction hash for the latest L1 -> L2 Transfer"
+  lastTransferredToL2AtTx: String
+  "Amount of GRT transferred to L2. Only visible from L1, as there's no events for it on L2"
+  stakedTokensTransferredToL2: BigInt!
+  "ID of the indexer on L2. Null if it's not transferred"
+  idOnL2: String
+  "ID of the indexer on L1. Null if it's not transferred"
+  idOnL1: String
 }
 
 """
@@ -749,6 +813,21 @@ type DelegatedStake @entity {
 
   "Auxiliary entity used for batch updates"
   relation: IndexerDelegatedStakeRelation!
+
+  "Whether the delegation has been transferred from L1 to L2"
+  transferredToL2: Boolean!
+  "Timestamp for the L1 -> L2 Transfer"
+  transferredToL2At: BigInt
+  "Block number for the L1 -> L2 Transfer"
+  transferredToL2AtBlockNumber: BigInt
+  "Transaction hash for the L1 -> L2 Transfer"
+  transferredToL2AtTx: String
+  "Amount of GRT transferred to L2. Only visible from L1, as there's no events for it on L2"
+  stakedTokensTransferredToL2: BigInt!
+  "ID of the delegation on L2. Null if it's not transferred"
+  idOnL2: String
+  "ID of the delegation on L1. Null if it's not transferred"
+  idOnL1: String
 }
 
 """
@@ -882,6 +961,23 @@ type NameSignal @entity {
   entityVersion: Int!
 
   linkedEntity: NameSignal
+
+  "Amount of GRT transferred to L2"
+  signalledTokensSentToL2: BigInt!
+  "Amount of GRT received on L2"
+  signalledTokensReceivedOnL2: BigInt!
+  "Whether the name signal has been transferred from L1 to L2. Only applies to NameSignals that have been transferred, native L2 NameSignal entities will return false"
+  transferredToL2: Boolean!
+  "Timestamp for the L1 -> L2 Transfer."
+  transferredToL2At: BigInt
+  "Block number for the L1 -> L2 Transfer."
+  transferredToL2AtBlockNumber: BigInt
+  "Transaction hash for the L1 -> L2 Transfer."
+  transferredToL2AtTx: String
+  "ID of the NameSignal entity on L2. Null if it's not transferred"
+  idOnL2: String
+  "ID of the NameSignal entity on L1. Null if it's not transferred"
+  idOnL1: String
 }
 
 """

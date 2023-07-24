@@ -12,16 +12,17 @@ export let addresses: Addresses = {
   graphToken: '{{mainnet.GraphToken.address}}',
   epochManager: '{{mainnet.EpochManager.address}}',
   disputeManager: '{{mainnet.DisputeManager.address}}',
-  staking: '{{mainnet.Staking.address}}',
+  staking: '{{mainnet.L1Staking.address}}',
   curation: '{{mainnet.Curation.address}}',
   rewardsManager: '{{mainnet.RewardsManager.address}}',
   serviceRegistry: '{{mainnet.ServiceRegistry.address}}',
-  gns: '{{mainnet.GNS.address}}',
+  gns: '{{mainnet.L1GNS.address}}',
   ens: '{{mainnet.IENS.address}}',
   ensPublicResolver: '{{mainnet.IPublicResolver.address}}',
   blockNumber: '',
   network: '',
   subgraphNFT: '{{mainnet.SubgraphNFT.address}}',
+  isL1: true,
 }
 
 const main = (): void => {
