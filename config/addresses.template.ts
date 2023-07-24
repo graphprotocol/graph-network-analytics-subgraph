@@ -14,6 +14,7 @@ export class Addresses {
   blockNumber: string
   network: string
   subgraphNFT: string
+  isL1: boolean
 }
 
 // AS compiler does not like const
@@ -32,4 +33,5 @@ export let addresses: Addresses = {
   blockNumber: '{{blockNumber}}',
   network: '{{network}}',
   subgraphNFT: '{{subgraphNFT}}',
+  isL1: {{isL1}},
 }

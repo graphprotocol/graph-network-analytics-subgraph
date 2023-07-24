@@ -12,16 +12,17 @@ export let addresses: Addresses = {
   graphToken: '{{arbitrum.GraphToken.address}}',
   epochManager: '{{arbitrum.EpochManager.address}}',
   disputeManager: '{{arbitrum.DisputeManager.address}}',
-  staking: '{{arbitrum.Staking.address}}',
+  staking: '{{arbitrum.L2Staking.address}}',
   curation: '{{arbitrum.Curation.address}}',
   rewardsManager: '{{arbitrum.RewardsManager.address}}',
   serviceRegistry: '{{arbitrum.ServiceRegistry.address}}',
-  gns: '{{arbitrum.GNS.address}}',
+  gns: '{{arbitrum.L2GNS.address}}',
   ens: '{{arbitrum.IENS.address}}',
   ensPublicResolver: '{{arbitrum.IPublicResolver.address}}',
   blockNumber: '',
   network: '',
   subgraphNFT: '{{arbitrum.SubgraphNFT.address}}',
+  isL1: false,
 }
 
 const main = (): void => {
