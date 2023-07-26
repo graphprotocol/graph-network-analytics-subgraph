@@ -1,11 +1,11 @@
-import { BigInt } from '@graphprotocol/graph-ts'
+import { BigDecimal, BigInt } from '@graphprotocol/graph-ts'
 import {
   IndexerStakeTransferredToL2,
   DelegationTransferredToL2,
   StakeDelegatedUnlockedDueToL2Transfer,
 } from '../types/L1Staking/L1Staking'
 
-import { Indexer, DelegatedStake, GraphNetwork } from '../types/schema'
+import { Indexer, DelegatedStake, GraphNetwork, Delegator, IndexerDelegatedStakeRelation } from '../types/schema'
 import {
   calculateCapacities,
   joinID,
@@ -14,6 +14,9 @@ import {
   getAndUpdateDelegatedStakeDailyData,
   getAndUpdateIndexerDailyData,
   getAndUpdateDelegatorDailyData,
+  createOrLoadGraphNetwork,
+  batchUpdateDelegatorsForIndexer,
+  getAndUpdateNetworkDailyData,
 } from './helpers'
 
 /*
@@ -47,6 +50,13 @@ export function handleIndexerStakeTransferredToL2(event: IndexerStakeTransferred
   indexer.save()
 
   getAndUpdateIndexerDailyData(indexer, event.block.timestamp);
+
+  // upgrade graph network
+  let graphNetwork = createOrLoadGraphNetwork()
+  graphNetwork.totalTokensStaked = graphNetwork.totalTokensStaked.minus(event.params.transferredStakeTokens)
+  graphNetwork.save()
+
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 /*
     /// @dev Emitted when a delegator transfers their delegation to L2
@@ -73,16 +83,16 @@ export function handleDelegationTransferredToL2(event: DelegationTransferredToL2
     event.params.transferredDelegationTokens,
   )
   delegation.shareAmount = BigInt.fromI32(0)
-  //delegation.unstakedTokens = delegation.unstakedTokens.plus(event.params.transferredDelegationTokens);
+  delegation.totalUnstakedTokens = delegation.totalUnstakedTokens.plus(event.params.transferredDelegationTokens);
   delegation.transferredToL2 = true
   delegation.transferredToL2At = event.block.timestamp
   delegation.transferredToL2AtBlockNumber = event.block.number
   delegation.transferredToL2AtTx = event.transaction.hash.toHexString()
   delegation.idOnL1 = delegationID
   delegation.idOnL2 = delegationIDL2
-  delegation.save()
 
   let indexer = Indexer.load(event.params.indexer.toHexString())!
+  let beforeUpdateDelegationExchangeRate = indexer.delegationExchangeRate
   indexer.delegatedTokens = indexer.delegatedTokens.minus(event.params.transferredDelegationTokens)
   indexer.delegatorShares = indexer.delegatorShares.minus(delegatorSharesBefore)
   if (indexer.delegatorShares != BigInt.fromI32(0)) {
@@ -94,6 +104,52 @@ export function handleDelegationTransferredToL2(event: DelegationTransferredToL2
 
   getAndUpdateIndexerDailyData(indexer, event.block.timestamp);
   getAndUpdateDelegatedStakeDailyData(delegation, event.block.timestamp);
+
+  let currentBalance = delegatorSharesBefore.toBigDecimal().times(beforeUpdateDelegationExchangeRate)
+  let oldBalance = delegatorSharesBefore.toBigDecimal().times(delegation.personalExchangeRate)
+  let realizedRewards = currentBalance.minus(oldBalance)
+  let oldOriginalDelegation = delegation.originalDelegation
+
+  delegation.realizedRewards = delegation.realizedRewards.plus(realizedRewards)
+  delegation.originalDelegation = BigDecimal.fromString('0')
+  delegation.latestIndexerExchangeRate = indexer.delegationExchangeRate
+  delegation.currentDelegation = BigDecimal.fromString('0')
+  delegation.unrealizedRewards = BigDecimal.fromString('0')
+  delegation.save()
+
+  // update delegator
+  let delegator = Delegator.load(event.params.delegator.toHexString())!
+  delegator.totalUnstakedTokens = delegator.totalUnstakedTokens.plus(event.params.transferredDelegationTokens)
+  delegator.totalRealizedRewards = delegator.totalRealizedRewards.plus(realizedRewards)
+  delegator.originalDelegation = delegator.originalDelegation.plus(oldOriginalDelegation)
+  delegator.currentDelegation = delegator.currentDelegation.minus(currentBalance)
+  delegator.stakedTokens = delegator.stakedTokens.minus(event.params.transferredDelegationTokens)
+  delegator.lockedTokens = delegator.lockedTokens.plus(event.params.transferredDelegationTokens)
+  delegator.lastUndelegatedAt = event.block.timestamp.toI32()
+  delegator.lastUndelegation = delegation.id
+  delegator.activeStakesCount = delegator.activeStakesCount - 1
+  delegator.save()
+
+  // upgrade graph network
+  let graphNetwork = createOrLoadGraphNetwork()
+  graphNetwork.totalDelegatedTokens = graphNetwork.totalDelegatedTokens.minus(event.params.transferredDelegationTokens)
+  graphNetwork.save()
+
+  // batch update delegs
+  batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
+
+  // analytics
+  let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  indexerDailyData.netDailyDelegatedTokens = indexerDailyData.netDailyDelegatedTokens.minus(
+    event.params.transferredDelegationTokens,
+  )
+  indexerDailyData.save()
+
+  // De-activate relation with indexer after batch update, so last datapoints are created properly
+  let relation = IndexerDelegatedStakeRelation.load(delegation.relation)!
+  relation.active = false
+  relation.save()
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 
 /*

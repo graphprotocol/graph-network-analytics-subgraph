@@ -79,7 +79,7 @@ export function handleCuratorBalanceReceived(event: CuratorBalanceReceived): voi
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
 
   let nameSignal = createOrLoadNameSignal(
-    event.params._l2Curator,
+    event.params._l2Curator.toHexString(),
     subgraphID,
     event.block.timestamp,
   )
@@ -120,7 +120,7 @@ export function handleCuratorBalanceReceived(event: CuratorBalanceReceived): voi
 export function handleCuratorBalanceReturnedToBeneficiary(
   event: CuratorBalanceReturnedToBeneficiary,
 ): void {
-  let graphAccount = createOrLoadGraphAccount(event.params._l2Curator, event.block.timestamp)
+  let graphAccount = createOrLoadGraphAccount(event.params._l2Curator.toHexString(), event.block.timestamp)
   graphAccount.balanceReceivedFromL1Signalling = graphAccount.balanceReceivedFromL1Signalling.plus(event.params._tokens)
   graphAccount.save()
 }
