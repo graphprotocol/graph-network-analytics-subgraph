@@ -9,7 +9,7 @@ import { createOrLoadGraphAccount } from './helpers'
     );
 */
 export function handleTransferredDelegationReturnedToDelegator(event: TransferredDelegationReturnedToDelegator): void {
-  let graphAccount = createOrLoadGraphAccount(event.params.indexer, event.block.timestamp)
+  let graphAccount = createOrLoadGraphAccount(event.params.indexer.toHexString(), event.block.timestamp)
   graphAccount.balanceReceivedFromL1Delegation = graphAccount.balanceReceivedFromL1Delegation.plus(event.params.amount)
   graphAccount.save()
 }
