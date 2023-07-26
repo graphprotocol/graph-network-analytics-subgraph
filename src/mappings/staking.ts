@@ -18,7 +18,7 @@ import {
   AssetHolderUpdate,
 } from '../types/Staking/Staking'
 import {
-  ParameterUpdated,
+  ParameterUpdated, StakingExtension,
 } from '../types/StakingExtension/StakingExtension'
 import {
   Indexer,
@@ -672,7 +672,7 @@ export function handleRebateClaimed(event: RebateClaimed): void {
 export function handleParameterUpdated(event: ParameterUpdated): void {
   let parameter = event.params.param
   let graphNetwork = createOrLoadGraphNetwork()
-  let staking = Staking.bind(event.address)
+  let staking = StakingExtension.bind(event.address)
 
   if (parameter == 'delegationRatio') {
     graphNetwork.delegationRatio = staking.delegationRatio().toI32()
