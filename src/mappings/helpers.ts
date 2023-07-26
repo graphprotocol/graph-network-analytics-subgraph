@@ -876,13 +876,15 @@ export function duplicateOrUpdateSubgraphWithNewID(entity: Subgraph, newID: Stri
   if (subgraph == null) {
     subgraph = new Subgraph(newID)
   }
-
+  
   subgraph.owner = entity.owner
   //subgraph.currentVersion = entity.currentVersion // currentVersion will have to be updated to be the duplicated SubgraphVersion entity afterwards
   subgraph.versionCount = entity.versionCount
   subgraph.createdAt = entity.createdAt
   subgraph.updatedAt = entity.updatedAt
   subgraph.active = entity.active
+  subgraph.startedTransferToL2 = entity.startedTransferToL2
+  subgraph.transferredToL2 = entity.transferredToL2
   subgraph.migrated = entity.migrated
   subgraph.nftID = entity.nftID
   subgraph.oldID = entity.oldID
@@ -895,6 +897,8 @@ export function duplicateOrUpdateSubgraphWithNewID(entity: Subgraph, newID: Stri
   subgraph.reserveRatio = entity.reserveRatio
   subgraph.withdrawableTokens = entity.withdrawableTokens
   subgraph.withdrawnTokens = entity.withdrawnTokens
+  subgraph.signalledTokensSentToL2 = entity.signalledTokensSentToL2
+  subgraph.signalledTokensReceivedOnL2 = entity.signalledTokensReceivedOnL2
   subgraph.metadataHash = entity.metadataHash
   // subgraph.pastVersions = entity.pastVersions This is a derived field, we won't copy, but need to make sure NameSignals are duplicated too.
   // subgraph.nameSignals = entity.nameSignals This is a derived field, we won't copy, but need to make sure NameSignals are duplicated too.
@@ -939,6 +943,9 @@ export function duplicateOrUpdateNameSignalWithNewID(entity: NameSignal, newID: 
   signal.realizedRewards = entity.realizedRewards
   signal.averageCostBasis = entity.averageCostBasis
   signal.averageCostBasisPerSignal = entity.averageCostBasisPerSignal
+  signal.transferredToL2 = entity.transferredToL2
+  signal.signalledTokensReceivedOnL2 = entity.signalledTokensReceivedOnL2
+  signal.signalledTokensSentToL2 = entity.signalledTokensSentToL2
 
   signal.entityVersion = newEntityVersion
   signal.linkedEntity = entity.id
