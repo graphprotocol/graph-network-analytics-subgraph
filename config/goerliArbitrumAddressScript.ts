@@ -13,7 +13,7 @@ export let addresses: Addresses = {
   epochManager: '{{arbitrum-goerli.EpochManager.address}}',
   disputeManager: '{{arbitrum-goerli.DisputeManager.address}}',
   staking: '{{arbitrum-goerli.L2Staking.address}}',
-  curation: '{{arbitrum-goerli.Curation.address}}',
+  curation: '{{arbitrum-goerli.L2Curation.address}}',
   rewardsManager: '{{arbitrum-goerli.RewardsManager.address}}',
   serviceRegistry: '{{arbitrum-goerli.ServiceRegistry.address}}',
   gns: '{{arbitrum-goerli.L2GNS.address}}',

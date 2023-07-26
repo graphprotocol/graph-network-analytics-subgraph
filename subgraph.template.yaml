@@ -1,6 +1,9 @@
 specVersion: 0.0.2
 description: Graph Network analytics subgraph
 repository: https://github.com/graphprotocol/graph-network-analytics-subgraph
+features:
+  - fullTextSearch
+  - ipfsOnEthereumContracts
 schema:
   file: ./schema.graphql
 dataSources:
@@ -237,8 +240,8 @@ dataSources:
           handler: handleDelegationTransferredToL2
         - event: IndexerStakeTransferredToL2(indexed address,indexed address,uint256)
           handler: handleIndexerStakeTransferredToL2
-        - event: StakeDelegatedUnlockedDueToL2Transfer(indexed address,indexed address)
-          handler: handleStakeDelegatedUnlockedDueToL2Transfer
+        # - event: StakeDelegatedUnlockedDueToL2Transfer(indexed address,indexed address)
+        #   handler: handleStakeDelegatedUnlockedDueToL2Transfer
 {{/isL1}}
 {{^isL1}}
   - kind: ethereum/contract
