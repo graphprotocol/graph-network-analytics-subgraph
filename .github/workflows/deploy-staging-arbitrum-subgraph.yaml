@@ -2,8 +2,8 @@ name: Staging Subgraph (Arbitrum One)
 
 on:
   push:
-    tags:
-      - v*
+    branches:
+      - mainnet-staging
 
 jobs:
   deploy:
