@@ -30,6 +30,6 @@ jobs:
       - name: Prepare addresses arbitrum goerli
         run: ./node_modules/.bin/ts-node config/goerliArbitrumAddressScript.ts && ./node_modules/.bin/mustache ./config/generatedAddresses.json ./config/addresses.template.ts > ./config/addresses.ts
       - name: Prepare arbitrum goerli
-        run: ./node_modules/.bin/mustache ./config/generatedAddresses.json subgraph.template.yaml > subgraph.yaml && ./node_modules/@graphprotocol/graph-cli/bin/graph codegen --output-dir src/types/
+        run: ./node_modules/.bin/mustache ./config/generatedAddresses.json subgraph.template.yaml > subgraph.yaml && ./node_modules/@graphprotocol/graph-cli/bin/run codegen --output-dir src/types/
       - name: Deploy to testnet rinkeby
-        run: ./node_modules/@graphprotocol/graph-cli/bin/graph deploy graphprotocol/gn-analytics-arbitrum-devnet --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/ --access-token ${{secrets.access_token}}
+        run: ./node_modules/@graphprotocol/graph-cli/bin/run deploy graphprotocol/gn-analytics-arbitrum-devnet --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/ --access-token ${{secrets.access_token}}
