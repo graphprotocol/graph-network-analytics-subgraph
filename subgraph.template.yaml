@@ -3,10 +3,6 @@ description: Graph Network analytics subgraph
 repository: https://github.com/graphprotocol/graph-network-analytics-subgraph
 features:
   - fullTextSearch
-<<<<<<< HEAD
-  - ipfsOnEthereumContracts
-=======
->>>>>>> feat: FDS refactor
 schema:
   file: ./schema.graphql
 dataSources:
