@@ -605,11 +605,11 @@ export function batchUpdateDelegatorsForIndexer(indexerId: string, timestamp: Bi
   let indexer = Indexer.load(indexerId)!
   // pre-calculates a lot of data for all delegators that exists for a specific indexer
   // using already existing links with the indexer-delegatedStake relations
-  for (let i = 0; i < indexer.delegatorsCount.toI32(); i++) {
-    let relationId = compoundId(indexer.id, BigInt.fromI32(i).toString())
-    let relation = IndexerDelegatedStakeRelation.load(relationId)!
-    if (relation.active) {
-      let delegatedStake = DelegatedStake.load(relation.stake)!
+  let delegators = indexer.delegators.load()
+
+  for (let i = 0; i < delegators.length; i++) {
+    if (!delegators[i].shareAmount.isZero()) {
+      let delegatedStake = delegators[i]
       let delegator = Delegator.load(delegatedStake.delegator)!
       // Only update core entities if there's a change in the exchange rate
       if (delegatedStake.latestIndexerExchangeRate != indexer.delegationExchangeRate) {
