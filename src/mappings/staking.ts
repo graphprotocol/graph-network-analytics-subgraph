@@ -47,7 +47,7 @@ import {
   getAndUpdateIndexerDailyData,
   calculatePricePerShare,
   getAndUpdateSubgraphDeploymentDailyData,
-  // batchUpdateDelegatorsForIndexer,
+  batchUpdateDelegatorsForIndexer,
   getAndUpdateNetworkDailyData,
   calculateCapacities,
 } from './helpers'
@@ -654,7 +654,7 @@ export function handleRebateClaimed(event: RebateClaimed): void {
   )
   graphNetwork.save()
 
-  // batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
+  batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
 
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   getAndUpdateSubgraphDeploymentDailyData(
