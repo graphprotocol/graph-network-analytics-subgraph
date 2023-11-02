@@ -16,6 +16,7 @@ import {
   DelegationParametersUpdated,
   SlasherUpdate,
   AssetHolderUpdate,
+  AllocationClosed1,
 } from '../types/Staking/Staking'
 import {
   ParameterUpdated, StakingExtension,
@@ -542,6 +543,56 @@ export function handleAllocationCollected(event: AllocationCollected): void {
  * - update and close the channel
  */
 export function handleAllocationClosed(event: AllocationClosed): void {
+  let indexerID = event.params.indexer.toHexString()
+  let allocationID = event.params.allocationID.toHexString()
+
+  // update indexer
+  let indexer = Indexer.load(indexerID)!
+  if (event.params.sender != event.params.indexer) {
+    indexer.forcedClosures = indexer.forcedClosures + 1
+  }
+  indexer.allocatedTokens = indexer.allocatedTokens.minus(event.params.tokens)
+  indexer.allocationCount = indexer.allocationCount - 1
+  indexer = updateAdvancedIndexerMetrics(indexer as Indexer)
+  indexer = calculateCapacities(indexer as Indexer)
+  indexer.save()
+
+  // update allocation
+  let allocation = Allocation.load(allocationID)!
+  allocation.poolClosedIn = event.params.epoch.toString()
+  allocation.activeForIndexer = null
+  allocation.closedAtEpoch = event.params.epoch.toI32()
+  allocation.closedAtBlockHash = event.block.hash
+  allocation.closedAtBlockNumber = event.block.number.toI32()
+  allocation.status = 'Closed'
+  allocation.poi = event.params.poi
+  allocation.save()
+
+  // update subgraph deployment. Pretty sure this should be done here, if not
+  // it would be done in handleRebateClaimed
+  let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
+  let deployment = createOrLoadSubgraphDeployment(subgraphDeploymentID, event.block.timestamp)
+  deployment.stakedTokens = deployment.stakedTokens.minus(event.params.tokens)
+  deployment.save()
+
+  // update graph network
+  let graphNetwork = createOrLoadGraphNetwork()
+  graphNetwork.totalTokensAllocated = graphNetwork.totalTokensAllocated.minus(event.params.tokens)
+  graphNetwork.save()
+
+  getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
+}
+/**
+ * @dev handleAllocationClosed
+ * - update the indexers stake
+ * - update the subgraph total stake
+ * - update the named subgraph aggregate stake
+ * - update the specific allocation
+ * - update and close the channel
+ */
+export function handleAllocationClosedCobbDouglas(event: AllocationClosed1): void {
   let indexerID = event.params.indexer.toHexString()
   let allocationID = event.params.allocationID.toHexString()
 

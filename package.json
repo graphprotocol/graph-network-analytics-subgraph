@@ -28,13 +28,17 @@
     "prepare:mainnet": "yarn prep:addresses:mainnet && mustache ./config/generatedAddresses.json subgraph.template.yaml > subgraph.yaml && graph codegen --output-dir src/types/",
     "prep:addresses:arbitrum": "ts-node config/arbitrumAddressScript.ts && mustache ./config/generatedAddresses.json ./config/addresses.template.ts > ./config/addresses.ts",
     "prepare:arbitrum": "yarn prep:addresses:arbitrum && mustache ./config/generatedAddresses.json subgraph.template.yaml > subgraph.yaml && graph codegen --output-dir src/types/",
+    "prep:addresses:arbitrum-sepolia": "ts-node config/arbitrumSepoliaAddressScript.ts && mustache ./config/generatedAddresses.json ./config/addresses.template.ts > ./config/addresses.ts",
+    "prepare:arbitrum-sepolia": "yarn prep:addresses:arbitrum-sepolia && mustache ./config/generatedAddresses.json subgraph.template.yaml > subgraph.yaml && graph codegen --output-dir src/types/",
+    "prep:addresses:sepolia": "ts-node config/sepoliaAddressScript.ts && mustache ./config/generatedAddresses.json ./config/addresses.template.ts > ./config/addresses.ts",
+    "prepare:sepolia": "yarn prep:addresses:sepolia && mustache ./config/generatedAddresses.json subgraph.template.yaml > subgraph.yaml && graph codegen --output-dir src/types/",
     "lint": "yarn eslint .",
     "lint-fix": "eslint . --fix",
     "prettier": "prettier '**/*.ts'",
     "prettier-write": "prettier --write '**/*.ts'"
   },
   "devDependencies": {
-    "@graphprotocol/contracts": "5.0.0",
+    "@graphprotocol/contracts": "5.3.0",
     "@graphprotocol/graph-cli": "^0.51.0",
     "@graphprotocol/graph-ts": "^0.31.0",
     "@types/node": "^14.0.13",
