@@ -43,7 +43,7 @@ type GraphNetwork @entity {
   totalTaxedQueryFees: BigInt!
 
   # It is hard to separate the unclaimed and rebates lost
-  "Total unclaimed rebates. Includes unclaimed rebates and rebates lost in cobbs douglas "
+  "Total unclaimed rebates. Includes unclaimed rebates and rebates lost in rebate mechanism "
   totalUnclaimedQueryFeeRebates: BigInt!
 
   # Indexing rewards globals
@@ -386,10 +386,10 @@ type SubgraphDeployment @entity {
   "Total query fees earned by this Subgraph Deployment, without curator query fees"
   queryFeesAmount: BigInt!
 
-  "Total query fee rebates for indexers earned from the protocol, through the cobbs douglas formula."
+  "Total query fee rebates for indexers earned from the protocol, through the rebate mechanism formula."
   queryFeeRebates: BigInt!
 
-  "Total query fee rebates for delegators earned from the protocol, through the cobbs douglas formula."
+  "Total query fee rebates for delegators earned from the protocol, through the rebate mechanism formula."
   delegatorQueryFees: BigInt!
 
   "Total curator rewards from fees"
@@ -479,7 +479,7 @@ type Indexer @entity {
   "Total query fees collected. Includes the portion given to delegators"
   queryFeesCollected: BigInt!
 
-  "Query fee rebate amount claimed from the protocol through cobbs douglas. Does not include portion given to delegators"
+  "Query fee rebate amount claimed from the protocol through rebate mechanism. Does not include portion given to delegators"
   queryFeeRebates: BigInt!
 
   "Total indexing rewards earned by this indexer from inflation. Including delegation rewards"
@@ -619,12 +619,12 @@ type Allocation @entity {
   "Fees this allocation collected from query fees upon closing. Excludes curator reward and protocol tax"
   queryFeesCollected: BigInt!
 
-  "Query fee rebate amount claimed from the protocol through cobbs douglas. Does not include portion given to delegators"
+  "Query fee rebate amount claimed from the protocol through rebates mechanism. Does not include portion given to delegators"
   queryFeeRebates: BigInt!
 
   "Query fee rebates collected from the protocol. Can differ from queryFeeRebates if multiple vouchers per allocation are allowed."
   distributedRebates: BigInt!
-  
+
   "Curator rewards deposited to the curating bonding curve"
   curatorRewards: BigInt!
 
@@ -682,7 +682,7 @@ type Pool @entity {
   "Total query fees collected in this epoch"
   totalQueryFees: BigInt!
 
-  "Total query fees claimed in this epoch. Can be smaller than totalFees because of cobbs douglas function "
+  "Total query fees claimed in this epoch. Can be smaller than totalFees because of rebate mechanism function "
   claimedFees: BigInt!
 
   "Total rewards from query fees deposited to all curator bonding curves during the epoch"
@@ -1297,10 +1297,10 @@ type SubgraphDeploymentDailyData @entity {
   "[CUMULATIVE] Total query fees earned by this Subgraph Deployment, without curator query fees"
   queryFeesAmount: BigInt!
 
-  "[CUMULATIVE] Total query fee rebates for indexers earned from the protocol, through the cobbs douglas formula."
+  "[CUMULATIVE] Total query fee rebates for indexers earned from the protocol, through the rebate mechanism formula."
   queryFeeRebates: BigInt!
 
-  "[CUMULATIVE] Total query fee rebates for delegators earned from the protocol, through the cobbs douglas formula."
+  "[CUMULATIVE] Total query fee rebates for delegators earned from the protocol, through the rebate mechanism formula."
   delegatorQueryFees: BigInt!
 
   "[CUMULATIVE] Total curator rewards from fees"
@@ -1359,7 +1359,7 @@ type GraphNetworkDailyData @entity {
   totalTaxedQueryFees: BigInt!
 
   # It is hard to separate the unclaimed and rebates lost
-  "[CUMULATIVE] Total unclaimed rebates. Includes unclaimed rebates and rebates lost in cobbs douglas "
+  "[CUMULATIVE] Total unclaimed rebates. Includes unclaimed rebates and rebates lost in rebate mechanism "
   totalUnclaimedQueryFeeRebates: BigInt!
 
   # Indexing rewards globals
