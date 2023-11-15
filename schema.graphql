@@ -622,6 +622,9 @@ type Allocation @entity {
   "Query fee rebate amount claimed from the protocol through cobbs douglas. Does not include portion given to delegators"
   queryFeeRebates: BigInt!
 
+  "Query fee rebates collected from the protocol. Can differ from queryFeeRebates if multiple vouchers per allocation are allowed."
+  distributedRebates: BigInt!
+  
   "Curator rewards deposited to the curating bonding curve"
   curatorRewards: BigInt!
 
@@ -661,8 +664,8 @@ enum AllocationStatus {
   Null # == indexer == address(0)
   Active # == not Null && tokens > 0 #
   Closed # == Active && closedAtEpoch != 0. Still can collect, while you are waiting to be finalized. a.k.a settling
-  Finalized # == Closing && closedAtEpoch + channelDisputeEpochs > now(). Note, the subgraph has no way to return this value. it is implied
-  Claimed # == not Null && tokens == 0 - i.e. finalized, and all tokens withdrawn
+  Finalized # == [DEPRECATED] Closing && closedAtEpoch + channelDisputeEpochs > now(). Note, the subgraph has no way to return this value. it is implied
+  Claimed # == [DEPRECATED] not Null && tokens == 0 - i.e. finalized, and all tokens withdrawn
 }
 
 """
