@@ -17,6 +17,7 @@ import {
   SlasherUpdate,
   AssetHolderUpdate,
   AllocationClosed1,
+  RebateCollected,
 } from '../types/Staking/Staking'
 import {
   ParameterUpdated, StakingExtension,
@@ -448,6 +449,7 @@ export function handleAllocationCreated(event: AllocationCreated): void {
   allocation.createdAtBlockHash = event.block.hash
   allocation.queryFeesCollected = BigInt.fromI32(0)
   allocation.queryFeeRebates = BigInt.fromI32(0)
+  allocation.distributedRebates = BigInt.fromI32(0)
   allocation.curatorRewards = BigInt.fromI32(0)
   allocation.indexingRewards = BigInt.fromI32(0)
   allocation.indexingIndexerRewards = BigInt.fromI32(0)
@@ -462,14 +464,18 @@ export function handleAllocationCreated(event: AllocationCreated): void {
   getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
 
-// Transfers tokens from a state channel to the staking contract
-// Burns fees if protocolPercentage > 0
-// Collects curationFees to go to curator rewards
-// calls collect() on curation, which is handled in curation.ts
-// adds to the allocations collected fees
-// if closed, it will add fees to the rebate pool
-// Note - the name event.param.rebateFees is confusing. Rebate fees are better described
-// as query Fees. rebate is from cobbs douglas, which we get from claim()
+/** 
+ * @dev handleAllocationCollected
+ * Note: this handler is for the AllocationCollected event prior to exponential rebates upgrade
+ * - Transfers tokens from a state channel to the staking contract
+ * - Burns fees if protocolPercentage > 0
+ * - Collects curationFees to go to curator rewards
+ * - calls collect() on curation, which is handled in curation.ts
+ * - adds to the allocations collected fees
+ * - if closed, it will add fees to the rebate pool
+ * - Note - the name event.param.rebateFees is confusing. Rebate fees are better described
+ * as query Fees. rebate is from cobbs douglas, which we get from claim()
+*/
 export function handleAllocationCollected(event: AllocationCollected): void {
   let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
   let indexerID = event.params.indexer.toHexString()
@@ -584,6 +590,7 @@ export function handleAllocationClosed(event: AllocationClosed): void {
   getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)
   getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
+
 /**
  * @dev handleAllocationClosed
  * - update the indexers stake
@@ -676,7 +683,7 @@ export function handleRebateClaimed(event: RebateClaimed): void {
   let allocation = Allocation.load(allocationID)!
   allocation.queryFeeRebates = event.params.tokens
   allocation.delegationFees = event.params.delegationFees
-  allocation.status = 'Claimed'
+  allocation.status = 'Closed' // 'Claimed' is the correct status for pre exponential rebates
   allocation.save()
 
   // update pool
@@ -731,6 +738,97 @@ export function handleParameterUpdated(event: ParameterUpdated): void {
   graphNetwork.save()
   getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
+
+/** 
+ * @dev handleRebateCollected
+ * - update indexer
+ * - update allocation
+ * - update epoch
+ * - update subgraph deployment
+ * - update graph network
+*/
+export function handleRebateCollected(event: RebateCollected): void {
+  let graphNetwork = createOrLoadGraphNetwork()
+  let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
+  let indexerID = event.params.indexer.toHexString()
+  let allocationID = event.params.allocationID.toHexString()
+
+  // update indexer
+  let indexer = Indexer.load(indexerID)!
+  indexer.queryFeesCollected = indexer.queryFeesCollected.plus(event.params.queryFees)
+  indexer.queryFeeRebates = indexer.queryFeeRebates.plus(event.params.queryRebates)
+  indexer.delegatorQueryFees = indexer.delegatorQueryFees.plus(event.params.delegationRewards)
+  indexer.delegatedTokens = indexer.delegatedTokens.plus(event.params.delegationRewards)
+  if (indexer.delegatorShares != BigInt.fromI32(0)) {
+    indexer = updateDelegationExchangeRate(indexer as Indexer)
+  }
+  indexer = updateAdvancedIndexerMetrics(indexer as Indexer)
+  indexer.save()
+
+  // update allocation
+  // queryFees is the total token value minus the curation and protocol fees, as can be seen in the contracts
+  let allocation = Allocation.load(allocationID)!
+  allocation.queryFeesCollected = allocation.queryFeesCollected.plus(event.params.queryFees)
+  allocation.curatorRewards = allocation.curatorRewards.plus(event.params.curationFees)
+  allocation.queryFeeRebates = event.params.queryRebates
+  allocation.distributedRebates = allocation.distributedRebates.plus(event.params.queryRebates)
+  allocation.delegationFees = event.params.delegationRewards
+  allocation.status = 'Closed'
+  allocation.save()
+
+  // // Update epoch
+  // let epoch = createOrLoadEpoch(
+  //   addresses.isL1 ? event.block.number : graphNetwork.currentL1BlockNumber!,
+  // )
+  // epoch.totalQueryFees = epoch.totalQueryFees.plus(event.params.tokens)
+  // epoch.taxedQueryFees = epoch.taxedQueryFees.plus(event.params.protocolTax)
+  // epoch.queryFeesCollected = epoch.queryFeesCollected.plus(event.params.queryFees)
+  // epoch.curatorQueryFees = epoch.curatorQueryFees.plus(event.params.curationFees)
+  // epoch.queryFeeRebates = epoch.queryFeeRebates.plus(event.params.queryRebates)
+  // epoch.save()
+
+  // update subgraph deployment
+  let deployment = SubgraphDeployment.load(subgraphDeploymentID)!
+  deployment.queryFeesAmount = deployment.queryFeesAmount.plus(event.params.queryFees)
+  deployment.signalledTokens = deployment.signalledTokens.plus(event.params.curationFees)
+  deployment.curatorFeeRewards = deployment.curatorFeeRewards.plus(event.params.curationFees)
+  deployment.pricePerShare = calculatePricePerShare(deployment as SubgraphDeployment)
+  deployment.queryFeeRebates = deployment.queryFeeRebates.plus(event.params.queryRebates)
+  deployment.save()
+
+  // update graph network
+  graphNetwork.totalQueryFees = graphNetwork.totalQueryFees.plus(event.params.tokens)
+  graphNetwork.totalIndexerQueryFeesCollected = graphNetwork.totalIndexerQueryFeesCollected.plus(
+    event.params.queryFees,
+  )
+  graphNetwork.totalCuratorQueryFees = graphNetwork.totalCuratorQueryFees.plus(
+    event.params.curationFees,
+  )
+  graphNetwork.totalTaxedQueryFees = graphNetwork.totalTaxedQueryFees.plus(event.params.protocolTax)
+  graphNetwork.totalUnclaimedQueryFeeRebates = graphNetwork.totalUnclaimedQueryFeeRebates.plus(
+    event.params.queryFees,
+  )
+  graphNetwork.totalIndexerQueryFeeRebates = graphNetwork.totalIndexerQueryFeeRebates.plus(
+    event.params.queryRebates,
+  )
+  graphNetwork.totalDelegatorQueryFeeRebates = graphNetwork.totalDelegatorQueryFeeRebates.plus(
+    event.params.delegationRewards,
+  )
+  graphNetwork.totalUnclaimedQueryFeeRebates = graphNetwork.totalUnclaimedQueryFeeRebates.minus(
+    event.params.delegationRewards.plus(event.params.queryRebates),
+  )
+  graphNetwork.save()
+
+  batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
+
+  getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
+  getAndUpdateSubgraphDeploymentDailyData(
+    deployment as SubgraphDeployment,
+    event.block.timestamp,
+  )
+  getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
+}
+
 //
 // export function handleSetOperator(event: SetOperator): void {
 //   let graphAccount = createOrLoadGraphAccount(
