@@ -155,8 +155,10 @@ type GraphAccount @entity {
 type GraphAccountMetadata @entity(immutable:true) {
   "IPFS hash with account metadata details"
   id: ID!
-  "Original graph account that created it"
-  graphAccount: [GraphAccount!] @derivedFrom(field:"metadata")
+  "Account that reference this metadata file. For compatibility purposes. For the full list use graphAccounts"
+  graphAccount: GraphAccount @derivedFrom(field:"metadata")
+  "Accounts that reference this metadata file"
+  graphAccounts: [GraphAccount!]! @derivedFrom(field:"metadata")
   "True if it is an organization. False if it is an individual"
   isOrganization: Boolean
   "Main repository of code for the graph account"

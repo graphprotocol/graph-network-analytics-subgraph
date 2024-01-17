@@ -5,7 +5,8 @@ import {
 import { jsonToString } from './utils'
 
 export function handleGraphAccountMetadata(content: Bytes): void {
-  let graphAccountMetadata = new GraphAccountMetadata(dataSource.stringParam())
+  let id = dataSource.context().getString("id")
+  let graphAccountMetadata = new GraphAccountMetadata(id)
   let tryData = json.try_fromBytes(content)
   if (tryData.isOk) {
     let data = tryData.value.toObject()
