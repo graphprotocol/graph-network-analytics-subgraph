@@ -105,6 +105,7 @@ export function handleStakeLocked(event: StakeLocked): void {
   // update indexer
   let id = event.params.indexer.toHexString()
   let indexer = Indexer.load(id)!
+  let oldLockedTokens = indexer.lockedTokens
   indexer.lockedTokens = event.params.tokens
   indexer.tokensLockedUntil = event.params.until.toI32()
   indexer = updateAdvancedIndexerMetrics(indexer as Indexer)
@@ -112,10 +113,12 @@ export function handleStakeLocked(event: StakeLocked): void {
   indexer.save()
 
   // update graph network
+  // the tokens from the event replace the previously locked tokens
+  // from this indexer
   let graphNetwork = createOrLoadGraphNetwork()
   graphNetwork.totalUnstakedTokensLocked = graphNetwork.totalUnstakedTokensLocked.plus(
     event.params.tokens,
-  )
+  ).minus(oldLockedTokens)
   if (indexer.stakedTokens == indexer.lockedTokens) {
     graphNetwork.stakedIndexersCount = graphNetwork.stakedIndexersCount - 1
   }
@@ -710,6 +713,7 @@ export function handleRebateClaimed(event: RebateClaimed): void {
   graphNetwork.totalUnclaimedQueryFeeRebates = graphNetwork.totalUnclaimedQueryFeeRebates.minus(
     event.params.delegationFees.plus(event.params.tokens),
   )
+  graphNetwork.totalDelegatedTokens = graphNetwork.totalDelegatedTokens.plus(event.params.delegationFees)
   graphNetwork.save()
 
   batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
@@ -817,6 +821,7 @@ export function handleRebateCollected(event: RebateCollected): void {
   graphNetwork.totalUnclaimedQueryFeeRebates = graphNetwork.totalUnclaimedQueryFeeRebates.minus(
     event.params.delegationRewards.plus(event.params.queryRebates),
   )
+  graphNetwork.totalDelegatedTokens = graphNetwork.totalDelegatedTokens.plus(event.params.delegationRewards)
   graphNetwork.save()
 
   batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
