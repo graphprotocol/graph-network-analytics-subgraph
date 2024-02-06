@@ -80,6 +80,7 @@ export function handleRewardsAssigned(event: RewardsAssigned): void {
   graphNetwork.totalIndexingDelegatorRewards = graphNetwork.totalIndexingDelegatorRewards.plus(
     delegatorIndexingRewards,
   )
+  graphNetwork.totalDelegatedTokens = graphNetwork.totalDelegatedTokens.plus(delegatorIndexingRewards)
   graphNetwork.save()
 
   batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
