@@ -1,8 +1,15 @@
-specVersion: 0.0.2
+specVersion: 1.0.0
 description: Graph Network analytics subgraph
 repository: https://github.com/graphprotocol/graph-network-analytics-subgraph
 features:
   - fullTextSearch
+indexerHints:
+{{#isL1}}
+  prune: 400
+{{/isL1}}
+{{^isL1}}
+  prune: 15000
+{{/isL1}}
 schema:
   file: ./schema.graphql
 dataSources:
