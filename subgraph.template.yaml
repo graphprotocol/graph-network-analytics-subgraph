@@ -1,5 +1,5 @@
 specVersion: 1.0.0
-description: Graph Network analytics subgraph
+description: Graph Network analytics subgraph ({{network}})
 repository: https://github.com/graphprotocol/graph-network-analytics-subgraph
 features:
   - fullTextSearch
