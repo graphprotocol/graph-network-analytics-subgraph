@@ -3,7 +3,7 @@ Graph Network global parameters and contract addresses
 """
 type GraphNetwork @entity {
   "ID is set to 1"
-  id: ID!
+  id: Bytes!
 
   "Ratio of max staked delegation tokens to indexers stake that earns rewards"
   delegationRatio: Int!
@@ -89,7 +89,7 @@ delegating, curating, and indexing.
 """
 type GraphAccount @entity {
   "Graph account ID"
-  id: ID!
+  id: Bytes!
 
   "All names this graph account has claimed from all name systems"
   names: [GraphAccountName!]! @derivedFrom(field: "graphAccount")
@@ -154,7 +154,7 @@ type GraphAccount @entity {
 
 type GraphAccountMetadata @entity(immutable:true) {
   "IPFS hash with account metadata details"
-  id: ID!
+  id: Bytes!
   "Account that reference this metadata file. For compatibility purposes. For the full list use graphAccounts"
   graphAccount: GraphAccount @derivedFrom(field:"metadata")
   "Accounts that reference this metadata file"
@@ -205,7 +205,7 @@ subgraph is stored on IPFS.
 """
 type Subgraph @entity {
   "Subgraph ID - which is derived from the Organization/Individual graph accountID"
-  id: ID!
+  id: Bytes!
 
   "Graph account that owns this subgraph"
   owner: GraphAccount!
@@ -319,7 +319,7 @@ just a counter than increases each time a new SubgraphVersion is created for a S
 """
 type SubgraphVersion @entity {
   "Concatenation of subgraph, subgraph deployment, and version ID"
-  id: ID!
+  id: Bytes!
 
   "Subgraph of this version"
   subgraph: Subgraph!
@@ -355,7 +355,7 @@ related to a SubgraphVersion.
 """
 type SubgraphDeployment @entity {
   "Subgraph Deployment ID. The IPFS hash with Qm removed to fit into 32 bytes"
-  id: ID!
+  id: Bytes!
 
   "The versions this subgraph deployment relates to"
   versions: [SubgraphVersion!]! @derivedFrom(field: "subgraphDeployment")
@@ -440,7 +440,7 @@ Metadata for the Indexer along with parameters and staking data
 """
 type Indexer @entity {
   "Eth address of Indexer"
-  id: ID!
+  id: Bytes!
   "Time this indexer was created"
   createdAt: Int!
   "Service registry URL for the indexer"
@@ -583,7 +583,7 @@ A state channel Allocation representing a single Indexer-SubgraphDeployment stak
 """
 type Allocation @entity {
   "Channel Address"
-  id: ID!
+  id: Bytes!
 
   "Indexer of this allocation"
   indexer: Indexer!
@@ -676,7 +676,7 @@ hence why they share the same IDs.
 """
 type Pool @entity {
   "Epoch number of the pool"
-  id: ID!
+  id: Bytes!
 
   "Total effective allocation tokens from all allocations closed in this epoch"
   allocation: BigInt!
@@ -699,7 +699,7 @@ Delegator with all their delegated stakes towards Indexers
 """
 type Delegator @entity {
   "Delegator address"
-  id: ID!
+  id: Bytes!
 
   account: GraphAccount!
   defaultDisplayName: String
@@ -762,7 +762,7 @@ Delegator stake for a single Indexer
 """
 type DelegatedStake @entity {
   "Concatenation of Delegator address and Indexer address"
-  id: ID!
+  id: Bytes!
 
   "Index the stake is delegated to"
   indexer: Indexer!
@@ -840,7 +840,7 @@ Curator with all Signals and metrics
 """
 type Curator @entity {
   "Eth address of the Curator"
-  id: ID!
+  id: Bytes!
 
   "Time this curator was created"
   createdAt: Int!
@@ -894,7 +894,7 @@ Curator Signal for a single SubgraphDeployment
 """
 type Signal @entity {
   "Eth address + subgraph deployment ID"
-  id: ID!
+  id: Bytes!
 
   "Eth address of the curator"
   curator: Curator!
@@ -926,7 +926,7 @@ Curator Name Signal for a single Subgraph
 """
 type NameSignal @entity {
   "Eth address + subgraph ID"
-  id: ID!
+  id: Bytes!
 
   "Eth address of the curator"
   curator: Curator!
@@ -990,7 +990,7 @@ A generic transaction in The Graph Network
 """
 interface Transaction {
   "Transaction hash concatenated with event log index"
-  id: ID!
+  id: Bytes!
 
   "Block number for the transaction"
   blockNumber: Int!
@@ -1011,7 +1011,7 @@ interface Transaction {
 All relevant data for a Name Signal Transaction in The Graph Network
 """
 type NameSignalTransaction implements Transaction @entity {
-  id: ID!
+  id: Bytes!
 
   blockNumber: Int!
 
@@ -1038,7 +1038,7 @@ type NameSignalTransaction implements Transaction @entity {
 All relevant data for a Signal Transaction in The Graph Network
 """
 type SignalTransaction implements Transaction @entity {
-  id: ID!
+  id: Bytes!
 
   blockNumber: Int!
 
@@ -1075,7 +1075,7 @@ Analytics
 """
 type IndexerDelegatedStakeRelation @entity {
   "Auxiliary entity to DelegatedStake to make it easier to batch update those delegations"
-  id: ID!
+  id: Bytes!
 
   "Indexer entity where the delegation resides"
   indexer: Indexer!
@@ -1092,7 +1092,7 @@ type IndexerDelegatedStakeRelation @entity {
 
 type IndexerDailyData @entity {
   "<INDEXER ADDRESS>-<DAY NUMBER>"
-  id: ID!
+  id: Bytes!
 
   "Timestamp for the start of the day that this entity represents. UTC+0"
   dayStart: BigInt!
@@ -1147,7 +1147,7 @@ type IndexerDailyData @entity {
 
 type DelegatorDailyData @entity {
   "<DELEGATOR ADDRESS>-<DAY NUMBER>"
-  id: ID!
+  id: Bytes!
 
   "Timestamp for the start of the day that this entity represents. UTC+0"
   dayStart: BigInt!
@@ -1185,7 +1185,7 @@ type DelegatorDailyData @entity {
 
 type DelegatedStakeDailyData @entity {
   "<DELEGATOR ADDRESS>-<INDEXER ADDRESS>-<DAY NUMBER>"
-  id: ID!
+  id: Bytes!
 
   "Timestamp for the start of the day that this entity represents. UTC+0"
   dayStart: BigInt!
@@ -1235,7 +1235,7 @@ type DelegatedStakeDailyData @entity {
 
 type DelegatorDelegatedStakeDailyRelation @entity {
   "Auxiliary entity to avoid using arrays for many-to-many relation tracking. Compounds the delegator id with an autoincremental number."
-  id: ID!
+  id: Bytes!
 
   "Timestamp for the start of the day that this entity represents. UTC+0"
   dayStart: BigInt!
@@ -1261,7 +1261,7 @@ type DelegatorDelegatedStakeDailyRelation @entity {
 
 type SubgraphDeploymentDailyData @entity {
   "<SUBGRAPH ID>-<DAY NUMBER>"
-  id: ID!
+  id: Bytes!
 
   "Timestamp for the start of the day that this entity represents. UTC+0"
   dayStart: BigInt!
@@ -1311,7 +1311,7 @@ type SubgraphDeploymentDailyData @entity {
 
 type GraphNetworkDailyData @entity {
   "<SUBGRAPH ID>-<DAY NUMBER>"
-  id: ID!
+  id: Bytes!
 
   "Timestamp for the start of the day that this entity represents. UTC+0"
   dayStart: BigInt!
