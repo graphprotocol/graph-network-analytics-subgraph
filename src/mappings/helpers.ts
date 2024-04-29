@@ -25,7 +25,9 @@ import { ENS } from '../types/GNS/ENS'
 import { addresses } from '../../config/addresses'
 import { LAUNCH_DAY, SECONDS_PER_DAY, avoidNegativeRoundingError } from './utils'
 
-export function createOrLoadGraphAccount(id: string, timeStamp: BigInt): GraphAccount {
+let bytesSeparator = Bytes.fromHexString("0xABCDEF")
+
+export function createOrLoadGraphAccount(id: Bytes, timeStamp: BigInt): GraphAccount {
   let graphAccount = GraphAccount.load(id)
   if (graphAccount == null) {
     graphAccount = new GraphAccount(id)
@@ -52,7 +54,7 @@ export function createOrLoadSubgraph(
   let subgraph = Subgraph.load(subgraphID)
   if (subgraph == null) {
     subgraph = new Subgraph(subgraphID)
-    subgraph.owner = owner.toHexString()
+    subgraph.owner = owner
     subgraph.createdAt = timestamp.toI32()
     subgraph.updatedAt = timestamp.toI32()
     subgraph.versionCount = BigInt.fromI32(0)
@@ -83,7 +85,7 @@ export function createOrLoadSubgraph(
 }
 
 export function createOrLoadSubgraphDeployment(
-  subgraphID: string,
+  subgraphID: Bytes,
   timestamp: BigInt,
 ): SubgraphDeployment {
   let graphNetwork = createOrLoadGraphNetwork()
@@ -117,7 +119,7 @@ export function createOrLoadSubgraphDeployment(
   return deployment as SubgraphDeployment
 }
 
-export function createOrLoadIndexer(id: string, timestamp: BigInt): Indexer {
+export function createOrLoadIndexer(id: Bytes, timestamp: BigInt): Indexer {
   let indexer = Indexer.load(id)
   if (indexer == null) {
     createOrLoadGraphAccount(id, timestamp)
@@ -172,7 +174,7 @@ export function createOrLoadIndexer(id: string, timestamp: BigInt): Indexer {
   return indexer as Indexer
 }
 
-export function createOrLoadDelegator(id: string, timestamp: BigInt): Delegator {
+export function createOrLoadDelegator(id: Bytes, timestamp: BigInt): Delegator {
   let delegator = Delegator.load(id)
   if (delegator == null) {
     createOrLoadGraphAccount(id, timestamp)
@@ -200,15 +202,15 @@ export function createOrLoadDelegator(id: string, timestamp: BigInt): Delegator 
 
 export function createOrLoadDelegatedStake(
   delegator: Delegator,
-  indexer: string,
+  indexer: Bytes,
   timestamp: i32,
 ): DelegatedStake {
-  let id = joinID([delegator.id, indexer])
+  let id = compoundId(delegator.id, indexer)
   let delegatedStake = DelegatedStake.load(id)
 
   if (delegatedStake == null) {
     let indexerEntity = Indexer.load(indexer)!
-    let relationId = compoundId(indexer, indexerEntity.delegatorsCount.toString())
+    let relationId = compoundId(indexer, Bytes.fromBigInt(indexerEntity.delegatorsCount))
 
     delegatedStake = new DelegatedStake(id)
     delegatedStake.indexer = indexer
@@ -248,7 +250,7 @@ export function createOrLoadDelegatedStake(
 
   return delegatedStake as DelegatedStake
 }
-export function createOrLoadCurator(id: string, timestamp: BigInt): Curator {
+export function createOrLoadCurator(id: Bytes, timestamp: BigInt): Curator {
   let curator = Curator.load(id)
   if (curator == null) {
     curator = new Curator(id)
@@ -276,8 +278,8 @@ export function createOrLoadCurator(id: string, timestamp: BigInt): Curator {
   return curator as Curator
 }
 
-export function createOrLoadSignal(curator: string, subgraphDeploymentID: string): Signal {
-  let signalID = joinID([curator, subgraphDeploymentID])
+export function createOrLoadSignal(curator: Bytes, subgraphDeploymentID: Bytes): Signal {
+  let signalID = compoundId(curator, subgraphDeploymentID)
   let signal = Signal.load(signalID)
   if (signal == null) {
     signal = new Signal(signalID)
@@ -294,11 +296,11 @@ export function createOrLoadSignal(curator: string, subgraphDeploymentID: string
 }
 
 export function createOrLoadNameSignal(
-  curator: string,
-  subgraphID: string,
+  curator: Bytes,
+  subgraphID: Bytes,
   timestamp: BigInt,
 ): NameSignal {
-  let nameSignalID = joinID([curator, subgraphID])
+  let nameSignalID = compoundId(curator, subgraphID)
   let nameSignal = NameSignal.load(nameSignalID)
   if (nameSignal == null) {
     nameSignal = new NameSignal(nameSignalID)
@@ -323,9 +325,9 @@ export function createOrLoadNameSignal(
 }
 
 export function createOrLoadPool(id: BigInt): Pool {
-  let pool = Pool.load(id.toString())
+  let pool = Pool.load(Bytes.fromBigInt(id))
   if (pool == null) {
-    pool = new Pool(id.toString())
+    pool = new Pool(Bytes.fromBigInt(id))
     pool.allocation = BigInt.fromI32(0)
     pool.totalQueryFees = BigInt.fromI32(0)
     pool.claimedFees = BigInt.fromI32(0)
@@ -336,9 +338,9 @@ export function createOrLoadPool(id: BigInt): Pool {
 }
 
 export function createOrLoadGraphNetwork(): GraphNetwork {
-  let graphNetwork = GraphNetwork.load('1')
+  let graphNetwork = GraphNetwork.load(Bytes.fromI32(1))
   if (graphNetwork == null) {
-    graphNetwork = new GraphNetwork('1')
+    graphNetwork = new GraphNetwork(Bytes.fromI32(1))
 
     // let contract = GraphNetwork.bind(event.params.a)
     // most of the parameters below are updated in the constructor, or else
@@ -401,13 +403,13 @@ export function concatByteArrays(a: ByteArray, b: ByteArray): ByteArray {
 }
 
 export function getVersionNumber(
-  graphAccount: string,
-  subgraphNumber: string,
+  graphAccount: Bytes,
+  subgraphNumber: Bytes,
   versionNumber: BigInt,
 ): BigInt {
   // create versionID. start at version 1
   // TODO - should I start it at 0?
-  let versionID = joinID([graphAccount, subgraphNumber, versionNumber.toString()])
+  let versionID = joinID([graphAccount, subgraphNumber, Bytes.fromBigInt(versionNumber)])
   let version = SubgraphVersion.load(versionID)
   // recursion until you get the right version
   if (version != null) {
@@ -426,8 +428,8 @@ export function resolveName(graphAccount: Address, name: string, node: Bytes): s
   if (checkTLD(name, node.toHexString())) {
     if (verifyNameOwnership(graphAccountString, node)) {
       let nameSystem = 'ENS'
-      let id = joinID([nameSystem, node.toHexString()])
-      createGraphAccountName(id, nameSystem, name, graphAccountString)
+      let id = joinIDString([nameSystem, node.toHexString()])
+      createGraphAccountName(id, nameSystem, name, graphAccount)
       // All checks have passed: save the new name and return the ID to be stored on the subgraph
       return id
     }
@@ -480,7 +482,7 @@ function createGraphAccountName(
   id: string,
   nameSystem: string,
   name: string,
-  graphAccount: string,
+  graphAccount: Bytes,
 ): void {
   let graphAccountName = GraphAccountName.load(id)
   // This name is new, so lets register it
@@ -506,8 +508,12 @@ function createGraphAccountName(
   }
 }
 
-export function joinID(pieces: Array<string>): string {
-  return pieces.join('-')
+export function joinID(pieces: Array<Bytes>): Bytes {
+  return pieces.reduce((acc, elem, index) => { return index == 0 ? elem : acc.concat(bytesSeparator).concat(elem) })
+}
+
+export function joinIDString(pieces: Array<String>): string {
+  return pieces.join("-")
 }
 
 function min(a: BigDecimal, b: BigDecimal): BigDecimal {
@@ -596,20 +602,20 @@ export function updateDelegationExchangeRate(indexer: Indexer): Indexer {
   return indexer as Indexer
 }
 
-export function compoundId(idA: string, idB: string): string {
-  return idA.concat('-').concat(idB)
+export function compoundId(idA: Bytes, idB: Bytes): Bytes {
+  return idA.concat(bytesSeparator).concat(idB)
 }
 
-export function batchUpdateDelegatorsForIndexer(indexerId: string, timestamp: BigInt): void {
+export function batchUpdateDelegatorsForIndexer(indexerId: Bytes, timestamp: BigInt): void {
   // Loading it again here to make sure we have the latest up to date data on the entity.
   let indexer = Indexer.load(indexerId)!
   // pre-calculates a lot of data for all delegators that exists for a specific indexer
   // using already existing links with the indexer-delegatedStake relations
-  let delegators = indexer.delegators.load()
-
-  for (let i = 0; i < delegators.length; i++) {
-    if (!delegators[i].shareAmount.isZero()) {
-      let delegatedStake = delegators[i]
+  for (let i = 0; i < indexer.delegatorsCount.toI32(); i++) {
+    let relationId = compoundId(indexer.id, Bytes.fromBigInt(BigInt.fromI32(i)))
+    let relation = IndexerDelegatedStakeRelation.load(relationId)!
+    if (relation.active) {
+      let delegatedStake = DelegatedStake.load(relation.stake)!
       let delegator = Delegator.load(delegatedStake.delegator)!
       // Only update core entities if there's a change in the exchange rate
       if (delegatedStake.latestIndexerExchangeRate != indexer.delegationExchangeRate) {
@@ -643,14 +649,14 @@ export function getAndUpdateNetworkDailyData(
   timestamp: BigInt,
 ): GraphNetworkDailyData {
   let dayNumber = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
-  let id = compoundId(entity.id, BigInt.fromI32(dayNumber).toString())
+  let id = compoundId(entity.id, Bytes.fromI32(dayNumber))
   let dailyData = GraphNetworkDailyData.load(id)
 
   if (dailyData == null) {
     dailyData = new GraphNetworkDailyData(id)
 
     dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
-    dailyData.dayEnd = dailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
+    dailyData.dayEnd = dailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
     dailyData.dayNumber = dayNumber
     dailyData.network = entity.id
   }
@@ -686,14 +692,14 @@ export function getAndUpdateNetworkDailyData(
 
 export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt): IndexerDailyData {
   let dayNumber = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
-  let id = compoundId(entity.id, BigInt.fromI32(dayNumber).toString())
+  let id = compoundId(entity.id, Bytes.fromI32(dayNumber))
   let dailyData = IndexerDailyData.load(id)
 
   if (dailyData == null) {
     dailyData = new IndexerDailyData(id)
 
     dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
-    dailyData.dayEnd = dailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
+    dailyData.dayEnd = dailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
     dailyData.dayNumber = dayNumber
     dailyData.indexer = entity.id
     dailyData.netDailyDelegatedTokens = BigInt.fromI32(0)
@@ -728,7 +734,7 @@ export function getAndUpdateDelegatedStakeDailyData(
   timestamp: BigInt,
 ): DelegatedStakeDailyData {
   let dayNumber = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
-  let stakeId = compoundId(stakeEntity.id, BigInt.fromI32(dayNumber).toString())
+  let stakeId = compoundId(stakeEntity.id, Bytes.fromI32(dayNumber))
   let stakeDailyData = DelegatedStakeDailyData.load(stakeId)
 
   if (stakeDailyData == null) {
@@ -737,7 +743,7 @@ export function getAndUpdateDelegatedStakeDailyData(
     stakeDailyData.dayStart = BigInt.fromI32(
       (timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY,
     )
-    stakeDailyData.dayEnd = stakeDailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
+    stakeDailyData.dayEnd = stakeDailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
     stakeDailyData.dayNumber = dayNumber
     stakeDailyData.stake = stakeEntity.id
     stakeDailyData.delegator = stakeEntity.delegator
@@ -764,14 +770,14 @@ export function getAndUpdateDelegatorDailyData(
   timestamp: BigInt,
 ): DelegatorDailyData {
   let dayNumber = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
-  let id = compoundId(entity.id, BigInt.fromI32(dayNumber).toString())
+  let id = compoundId(entity.id, Bytes.fromI32(dayNumber))
   let dailyData = DelegatorDailyData.load(id)
 
   if (dailyData == null) {
     dailyData = new DelegatorDailyData(id)
 
     dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
-    dailyData.dayEnd = dailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
+    dailyData.dayEnd = dailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
     dailyData.dayNumber = dayNumber
     dailyData.delegator = entity.id
   }
@@ -794,14 +800,14 @@ export function getAndUpdateSubgraphDeploymentDailyData(
   timestamp: BigInt,
 ): SubgraphDeploymentDailyData {
   let dayId = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
-  let id = compoundId(entity.id, BigInt.fromI32(dayId).toString())
+  let id = compoundId(entity.id, Bytes.fromI32(dayId))
   let dailyData = SubgraphDeploymentDailyData.load(id)
 
   if (dailyData == null) {
     dailyData = new SubgraphDeploymentDailyData(id)
 
     dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
-    dailyData.dayEnd = dailyData.dayStart + BigInt.fromI32(SECONDS_PER_DAY)
+    dailyData.dayEnd = dailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
     dailyData.dayNumber = dayId
     dailyData.subgraphDeployment = entity.id
   }
@@ -846,19 +852,19 @@ export function calculatePricePerShare(deployment: SubgraphDeployment): BigDecim
   return pricePerShare
 }
 
-export function convertBigIntSubgraphIDToBase58(bigIntRepresentation: BigInt): String {
+export function convertBigIntSubgraphIDToBase58(bigIntRepresentation: BigInt): Bytes {
   // Might need to unpad the BigInt since `fromUnsignedBytes` pads one byte with a zero.
   // Although for the events where the uint256 is provided, we probably don't need to unpad.
   let hexString = bigIntRepresentation.toHexString()
   if (hexString.length % 2 != 0) {
-    log.error('Hex string not even, hex: {}, original: {}. Padding it to even length', [
+    log.warning('Hex string not even, hex: {}, original: {}. Padding it to even length', [
       hexString,
       bigIntRepresentation.toString(),
     ])
     hexString = '0x0' + hexString.slice(2)
   }
   let bytes = ByteArray.fromHexString(hexString)
-  return bytes.toBase58()
+  return bytes
 }
 
 export function getSubgraphID(graphAccount: Address, subgraphNumber: BigInt): BigInt {
@@ -869,88 +875,6 @@ export function getSubgraphID(graphAccount: Address, subgraphNumber: BigInt): Bi
   let hashedId = Bytes.fromByteArray(crypto.keccak256(ByteArray.fromHexString(unhashedSubgraphID)))
   let bigIntRepresentation = BigInt.fromUnsignedBytes(changetype<Bytes>(hashedId.reverse()))
   return bigIntRepresentation
-}
-
-export function duplicateOrUpdateSubgraphWithNewID(entity: Subgraph, newID: String, newEntityVersion: i32): Subgraph {
-  let subgraph = Subgraph.load(newID)
-  if (subgraph == null) {
-    subgraph = new Subgraph(newID)
-  }
-  
-  subgraph.owner = entity.owner
-  //subgraph.currentVersion = entity.currentVersion // currentVersion will have to be updated to be the duplicated SubgraphVersion entity afterwards
-  subgraph.versionCount = entity.versionCount
-  subgraph.createdAt = entity.createdAt
-  subgraph.updatedAt = entity.updatedAt
-  subgraph.active = entity.active
-  subgraph.startedTransferToL2 = entity.startedTransferToL2
-  subgraph.transferredToL2 = entity.transferredToL2
-  subgraph.migrated = entity.migrated
-  subgraph.nftID = entity.nftID
-  subgraph.oldID = entity.oldID
-  subgraph.creatorAddress = entity.creatorAddress
-  subgraph.subgraphNumber = entity.subgraphNumber
-  subgraph.initializing = entity.initializing
-  subgraph.signalledTokens = entity.signalledTokens
-  subgraph.unsignalledTokens = entity.unsignalledTokens
-  subgraph.nameSignalAmount = entity.nameSignalAmount
-  subgraph.reserveRatio = entity.reserveRatio
-  subgraph.withdrawableTokens = entity.withdrawableTokens
-  subgraph.withdrawnTokens = entity.withdrawnTokens
-  subgraph.signalledTokensSentToL2 = entity.signalledTokensSentToL2
-  subgraph.signalledTokensReceivedOnL2 = entity.signalledTokensReceivedOnL2
-  subgraph.metadataHash = entity.metadataHash
-  // subgraph.pastVersions = entity.pastVersions This is a derived field, we won't copy, but need to make sure NameSignals are duplicated too.
-  // subgraph.nameSignals = entity.nameSignals This is a derived field, we won't copy, but need to make sure NameSignals are duplicated too.
-  // subgraph.categories = entity.categories This is a derived field, we wont' copy, but need to make sure Categories auxiliary entities are properly duplicated too.
-
-  subgraph.entityVersion = newEntityVersion
-  subgraph.linkedEntity = entity.id // this is the entity id, since for the entity, this value will be this particular entity.
-
-  return subgraph as Subgraph
-}
-
-export function duplicateOrUpdateSubgraphVersionWithNewID(entity: SubgraphVersion, newID: String, newEntityVersion: i32): SubgraphVersion {
-  let version = SubgraphVersion.load(newID)
-  if (version == null) {
-    version = new SubgraphVersion(newID)
-  }
-
-  version.subgraphDeployment = entity.subgraphDeployment
-  version.version = entity.version
-  version.createdAt = entity.createdAt
-  version.metadataHash = entity.metadataHash
-
-  version.entityVersion = newEntityVersion
-  version.linkedEntity = entity.id
-
-  return version as SubgraphVersion
-}
-
-export function duplicateOrUpdateNameSignalWithNewID(entity: NameSignal, newID: String, newEntityVersion: i32): NameSignal {
-  let signal = NameSignal.load(newID)
-  if (signal == null) {
-    signal = new NameSignal(newID)
-  }
-
-  signal.curator = entity.curator
-  //signal.subgraph = entity.subgraph
-  signal.signalledTokens = entity.signalledTokens
-  signal.unsignalledTokens = entity.unsignalledTokens
-  signal.withdrawnTokens = entity.withdrawnTokens
-  signal.nameSignal = entity.nameSignal
-  signal.lastNameSignalChange = entity.lastNameSignalChange
-  signal.realizedRewards = entity.realizedRewards
-  signal.averageCostBasis = entity.averageCostBasis
-  signal.averageCostBasisPerSignal = entity.averageCostBasisPerSignal
-  signal.transferredToL2 = entity.transferredToL2
-  signal.signalledTokensReceivedOnL2 = entity.signalledTokensReceivedOnL2
-  signal.signalledTokensSentToL2 = entity.signalledTokensSentToL2
-
-  signal.entityVersion = newEntityVersion
-  signal.linkedEntity = entity.id
-
-  return signal as NameSignal
 }
 
 export function getAliasedL2SubgraphID(id: BigInt): BigInt {
