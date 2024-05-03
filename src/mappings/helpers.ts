@@ -210,7 +210,7 @@ export function createOrLoadDelegatedStake(
 
   if (delegatedStake == null) {
     let indexerEntity = Indexer.load(indexer)!
-    let relationId = compoundId(indexer, Bytes.fromBigInt(indexerEntity.delegatorsCount))
+    let relationId = compoundId(indexer, changetype<Bytes>(Bytes.fromBigInt(indexerEntity.delegatorsCount)))
 
     delegatedStake = new DelegatedStake(id)
     delegatedStake.indexer = indexer
@@ -325,9 +325,9 @@ export function createOrLoadNameSignal(
 }
 
 export function createOrLoadPool(id: BigInt): Pool {
-  let pool = Pool.load(Bytes.fromBigInt(id))
+  let pool = Pool.load(changetype<Bytes>(Bytes.fromBigInt(id)))
   if (pool == null) {
-    pool = new Pool(Bytes.fromBigInt(id))
+    pool = new Pool(changetype<Bytes>(Bytes.fromBigInt(id)))
     pool.allocation = BigInt.fromI32(0)
     pool.totalQueryFees = BigInt.fromI32(0)
     pool.claimedFees = BigInt.fromI32(0)
@@ -409,7 +409,7 @@ export function getVersionNumber(
 ): BigInt {
   // create versionID. start at version 1
   // TODO - should I start it at 0?
-  let versionID = joinID([graphAccount, subgraphNumber, Bytes.fromBigInt(versionNumber)])
+  let versionID = joinID([graphAccount, subgraphNumber, changetype<Bytes>(Bytes.fromBigInt(versionNumber))])
   let version = SubgraphVersion.load(versionID)
   // recursion until you get the right version
   if (version != null) {
@@ -509,9 +509,9 @@ function createGraphAccountName(
 }
 
 export function joinID(pieces: Array<Bytes>): Bytes {
-  return pieces.reduce((acc, elem, index) => {
-    return index == 0 ? elem : acc.concat(bytesSeparator).concat(elem)
-  })
+  return pieces.reduce((acc, elem) => {
+    return acc.concat(bytesSeparator).concat(elem)
+  }, Bytes.empty())
 }
 
 export function joinIDString(pieces: Array<String>): string {
@@ -614,7 +614,7 @@ export function batchUpdateDelegatorsForIndexer(indexerId: Bytes, timestamp: Big
   // pre-calculates a lot of data for all delegators that exists for a specific indexer
   // using already existing links with the indexer-delegatedStake relations
   for (let i = 0; i < indexer.delegatorsCount.toI32(); i++) {
-    let relationId = compoundId(indexer.id, Bytes.fromBigInt(BigInt.fromI32(i)))
+    let relationId = compoundId(indexer.id, changetype<Bytes>(Bytes.fromBigInt(BigInt.fromI32(i))))
     let relation = IndexerDelegatedStakeRelation.load(relationId)!
     if (relation.active) {
       let delegatedStake = DelegatedStake.load(relation.stake)!
@@ -865,7 +865,7 @@ export function convertBigIntSubgraphIDToBase58(bigIntRepresentation: BigInt): B
     ])
     hexString = '0x0' + hexString.slice(2)
   }
-  let bytes = ByteArray.fromHexString(hexString)
+  let bytes = changetype<Bytes>(ByteArray.fromHexString(hexString))
   return bytes
 }
 

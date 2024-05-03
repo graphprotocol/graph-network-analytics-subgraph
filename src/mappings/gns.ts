@@ -30,10 +30,9 @@ import {
   Delegator,
   Indexer,
   GraphAccountName,
-  SubgraphDeployment,
 } from '../types/schema'
 
-import { jsonToString, zeroBD } from './utils'
+import { zeroBD } from './utils'
 import {
   createOrLoadSubgraphDeployment,
   createOrLoadGraphAccount,
@@ -41,7 +40,6 @@ import {
   addQm,
   resolveName,
   createOrLoadSubgraph,
-  joinID,
   createOrLoadNameSignal,
   getSubgraphID,
   convertBigIntSubgraphIDToBase58,
@@ -142,7 +140,7 @@ export function handleSubgraphPublished(event: SubgraphPublished): void {
   let subgraph = createOrLoadSubgraph(subgraphID, event.params.graphAccount, event.block.timestamp)
 
   versionNumber = subgraph.versionCount
-  let versionIDNew = compoundId(subgraph.id, Bytes.fromBigInt(subgraph.versionCount))
+  let versionIDNew = compoundId(subgraph.id, changetype<Bytes>(Bytes.fromBigInt(subgraph.versionCount)))
   subgraph.creatorAddress = event.params.graphAccount
   subgraph.subgraphNumber = event.params.subgraphNumber
   subgraph.oldID = joinIDString([event.params.graphAccount.toHexString(), event.params.subgraphNumber.toString()])
@@ -247,7 +245,7 @@ export function handleNSignalMinted(event: NSignalMinted): void {
 
   // Create n signal tx
   let nSignalTransaction = new NameSignalTransaction(
-    compoundId(event.transaction.hash, Bytes.fromBigInt(event.logIndex)),
+    compoundId(event.transaction.hash, changetype<Bytes>(Bytes.fromBigInt(event.logIndex))),
   )
   nSignalTransaction.blockNumber = event.block.number.toI32()
   nSignalTransaction.timestamp = event.block.timestamp.toI32()
@@ -310,7 +308,7 @@ export function handleNSignalBurned(event: NSignalBurned): void {
 
   // Create n signal tx
   let nSignalTransaction = new NameSignalTransaction(
-    compoundId(event.transaction.hash, Bytes.fromBigInt(event.logIndex)),
+    compoundId(event.transaction.hash, changetype<Bytes>(Bytes.fromBigInt(event.logIndex))),
   )
   nSignalTransaction.blockNumber = event.block.number.toI32()
   nSignalTransaction.timestamp = event.block.timestamp.toI32()
@@ -367,7 +365,7 @@ export function handleGRTWithdrawn(event: GRTWithdrawn): void {
 
   let curator = Curator.load(event.params.nameCurator)!
   curator.totalWithdrawnTokens = curator.totalWithdrawnTokens.plus(event.params.withdrawnGRT)
-  curator.save()6
+  curator.save()
 }
 
 // - event: SubgraphPublished(indexed uint256,indexed bytes32,uint32)
@@ -385,7 +383,7 @@ export function handleSubgraphPublishedV2(event: SubgraphPublished1): void {
     event.transaction.from,
     event.block.timestamp,
   )
-  versionID = compoundId(subgraph.id, Bytes.fromBigInt(subgraph.versionCount))
+  versionID = compoundId(subgraph.id, changetype<Bytes>(Bytes.fromBigInt(subgraph.versionCount)))
   subgraph.currentVersion = versionID
   subgraph.versionCount = subgraph.versionCount.plus(BigInt.fromI32(1))
   subgraph.updatedAt = event.block.timestamp.toI32()
@@ -484,7 +482,7 @@ export function handleNSignalMintedV2(event: SignalMinted): void {
 
   // Create n signal tx
   let nSignalTransaction = new NameSignalTransaction(
-    compoundId(event.transaction.hash, Bytes.fromBigInt(event.logIndex)),
+    compoundId(event.transaction.hash, changetype<Bytes>(Bytes.fromBigInt(event.logIndex))),
   )
   nSignalTransaction.blockNumber = event.block.number.toI32()
   nSignalTransaction.timestamp = event.block.timestamp.toI32()
@@ -545,7 +543,7 @@ export function handleNSignalBurnedV2(event: SignalBurned): void {
 
   // Create n signal tx
   let nSignalTransaction = new NameSignalTransaction(
-    compoundId(event.transaction.hash, Bytes.fromBigInt(event.logIndex)),
+    compoundId(event.transaction.hash, changetype<Bytes>(Bytes.fromBigInt(event.logIndex))),
   )
   nSignalTransaction.blockNumber = event.block.number.toI32()
   nSignalTransaction.timestamp = event.block.timestamp.toI32()
@@ -614,7 +612,7 @@ export function handleSubgraphVersionUpdated(event: SubgraphVersionUpdated): voi
     subgraph.save()
 
     // Update already initialized subgraph version
-    versionID = compoundId(subgraph.id, Bytes.fromBigInt(subgraph.versionCount.minus(BigInt.fromI32(1))))
+    versionID = compoundId(subgraph.id, changetype<Bytes>(Bytes.fromBigInt(subgraph.versionCount.minus(BigInt.fromI32(1)))))
     let subgraphVersion = SubgraphVersion.load(versionID)!
     // let hexHash = changetype<Bytes>(addQm(event.params.versionMetadata))
     // let base58Hash = hexHash.toBase58()
@@ -623,7 +621,7 @@ export function handleSubgraphVersionUpdated(event: SubgraphVersionUpdated): voi
     subgraphVersion.save()
   } else {
     versionNumber = subgraph.versionCount
-    versionID = compoundId(subgraph.id, Bytes.fromBigInt(subgraph.versionCount))
+    versionID = compoundId(subgraph.id, changetype<Bytes>(Bytes.fromBigInt(subgraph.versionCount)))
     subgraph.currentVersion = versionID
     subgraph.versionCount = subgraph.versionCount.plus(BigInt.fromI32(1))
     subgraph.updatedAt = event.block.timestamp.toI32()
