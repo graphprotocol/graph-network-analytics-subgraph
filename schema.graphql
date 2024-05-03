@@ -1402,5 +1402,5 @@ type _Schema_
     name: "delegatorSearch"
     language: en
     algorithm: rank
-    include: [{ entity: "Delegator", fields: [{ name: "defaultDisplayName" }, { name: "id" }] }]
+    include: [{ entity: "Delegator", fields: [{ name: "defaultDisplayName" }] }]
   )
