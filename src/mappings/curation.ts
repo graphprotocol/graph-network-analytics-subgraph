@@ -12,7 +12,7 @@ import {
   SubgraphDeployment,
   SignalTransaction,
 } from '../types/schema'
-import { Address, BigInt, BigDecimal } from '@graphprotocol/graph-ts'
+import { BigInt, Bytes } from '@graphprotocol/graph-ts'
 
 import {
   createOrLoadSignal,
@@ -23,6 +23,7 @@ import {
   getAndUpdateSubgraphDeploymentDailyData,
   calculatePricePerShare,
   getAndUpdateNetworkDailyData,
+  compoundId,
 } from './helpers'
 
 /**
@@ -33,7 +34,7 @@ import {
  */
 export function handleSignalled(event: Signalled): void {
   // Update curator
-  let id = event.params.curator.toHexString()
+  let id = event.params.curator
   let curator = createOrLoadCurator(id, event.block.timestamp)
   curator.totalSignalledTokens = curator.totalSignalledTokens.plus(
     event.params.tokens.minus(event.params.curationTax),
@@ -41,7 +42,7 @@ export function handleSignalled(event: Signalled): void {
   curator.save()
 
   // Update signal
-  let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
+  let subgraphDeploymentID = event.params.subgraphDeploymentID
   let signal = createOrLoadSignal(id, subgraphDeploymentID)
   signal.signalledTokens = signal.signalledTokens.plus(
     event.params.tokens.minus(event.params.curationTax),
@@ -68,16 +69,16 @@ export function handleSignalled(event: Signalled): void {
 
   // Create n signal tx
   let signalTransaction = new SignalTransaction(
-    event.transaction.hash.toHexString().concat('-').concat(event.logIndex.toString()),
+    compoundId(event.transaction.hash, Bytes.fromBigInt(event.logIndex)),
   )
   signalTransaction.blockNumber = event.block.number.toI32()
   signalTransaction.timestamp = event.block.timestamp.toI32()
-  signalTransaction.signer = event.params.curator.toHexString()
+  signalTransaction.signer = event.params.curator
   signalTransaction.type = 'MintSignal'
   signalTransaction.signal = event.params.signal
   signalTransaction.tokens = event.params.tokens.minus(event.params.curationTax)
   signalTransaction.withdrawalFees = BigInt.fromI32(0)
-  signalTransaction.subgraphDeployment = event.params.subgraphDeploymentID.toHexString()
+  signalTransaction.subgraphDeployment = event.params.subgraphDeploymentID
   signalTransaction.save()
 
   getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)
@@ -91,12 +92,12 @@ export function handleSignalled(event: Signalled): void {
  */
 export function handleBurned(event: Burned): void {
   // Update curator
-  let id = event.params.curator.toHexString()
+  let id = event.params.curator
   let curator = Curator.load(id)!
   curator.totalUnsignalledTokens = curator.totalUnsignalledTokens.plus(event.params.tokens)
 
   // Update signal
-  let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
+  let subgraphDeploymentID = event.params.subgraphDeploymentID
   let signalID = joinID([id, subgraphDeploymentID])
   let signal = Signal.load(signalID)!
   // Note - if you immediately deposited and then withdrew, you would lose 5%, and you were
@@ -119,16 +120,16 @@ export function handleBurned(event: Burned): void {
 
   // Create n signal tx
   let signalTransaction = new SignalTransaction(
-    event.transaction.hash.toHexString().concat('-').concat(event.logIndex.toString()),
+    compoundId(event.transaction.hash, Bytes.fromBigInt(event.logIndex)),
   )
   signalTransaction.blockNumber = event.block.number.toI32()
   signalTransaction.timestamp = event.block.timestamp.toI32()
-  signalTransaction.signer = event.params.curator.toHexString()
+  signalTransaction.signer = event.params.curator
   signalTransaction.type = 'BurnSignal'
   signalTransaction.signal = event.params.signal
   signalTransaction.tokens = event.params.tokens
   signalTransaction.withdrawalFees = BigInt.fromI32(0)
-  signalTransaction.subgraphDeployment = event.params.subgraphDeploymentID.toHexString()
+  signalTransaction.subgraphDeployment = event.params.subgraphDeploymentID
   signalTransaction.save()
 
   getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)
@@ -140,17 +141,17 @@ export function handleBurned(event: Burned): void {
  * - updates all parameters of curation, depending on string passed. We then can
  *   call the contract directly to get the updated value
  */
- export function handleParameterUpdated(event: ParameterUpdated): void {
-   let parameter = event.params.param
+export function handleParameterUpdated(event: ParameterUpdated): void {
+  let parameter = event.params.param
 
-   if (parameter == 'defaultReserveRatio') {
-     let graphNetwork = createOrLoadGraphNetwork()
-     let curation = Curation.bind(event.address)
-     graphNetwork.defaultReserveRatio = curation.defaultReserveRatio().toI32()
-     graphNetwork.save()
-     getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
-   }
- }
+  if (parameter == 'defaultReserveRatio') {
+    let graphNetwork = createOrLoadGraphNetwork()
+    let curation = Curation.bind(event.address)
+    graphNetwork.defaultReserveRatio = curation.defaultReserveRatio().toI32()
+    graphNetwork.save()
+    getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
+  }
+}
 
 // export function handleImplementationUpdated(event: ImplementationUpdated): void {
 //   let graphNetwork = createOrLoadGraphNetwork()

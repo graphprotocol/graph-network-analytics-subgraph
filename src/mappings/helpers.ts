@@ -25,7 +25,7 @@ import { ENS } from '../types/GNS/ENS'
 import { addresses } from '../../config/addresses'
 import { LAUNCH_DAY, SECONDS_PER_DAY, avoidNegativeRoundingError } from './utils'
 
-let bytesSeparator = Bytes.fromHexString("0xABCDEF")
+let bytesSeparator = Bytes.fromHexString('0xABCDEF')
 
 export function createOrLoadGraphAccount(id: Bytes, timeStamp: BigInt): GraphAccount {
   let graphAccount = GraphAccount.load(id)
@@ -509,11 +509,13 @@ function createGraphAccountName(
 }
 
 export function joinID(pieces: Array<Bytes>): Bytes {
-  return pieces.reduce((acc, elem, index) => { return index == 0 ? elem : acc.concat(bytesSeparator).concat(elem) })
+  return pieces.reduce((acc, elem, index) => {
+    return index == 0 ? elem : acc.concat(bytesSeparator).concat(elem)
+  })
 }
 
 export function joinIDString(pieces: Array<String>): string {
-  return pieces.join("-")
+  return pieces.join('-')
 }
 
 function min(a: BigDecimal, b: BigDecimal): BigDecimal {
@@ -881,9 +883,13 @@ export function getAliasedL2SubgraphID(id: BigInt): BigInt {
   // offset === 0x1111000000000000000000000000000000000000000000000000000000001111 or "7719354826016761135949426780745810995650277145449579228033297493447455805713"
   // base === 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff + 1 or "115792089237316195423570985008687907853269984665640564039457584007913129639936"
   // const expectedL2SubgraphId = l1SubgraphId.add(offset).mod(base)
-  let offset = BigInt.fromString("7719354826016761135949426780745810995650277145449579228033297493447455805713")
-  let base = BigInt.fromString("115792089237316195423570985008687907853269984665640564039457584007913129639936")
-  return (id.plus(offset)).mod(base)
+  let offset = BigInt.fromString(
+    '7719354826016761135949426780745810995650277145449579228033297493447455805713',
+  )
+  let base = BigInt.fromString(
+    '115792089237316195423570985008687907853269984665640564039457584007913129639936',
+  )
+  return id.plus(offset).mod(base)
 }
 
 // TODO - this is broken if we change the delegatio ratio

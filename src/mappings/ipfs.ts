@@ -1,11 +1,9 @@
 import { json, Bytes, dataSource, JSONValueKind, log } from '@graphprotocol/graph-ts'
-import {
-  GraphAccountMetadata
-} from '../types/schema'
+import { GraphAccountMetadata } from '../types/schema'
 import { jsonToString } from './utils'
 
 export function handleGraphAccountMetadata(content: Bytes): void {
-  let id = dataSource.context().getString("id")
+  let id = dataSource.context().getBytes('id')
   let graphAccountMetadata = new GraphAccountMetadata(id)
   let tryData = json.try_fromBytes(content)
   if (tryData.isOk) {

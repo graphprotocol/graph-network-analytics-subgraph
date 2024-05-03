@@ -3,10 +3,10 @@ import { DIDAttributeChanged } from '../types/EthereumDIDRegistry/EthereumDIDReg
 import { GraphAccountMetadata as GraphAccountMetadataTemplate } from '../types/templates'
 import { GraphAccount } from '../types/schema'
 
-import { addQm, createOrLoadGraphAccount } from './helpers'
+import { addQm, createOrLoadGraphAccount, joinID } from './helpers'
 
 export function handleDIDAttributeChanged(event: DIDAttributeChanged): void {
-  let graphAccount = createOrLoadGraphAccount(event.params.identity.toHexString(), event.block.timestamp)
+  let graphAccount = createOrLoadGraphAccount(event.params.identity, event.block.timestamp)
   // OFFCHAIN_DATANAME = keccak256("GRAPH NAME SERVICE")
   // 0x72abcb436eed911d1b6046bbe645c235ec3767c842eb1005a6da9326c2347e4c
   if (
@@ -17,13 +17,17 @@ export function handleDIDAttributeChanged(event: DIDAttributeChanged): void {
     // called it directly, it could crash the subgraph
     let hexHash = changetype<Bytes>(addQm(event.params.value))
     let base58Hash = hexHash.toBase58()
-    let uniqueTxID = event.transaction.hash.toHexString().concat('-').concat(event.logIndex.toString())
-    let metadataId = uniqueTxID.concat('-').concat(graphAccount.id.concat('-').concat(base58Hash))
+    let metadataId = joinID([
+      event.transaction.hash,
+      Bytes.fromBigInt(event.logIndex),
+      graphAccount.id,
+      hexHash,
+    ])
     graphAccount.metadata = metadataId
     graphAccount.save()
 
     let context = new DataSourceContext()
-    context.setString('id', metadataId)
+    context.setBytes('id', metadataId)
     GraphAccountMetadataTemplate.createWithContext(base58Hash, context)
   }
 }

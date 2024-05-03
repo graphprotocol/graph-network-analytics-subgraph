@@ -249,11 +249,8 @@ type Subgraph @entity {
   "Subgraph number used to create the ID. Only available for Subgraphs created pre-migration"
   subgraphNumber: BigInt
 
-  "Version of the entity. Subgraph entities are changing the way their ID is generated when the new GNS v2 rolls out so we need to differnetiate them"
+  "[DEPRECATED] Version of the entity. Subgraph entities are changing the way their ID is generated when the new GNS v2 rolls out so we need to differnetiate them"
   entityVersion: Int!
-
-  "Subgraph entities might have 'duplicate' entities so that old IDs can be persisted and still queried properly. If that happens we have to link both duplicate entities to be able to update them properly."
-  linkedEntity: Subgraph
 
   # Name curation data for bonding curve
   # Note that the Subgraphs V signal is actually stored in a Signal entity, which
@@ -290,7 +287,7 @@ type Subgraph @entity {
   "Block number for the L1 -> L2 Transfer. Null if the transfer hasn't started yet"
   startedTransferToL2AtBlockNumber: BigInt
   "Transaction hash for the L1 -> L2 Transfer. Null if the transfer hasn't started yet"
-  startedTransferToL2AtTx: String
+  startedTransferToL2AtTx: Bytes
   "Whether the subgraph has been fully transferred from L1 to L2. Subgraphs published on L2 will have this as false unless they were published through a transfer"
   transferredToL2: Boolean!
   "Timestamp for the L1 -> L2 Transfer. Null if it's not fully transferred or if it's an L1 deployment"
@@ -298,15 +295,15 @@ type Subgraph @entity {
   "Block number for the L1 -> L2 Transfer. Null if it's not fully transferred or if it's an L1 deployment"
   transferredToL2AtBlockNumber: BigInt
   "Transaction hash for the L1 -> L2 Transfer. Null if it's not fully transferred or if it's an L1 deployment"
-  transferredToL2AtTx: String
+  transferredToL2AtTx: Bytes
   "Amount of GRT transferred to L2"
   signalledTokensSentToL2: BigInt!
   "Amount of GRT received on L2"
   signalledTokensReceivedOnL2: BigInt!
   "ID of the subgraph on L2. Null if it's not transferred"
-  idOnL2: String
+  idOnL2: Bytes
   "ID of the subgraph on L1. Null if it's not transferred"
-  idOnL1: String
+  idOnL1: Bytes
 }
 
 """
@@ -342,8 +339,6 @@ type SubgraphVersion @entity {
   # label: String!
 
   entityVersion: Int!
-
-  linkedEntity: SubgraphVersion
 }
 
 """
@@ -428,7 +423,7 @@ type SubgraphDeployment @entity {
   "Block number for the L1 -> L2 Transfer. Null if it's not fully transferred or if it's an L1 deployment"
   transferredToL2AtBlockNumber: BigInt
   "Transaction hash for the L1 -> L2 Transfer. Null if it's not fully transferred or if it's an L1 deployment"
-  transferredToL2AtTx: String
+  transferredToL2AtTx: Bytes
   "Amount of GRT transferred to L2"
   signalledTokensSentToL2: BigInt!
   "Amount of GRT received on L2"
@@ -563,19 +558,19 @@ type Indexer @entity {
   "Block number for the FIRST L1 -> L2 Transfer"
   firstTransferredToL2AtBlockNumber: BigInt
   "Transaction hash for the FIRST L1 -> L2 Transfer"
-  firstTransferredToL2AtTx: String
+  firstTransferredToL2AtTx: Bytes
   "Timestamp for the latest L1 -> L2 Transfer"
   lastTransferredToL2At: BigInt
   "Block number for the latest L1 -> L2 Transfer"
   lastTransferredToL2AtBlockNumber: BigInt
   "Transaction hash for the latest L1 -> L2 Transfer"
-  lastTransferredToL2AtTx: String
+  lastTransferredToL2AtTx: Bytes
   "Amount of GRT transferred to L2. Only visible from L1, as there's no events for it on L2"
   stakedTokensTransferredToL2: BigInt!
   "ID of the indexer on L2. Null if it's not transferred"
-  idOnL2: String
+  idOnL2: Bytes
   "ID of the indexer on L1. Null if it's not transferred"
-  idOnL1: String
+  idOnL1: Bytes
 }
 
 """
@@ -826,13 +821,13 @@ type DelegatedStake @entity {
   "Block number for the L1 -> L2 Transfer"
   transferredToL2AtBlockNumber: BigInt
   "Transaction hash for the L1 -> L2 Transfer"
-  transferredToL2AtTx: String
+  transferredToL2AtTx: Bytes
   "Amount of GRT transferred to L2. Only visible from L1, as there's no events for it on L2"
   stakedTokensTransferredToL2: BigInt!
   "ID of the delegation on L2. Null if it's not transferred"
-  idOnL2: String
+  idOnL2: Bytes
   "ID of the delegation on L1. Null if it's not transferred"
-  idOnL1: String
+  idOnL1: Bytes
 }
 
 """
@@ -965,8 +960,6 @@ type NameSignal @entity {
 
   entityVersion: Int!
 
-  linkedEntity: NameSignal
-
   "Amount of GRT transferred to L2"
   signalledTokensSentToL2: BigInt!
   "Amount of GRT received on L2"
@@ -978,11 +971,11 @@ type NameSignal @entity {
   "Block number for the L1 -> L2 Transfer."
   transferredToL2AtBlockNumber: BigInt
   "Transaction hash for the L1 -> L2 Transfer."
-  transferredToL2AtTx: String
+  transferredToL2AtTx: Bytes
   "ID of the NameSignal entity on L2. Null if it's not transferred"
-  idOnL2: String
+  idOnL2: Bytes
   "ID of the NameSignal entity on L1. Null if it's not transferred"
-  idOnL1: String
+  idOnL1: Bytes
 }
 
 """
@@ -1010,7 +1003,7 @@ interface Transaction {
 """
 All relevant data for a Name Signal Transaction in The Graph Network
 """
-type NameSignalTransaction implements Transaction @entity {
+type NameSignalTransaction implements Transaction @entity(immutable: true) {
   id: Bytes!
 
   blockNumber: Int!
@@ -1037,7 +1030,7 @@ type NameSignalTransaction implements Transaction @entity {
 """
 All relevant data for a Signal Transaction in The Graph Network
 """
-type SignalTransaction implements Transaction @entity {
+type SignalTransaction implements Transaction @entity(immutable: true) {
   id: Bytes!
 
   blockNumber: Int!

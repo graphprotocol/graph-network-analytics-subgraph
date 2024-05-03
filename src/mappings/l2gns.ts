@@ -36,7 +36,7 @@ export function handleSubgraphReceivedFromL1(event: SubgraphReceivedFromL1): voi
   subgraph.startedTransferToL2 = true
   subgraph.startedTransferToL2At = event.block.timestamp
   subgraph.startedTransferToL2AtBlockNumber = event.block.number
-  subgraph.startedTransferToL2AtTx = event.transaction.hash.toHexString()
+  subgraph.startedTransferToL2AtTx = event.transaction.hash
   subgraph.signalledTokensReceivedOnL2 = subgraph.signalledTokensReceivedOnL2.plus(
     event.params._tokens,
   )
@@ -56,7 +56,7 @@ export function handleSubgraphL2TransferFinalized(event: SubgraphL2TransferFinal
   subgraph.transferredToL2 = true
   subgraph.transferredToL2At = event.block.timestamp
   subgraph.transferredToL2AtBlockNumber = event.block.number
-  subgraph.transferredToL2AtTx = event.transaction.hash.toHexString()
+  subgraph.transferredToL2AtTx = event.transaction.hash
   subgraph.save()
 
   let version = SubgraphVersion.load(subgraph.currentVersion!)!
@@ -64,11 +64,11 @@ export function handleSubgraphL2TransferFinalized(event: SubgraphL2TransferFinal
   deployment.transferredToL2 = true
   deployment.transferredToL2At = event.block.timestamp
   deployment.transferredToL2AtBlockNumber = event.block.number
-  deployment.transferredToL2AtTx = event.transaction.hash.toHexString()
+  deployment.transferredToL2AtTx = event.transaction.hash
   deployment.signalledTokensReceivedOnL2 = subgraph.signalledTokensReceivedOnL2
   deployment.save()
 
-  getAndUpdateSubgraphDeploymentDailyData(deployment, event.block.timestamp);
+  getAndUpdateSubgraphDeploymentDailyData(deployment, event.block.timestamp)
 }
 
 /// @dev Emitted when the L1 balance for a curator has been claimed
@@ -79,14 +79,14 @@ export function handleCuratorBalanceReceived(event: CuratorBalanceReceived): voi
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
 
   let nameSignal = createOrLoadNameSignal(
-    event.params._l2Curator.toHexString(),
+    event.params._l2Curator,
     subgraphID,
     event.block.timestamp,
   )
   nameSignal.transferredToL2 = true
   nameSignal.transferredToL2At = event.block.timestamp
   nameSignal.transferredToL2AtBlockNumber = event.block.number
-  nameSignal.transferredToL2AtTx = event.transaction.hash.toHexString()
+  nameSignal.transferredToL2AtTx = event.transaction.hash
   nameSignal.idOnL2 = nameSignal.id
   nameSignal.signalledTokensReceivedOnL2 = nameSignal.signalledTokensReceivedOnL2.plus(
     event.params._tokens,
@@ -106,7 +106,7 @@ export function handleCuratorBalanceReceived(event: CuratorBalanceReceived): voi
   )
   deployment.save()
 
-  getAndUpdateSubgraphDeploymentDailyData(deployment, event.block.timestamp);
+  getAndUpdateSubgraphDeploymentDailyData(deployment, event.block.timestamp)
 }
 
 /// @dev Emitted when the L1 balance for a curator has been returned to the beneficiary.
@@ -120,7 +120,9 @@ export function handleCuratorBalanceReceived(event: CuratorBalanceReceived): voi
 export function handleCuratorBalanceReturnedToBeneficiary(
   event: CuratorBalanceReturnedToBeneficiary,
 ): void {
-  let graphAccount = createOrLoadGraphAccount(event.params._l2Curator.toHexString(), event.block.timestamp)
-  graphAccount.balanceReceivedFromL1Signalling = graphAccount.balanceReceivedFromL1Signalling.plus(event.params._tokens)
+  let graphAccount = createOrLoadGraphAccount(event.params._l2Curator, event.block.timestamp)
+  graphAccount.balanceReceivedFromL1Signalling = graphAccount.balanceReceivedFromL1Signalling.plus(
+    event.params._tokens,
+  )
   graphAccount.save()
 }
