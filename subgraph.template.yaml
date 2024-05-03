@@ -13,34 +13,6 @@ indexerHints:
 schema:
   file: ./schema.graphql
 dataSources:
-  # - kind: ethereum/contract
-  #   name: Controller
-  #   network: {{network}}
-  #   source:
-  #     address: '{{controller}}'
-  #     abi: Controller
-  #     startBlock: {{blockNumber}}
-  #   mapping:
-  #     kind: ethereum/events
-  #     apiVersion: 0.0.7
-  #     language: wasm/assemblyscript
-  #     file: ./src/mappings/controller.ts
-  #     entities:
-  #       - Indexer
-  #     abis:
-  #       - name: Controller
-  #         file: ./node_modules/@graphprotocol/contracts/dist/abis/Controller.json
-  #     eventHandlers:
-  #       - event: SetContractProxy(indexed bytes32,address)
-  #         handler: handleSetContractProxy
-  #       - event: NewOwnership(indexed address,indexed address)
-  #         handler: handleNewOwnership
-  #       - event: PartialPauseChanged(bool)
-  #         handler: handlePartialPauseChanged
-  #       - event: PauseChanged(bool)
-  #         handler: handlePauseChanged
-  #       - event: NewPauseGuardian(indexed address,indexed address)
-  #         handler: handleNewPauseGuardian
   - kind: ethereum/contract
     name: GNS
     network: {{network}}
