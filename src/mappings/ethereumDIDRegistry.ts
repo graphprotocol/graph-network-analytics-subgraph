@@ -19,7 +19,7 @@ export function handleDIDAttributeChanged(event: DIDAttributeChanged): void {
     let base58Hash = hexHash.toBase58()
     let metadataId = joinID([
       event.transaction.hash,
-      Bytes.fromBigInt(event.logIndex),
+      changetype<Bytes>(Bytes.fromBigInt(event.logIndex)),
       graphAccount.id,
       hexHash,
     ])
