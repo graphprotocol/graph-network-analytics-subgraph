@@ -562,7 +562,7 @@ export function handleAllocationClosed(event: AllocationClosed): void {
 
   // update allocation
   let allocation = Allocation.load(allocationID)!
-  allocation.poolClosedIn = Bytes.fromBigInt(event.params.epoch)
+  allocation.poolClosedIn = changetype<Bytes>(Bytes.fromBigInt(event.params.epoch))
   allocation.activeForIndexer = null
   allocation.closedAtEpoch = event.params.epoch.toI32()
   allocation.closedAtBlockHash = event.block.hash
@@ -613,7 +613,7 @@ export function handleAllocationClosedCobbDouglas(event: AllocationClosed1): voi
 
   // update allocation
   let allocation = Allocation.load(allocationID)!
-  allocation.poolClosedIn = Bytes.fromBigInt(event.params.epoch)
+  allocation.poolClosedIn = changetype<Bytes>(Bytes.fromBigInt(event.params.epoch))
   allocation.activeForIndexer = null
   allocation.closedAtEpoch = event.params.epoch.toI32()
   allocation.closedAtBlockHash = event.block.hash
@@ -684,7 +684,7 @@ export function handleRebateClaimed(event: RebateClaimed): void {
   allocation.save()
 
   // update pool
-  let pool = Pool.load(Bytes.fromBigInt(event.params.forEpoch))!
+  let pool = Pool.load(changetype<Bytes>(Bytes.fromBigInt(event.params.forEpoch)))!
   pool.claimedFees = pool.claimedFees.plus(event.params.tokens)
   pool.save()
 

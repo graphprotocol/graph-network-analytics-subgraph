@@ -69,7 +69,7 @@ export function handleSignalled(event: Signalled): void {
 
   // Create n signal tx
   let signalTransaction = new SignalTransaction(
-    compoundId(event.transaction.hash, Bytes.fromBigInt(event.logIndex)),
+    compoundId(event.transaction.hash, changetype<Bytes>(Bytes.fromBigInt(event.logIndex))),
   )
   signalTransaction.blockNumber = event.block.number.toI32()
   signalTransaction.timestamp = event.block.timestamp.toI32()
@@ -120,7 +120,7 @@ export function handleBurned(event: Burned): void {
 
   // Create n signal tx
   let signalTransaction = new SignalTransaction(
-    compoundId(event.transaction.hash, Bytes.fromBigInt(event.logIndex)),
+    compoundId(event.transaction.hash, changetype<Bytes>(Bytes.fromBigInt(event.logIndex))),
   )
   signalTransaction.blockNumber = event.block.number.toI32()
   signalTransaction.timestamp = event.block.timestamp.toI32()
