@@ -8,7 +8,7 @@ import { createOrLoadIndexer, createOrLoadGraphAccount } from './helpers'
  * - updates indexer, creates if needed
  */
 export function handleServiceRegistered(event: ServiceRegistered): void {
-  let id = event.params.indexer.toHexString()
+  let id = event.params.indexer
 
   // Creates Graph Account, if needed
   createOrLoadGraphAccount(id, event.block.timestamp)
@@ -24,7 +24,7 @@ export function handleServiceRegistered(event: ServiceRegistered): void {
  * - updates indexer
  */
 export function handleServiceUnregistered(event: ServiceUnregistered): void {
-  let id = event.params.indexer.toHexString()
+  let id = event.params.indexer
   let indexer = Indexer.load(id)!
   indexer.url = null
   indexer.geoHash = null

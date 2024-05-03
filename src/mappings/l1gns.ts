@@ -1,4 +1,4 @@
-import { BigDecimal, BigInt, log } from '@graphprotocol/graph-ts'
+import { BigInt } from '@graphprotocol/graph-ts'
 import { SubgraphSentToL2, CuratorBalanceSentToL2 } from '../types/L1GNS/L1GNS'
 
 import { Subgraph, NameSignal, SubgraphVersion, SubgraphDeployment } from '../types/schema'
@@ -8,6 +8,7 @@ import {
   convertBigIntSubgraphIDToBase58,
   getAliasedL2SubgraphID,
   getAndUpdateSubgraphDeploymentDailyData,
+  compoundId,
 } from './helpers'
 
 /*
@@ -22,14 +23,14 @@ export function handleSubgraphSentToL2(event: SubgraphSentToL2): void {
   let bigIntID = event.params._subgraphID
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
   let l2id = convertBigIntSubgraphIDToBase58(getAliasedL2SubgraphID(bigIntID))
-  let nameSignalID = joinID([event.params._l1Owner.toHexString(), subgraphID])
-  let nameSignalL2id = joinID([event.params._l2Owner.toHexString(), l2id])
+  let nameSignalID = compoundId(event.params._l1Owner, subgraphID)
+  let nameSignalL2id = compoundId(event.params._l2Owner, l2id)
 
   let nameSignal = NameSignal.load(nameSignalID)!
   nameSignal.transferredToL2 = true
   nameSignal.transferredToL2At = event.block.timestamp
   nameSignal.transferredToL2AtBlockNumber = event.block.number
-  nameSignal.transferredToL2AtTx = event.transaction.hash.toHexString()
+  nameSignal.transferredToL2AtTx = event.transaction.hash
   nameSignal.idOnL1 = nameSignalID
   nameSignal.idOnL2 = nameSignalL2id
   nameSignal.signalledTokensSentToL2 = nameSignal.signalledTokensSentToL2.plus(event.params._tokens)
@@ -39,22 +40,25 @@ export function handleSubgraphSentToL2(event: SubgraphSentToL2): void {
   // tokensForL2.mul(totalSignal).div(ownerNSignal) = curationTokens
 
   let subgraph = Subgraph.load(subgraphID)!
-  subgraph.active = false;
+  subgraph.active = false
   subgraph.startedTransferToL2 = true
   subgraph.startedTransferToL2At = event.block.timestamp
   subgraph.startedTransferToL2AtBlockNumber = event.block.number
-  subgraph.startedTransferToL2AtTx = event.transaction.hash.toHexString()
+  subgraph.startedTransferToL2AtTx = event.transaction.hash
   subgraph.signalledTokensSentToL2 = subgraph.signalledTokensSentToL2.plus(event.params._tokens)
   subgraph.idOnL1 = subgraphID
   subgraph.idOnL2 = l2id
-  
-  let curationTokens = event.params._tokens.times(subgraph.nameSignalAmount).div(nameSignal.nameSignal)
+
+  let curationTokens = event.params._tokens
+    .times(subgraph.nameSignalAmount)
+    .div(nameSignal.nameSignal)
 
   subgraph.nameSignalAmount = subgraph.nameSignalAmount.minus(nameSignal.nameSignal)
   let withdrawable = curationTokens.minus(event.params._tokens)
-  subgraph.withdrawableTokens = withdrawable == BigInt.fromI32(-1) ? BigInt.fromI32(0) : withdrawable; // to fix rounding error in AS
+  subgraph.withdrawableTokens =
+    withdrawable == BigInt.fromI32(-1) ? BigInt.fromI32(0) : withdrawable // to fix rounding error in AS
 
-  nameSignal.nameSignal = BigInt.fromI32(0);
+  nameSignal.nameSignal = BigInt.fromI32(0)
   //nameSignal.signal = BigDecimal.fromString('0');
   nameSignal.lastNameSignalChange = event.block.number.toI32()
 
@@ -66,11 +70,11 @@ export function handleSubgraphSentToL2(event: SubgraphSentToL2): void {
   deployment.transferredToL2 = true
   deployment.transferredToL2At = event.block.timestamp
   deployment.transferredToL2AtBlockNumber = event.block.number
-  deployment.transferredToL2AtTx = event.transaction.hash.toHexString()
+  deployment.transferredToL2AtTx = event.transaction.hash
   deployment.signalledTokensSentToL2 = deployment.signalledTokensSentToL2.plus(event.params._tokens)
   deployment.save()
 
-  getAndUpdateSubgraphDeploymentDailyData(deployment, event.block.timestamp);
+  getAndUpdateSubgraphDeploymentDailyData(deployment, event.block.timestamp)
 }
 
 /*
@@ -85,26 +89,27 @@ export function handleCuratorBalanceSentToL2(event: CuratorBalanceSentToL2): voi
   let bigIntID = event.params._subgraphID
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
   let subgraphL2id = convertBigIntSubgraphIDToBase58(getAliasedL2SubgraphID(bigIntID))
-  let nameSignalID = joinID([event.params._l1Curator.toHexString(), subgraphID])
-  let nameSignalL2id = joinID([event.params._l2Beneficiary.toHexString(), subgraphL2id])
+  let nameSignalID = compoundId(event.params._l1Curator, subgraphID)
+  let nameSignalL2id = compoundId(event.params._l2Beneficiary, subgraphL2id)
 
   let nameSignal = NameSignal.load(nameSignalID)!
   nameSignal.transferredToL2 = true
   nameSignal.transferredToL2At = event.block.timestamp
   nameSignal.transferredToL2AtBlockNumber = event.block.number
-  nameSignal.transferredToL2AtTx = event.transaction.hash.toHexString()
+  nameSignal.transferredToL2AtTx = event.transaction.hash
   nameSignal.idOnL1 = nameSignalID
   nameSignal.idOnL2 = nameSignalL2id
   nameSignal.signalledTokensSentToL2 = nameSignal.signalledTokensSentToL2.plus(event.params._tokens)
-  
+
   let subgraph = Subgraph.load(subgraphID)!
   subgraph.signalledTokensSentToL2 = subgraph.signalledTokensSentToL2.plus(event.params._tokens)
 
   subgraph.nameSignalAmount = subgraph.nameSignalAmount.minus(nameSignal.nameSignal)
   let withdrawable = subgraph.withdrawableTokens.minus(event.params._tokens)
-  subgraph.withdrawableTokens = withdrawable == BigInt.fromI32(-1) ? BigInt.fromI32(0) : withdrawable; // to fix rounding error in AS
+  subgraph.withdrawableTokens =
+    withdrawable == BigInt.fromI32(-1) ? BigInt.fromI32(0) : withdrawable // to fix rounding error in AS
 
-  nameSignal.nameSignal = BigInt.fromI32(0);
+  nameSignal.nameSignal = BigInt.fromI32(0)
   //nameSignal.signal = BigDecimal.fromString('0');
   nameSignal.lastNameSignalChange = event.block.number.toI32()
 
@@ -116,5 +121,5 @@ export function handleCuratorBalanceSentToL2(event: CuratorBalanceSentToL2): voi
   deployment.signalledTokensSentToL2 = deployment.signalledTokensSentToL2.plus(event.params._tokens)
   deployment.save()
 
-  getAndUpdateSubgraphDeploymentDailyData(deployment, event.block.timestamp);
+  getAndUpdateSubgraphDeploymentDailyData(deployment, event.block.timestamp)
 }

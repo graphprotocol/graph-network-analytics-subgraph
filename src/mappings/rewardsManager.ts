@@ -14,12 +14,12 @@ import {
   getAndUpdateIndexerDailyData,
   getAndUpdateSubgraphDeploymentDailyData,
   batchUpdateDelegatorsForIndexer,
-  getAndUpdateNetworkDailyData
+  getAndUpdateNetworkDailyData,
 } from './helpers'
 
 export function handleRewardsAssigned(event: RewardsAssigned): void {
-  let indexerID = event.params.indexer.toHexString()
-  let allocationID = event.params.allocationID.toHexString()
+  let indexerID = event.params.indexer
+  let allocationID = event.params.allocationID
 
   // update indexer
   let indexer = Indexer.load(indexerID)!
@@ -49,9 +49,8 @@ export function handleRewardsAssigned(event: RewardsAssigned): void {
   let allocation = Allocation.load(allocationID)!
   allocation.indexingRewards = allocation.indexingRewards.plus(event.params.amount)
   allocation.indexingIndexerRewards = allocation.indexingIndexerRewards.plus(indexerIndexingRewards)
-  allocation.indexingDelegatorRewards = allocation.indexingDelegatorRewards.plus(
-    delegatorIndexingRewards,
-  )
+  allocation.indexingDelegatorRewards =
+    allocation.indexingDelegatorRewards.plus(delegatorIndexingRewards)
   allocation.save()
 
   // update subgraph deployment
@@ -63,24 +62,21 @@ export function handleRewardsAssigned(event: RewardsAssigned): void {
   subgraphDeployment.indexingRewardAmount = subgraphDeployment.indexingRewardAmount.plus(
     event.params.amount,
   )
-  subgraphDeployment.indexingIndexerRewardAmount = subgraphDeployment.indexingIndexerRewardAmount.plus(
-    indexerIndexingRewards,
-  )
-  subgraphDeployment.indexingDelegatorRewardAmount = subgraphDeployment.indexingDelegatorRewardAmount.plus(
-    delegatorIndexingRewards,
-  )
+  subgraphDeployment.indexingIndexerRewardAmount =
+    subgraphDeployment.indexingIndexerRewardAmount.plus(indexerIndexingRewards)
+  subgraphDeployment.indexingDelegatorRewardAmount =
+    subgraphDeployment.indexingDelegatorRewardAmount.plus(delegatorIndexingRewards)
   subgraphDeployment.save()
 
   // update graph network
   let graphNetwork = createOrLoadGraphNetwork()
   graphNetwork.totalIndexingRewards = graphNetwork.totalIndexingRewards.plus(event.params.amount)
-  graphNetwork.totalIndexingIndexerRewards = graphNetwork.totalIndexingIndexerRewards.plus(
-    indexerIndexingRewards,
-  )
-  graphNetwork.totalIndexingDelegatorRewards = graphNetwork.totalIndexingDelegatorRewards.plus(
-    delegatorIndexingRewards,
-  )
-  graphNetwork.totalDelegatedTokens = graphNetwork.totalDelegatedTokens.plus(delegatorIndexingRewards)
+  graphNetwork.totalIndexingIndexerRewards =
+    graphNetwork.totalIndexingIndexerRewards.plus(indexerIndexingRewards)
+  graphNetwork.totalIndexingDelegatorRewards =
+    graphNetwork.totalIndexingDelegatorRewards.plus(delegatorIndexingRewards)
+  graphNetwork.totalDelegatedTokens =
+    graphNetwork.totalDelegatedTokens.plus(delegatorIndexingRewards)
   graphNetwork.save()
 
   batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
@@ -119,7 +115,7 @@ export function handleRewardsAssigned(event: RewardsAssigned): void {
 // }
 
 export function handleRewardsDenyListUpdated(event: RewardsDenylistUpdated): void {
-  let subgraphDeployment = SubgraphDeployment.load(event.params.subgraphDeploymentID.toHexString())!
+  let subgraphDeployment = SubgraphDeployment.load(event.params.subgraphDeploymentID)!
   if (event.params.sinceBlock.toI32() == 0) {
     subgraphDeployment.deniedAt = 0
   } else {

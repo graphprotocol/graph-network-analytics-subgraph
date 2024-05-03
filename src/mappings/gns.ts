@@ -45,16 +45,12 @@ import {
   createOrLoadNameSignal,
   getSubgraphID,
   convertBigIntSubgraphIDToBase58,
-  duplicateOrUpdateSubgraphWithNewID,
-  duplicateOrUpdateSubgraphVersionWithNewID,
-  duplicateOrUpdateNameSignalWithNewID,
+  compoundId,
+  joinIDString,
 } from './helpers'
 
 export function handleSetDefaultName(event: SetDefaultName): void {
-  let graphAccount = createOrLoadGraphAccount(
-    event.params.graphAccount.toHexString(),
-    event.block.timestamp,
-  )
+  let graphAccount = createOrLoadGraphAccount(event.params.graphAccount, event.block.timestamp)
 
   if (graphAccount.defaultName != null) {
     let graphAccountName = GraphAccountName.load(graphAccount.defaultName!)!
@@ -76,13 +72,13 @@ export function handleSetDefaultName(event: SetDefaultName): void {
       graphAccount.defaultDisplayName = null
       graphAccount.save()
 
-      let indexer = Indexer.load(event.params.graphAccount.toHexString())
+      let indexer = Indexer.load(event.params.graphAccount)
       if (indexer != null) {
         indexer.defaultDisplayName = graphAccount.defaultDisplayName
         indexer.save()
       }
 
-      let delegator = Delegator.load(event.params.graphAccount.toHexString())
+      let delegator = Delegator.load(event.params.graphAccount)
       if (delegator != null) {
         delegator.defaultDisplayName = graphAccount.defaultDisplayName
         delegator.save()
@@ -104,7 +100,7 @@ export function handleSetDefaultName(event: SetDefaultName): void {
 
     // And if the GraphAccount changes default name, we should change it on the indexer too.
     // Indexer also has a defaultDisplayName because it helps with filtering.
-    let userAddress = event.params.graphAccount.toHexString()
+    let userAddress = event.params.graphAccount
 
     let indexer = Indexer.load(userAddress)
     if (indexer != null) {
@@ -122,19 +118,12 @@ export function handleSetDefaultName(event: SetDefaultName): void {
 }
 
 export function handleSubgraphMetadataUpdated(event: SubgraphMetadataUpdated): void {
-  let oldID = joinID([
-    event.params.graphAccount.toHexString(),
-    event.params.subgraphNumber.toString(),
-  ])
   let subgraphID = getSubgraphID(event.params.graphAccount, event.params.subgraphNumber)
   let subgraph = createOrLoadSubgraph(subgraphID, event.params.graphAccount, event.block.timestamp)
 
   subgraph.metadataHash = event.params.subgraphMetadata
   subgraph.updatedAt = event.block.timestamp.toI32()
   subgraph.save()
-
-  let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, oldID, 1)
-  subgraphDuplicate.save()
 }
 
 /**
@@ -146,10 +135,6 @@ export function handleSubgraphMetadataUpdated(event: SubgraphMetadataUpdated): v
  * - creates graph account, if needed
  */
 export function handleSubgraphPublished(event: SubgraphPublished): void {
-  let oldID = joinID([
-    event.params.graphAccount.toHexString(),
-    event.params.subgraphNumber.toString(),
-  ])
   let subgraphID = getSubgraphID(event.params.graphAccount, event.params.subgraphNumber)
   let versionNumber: BigInt
 
@@ -157,30 +142,22 @@ export function handleSubgraphPublished(event: SubgraphPublished): void {
   let subgraph = createOrLoadSubgraph(subgraphID, event.params.graphAccount, event.block.timestamp)
 
   versionNumber = subgraph.versionCount
-  let versionIDOld = joinID([oldID, subgraph.versionCount.toString()])
-  let versionIDNew = joinID([subgraph.id, subgraph.versionCount.toString()])
-  subgraph.creatorAddress = changetype<Bytes>(event.params.graphAccount)
+  let versionIDNew = compoundId(subgraph.id, Bytes.fromBigInt(subgraph.versionCount))
+  subgraph.creatorAddress = event.params.graphAccount
   subgraph.subgraphNumber = event.params.subgraphNumber
-  subgraph.oldID = joinID([
-    event.params.graphAccount.toHexString(),
-    event.params.subgraphNumber.toString(),
-  ])
+  subgraph.oldID = joinIDString([event.params.graphAccount.toHexString(), event.params.subgraphNumber.toString()])
   subgraph.versionCount = subgraph.versionCount.plus(BigInt.fromI32(1))
   subgraph.updatedAt = event.block.timestamp.toI32()
 
-  let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, oldID, 1)
-
   subgraph.currentVersion = versionIDNew
-  subgraphDuplicate.currentVersion = versionIDOld
-  subgraph.linkedEntity = subgraphDuplicate.id
+
   subgraph.save()
-  subgraphDuplicate.save()
 
   // Creates Graph Account, if needed
-  createOrLoadGraphAccount(event.params.graphAccount.toHexString(), event.block.timestamp)
+  createOrLoadGraphAccount(event.params.graphAccount, event.block.timestamp)
 
   // Create subgraph deployment, if needed. Can happen if the deployment has never been staked on
-  let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
+  let subgraphDeploymentID = event.params.subgraphDeploymentID
   let deployment = createOrLoadSubgraphDeployment(subgraphDeploymentID, event.block.timestamp)
 
   // Create subgraph version
@@ -193,16 +170,7 @@ export function handleSubgraphPublished(event: SubgraphPublished): void {
   let hexHash = changetype<Bytes>(addQm(event.params.versionMetadata))
   let base58Hash = hexHash.toBase58()
   subgraphVersion.metadataHash = event.params.versionMetadata
-  //subgraphVersion = fetchSubgraphVersionMetadata(subgraphVersion, base58Hash)
-  let subgraphVersionDuplicate = duplicateOrUpdateSubgraphVersionWithNewID(
-    subgraphVersion,
-    versionIDOld,
-    1,
-  )
-  subgraphVersion.linkedEntity = subgraphVersionDuplicate.id
-  subgraphVersionDuplicate.subgraph = subgraphDuplicate.id
   subgraphVersion.save()
-  subgraphVersionDuplicate.save()
 }
 /**
  * @dev handleSubgraphDeprecated
@@ -210,10 +178,6 @@ export function handleSubgraphPublished(event: SubgraphPublished): void {
  * - deprecates subgraph version
  */
 export function handleSubgraphDeprecated(event: SubgraphDeprecated): void {
-  let oldID = joinID([
-    event.params.graphAccount.toHexString(),
-    event.params.subgraphNumber.toString(),
-  ])
   let bigIntID = getSubgraphID(event.params.graphAccount, event.params.subgraphNumber)
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
   let subgraph = Subgraph.load(subgraphID)!
@@ -221,16 +185,9 @@ export function handleSubgraphDeprecated(event: SubgraphDeprecated): void {
   subgraph.active = false
   subgraph.updatedAt = event.block.timestamp.toI32()
   subgraph.save()
-
-  let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, oldID, 1)
-  subgraphDuplicate.save()
 }
 
 export function handleNameSignalEnabled(event: NameSignalEnabled): void {
-  let oldID = joinID([
-    event.params.graphAccount.toHexString(),
-    event.params.subgraphNumber.toString(),
-  ])
   let bigIntID = getSubgraphID(event.params.graphAccount, event.params.subgraphNumber)
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
   let subgraph = Subgraph.load(subgraphID)!
@@ -238,17 +195,10 @@ export function handleNameSignalEnabled(event: NameSignalEnabled): void {
   // Right now we set deploymentID in SubgraphPublished, so only this is needed
   subgraph.reserveRatio = event.params.reserveRatio.toI32()
   subgraph.save()
-
-  let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, oldID, 1)
-  subgraphDuplicate.save()
 }
 
 export function handleNSignalMinted(event: NSignalMinted): void {
-  let curatorID = event.params.nameCurator.toHexString()
-  let oldID = joinID([
-    event.params.graphAccount.toHexString(),
-    event.params.subgraphNumber.toString(),
-  ])
+  let curatorID = event.params.nameCurator
   let bigIntID = getSubgraphID(event.params.graphAccount, event.params.subgraphNumber)
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
   let subgraph = Subgraph.load(subgraphID)!
@@ -257,11 +207,8 @@ export function handleNSignalMinted(event: NSignalMinted): void {
   subgraph.signalledTokens = subgraph.signalledTokens.plus(event.params.tokensDeposited)
   subgraph.save()
 
-  let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, oldID, 1)
-  subgraphDuplicate.save()
-
   let nameSignal = createOrLoadNameSignal(
-    event.params.nameCurator.toHexString(),
+    event.params.nameCurator,
     subgraphID,
     event.block.timestamp,
   )
@@ -278,16 +225,10 @@ export function handleNSignalMinted(event: NSignalMinted): void {
       nameSignal.nameSignal.toBigDecimal(),
     )
   }
-  let nsDuplicateID = joinID([curatorID, oldID])
-  nameSignal.linkedEntity = nsDuplicateID
   nameSignal.save()
 
-  let nameSignalDuplicate = duplicateOrUpdateNameSignalWithNewID(nameSignal, nsDuplicateID, 1)
-  nameSignalDuplicate.subgraph = oldID
-  nameSignalDuplicate.save()
-
   // Update the curator
-  let curator = createOrLoadCurator(event.params.nameCurator.toHexString(), event.block.timestamp)
+  let curator = createOrLoadCurator(event.params.nameCurator, event.block.timestamp)
   curator.totalNameSignalledTokens = curator.totalNameSignalledTokens.plus(
     event.params.tokensDeposited,
   )
@@ -306,11 +247,11 @@ export function handleNSignalMinted(event: NSignalMinted): void {
 
   // Create n signal tx
   let nSignalTransaction = new NameSignalTransaction(
-    event.transaction.hash.toHexString().concat('-').concat(event.logIndex.toString()),
+    compoundId(event.transaction.hash, Bytes.fromBigInt(event.logIndex)),
   )
   nSignalTransaction.blockNumber = event.block.number.toI32()
   nSignalTransaction.timestamp = event.block.timestamp.toI32()
-  nSignalTransaction.signer = event.params.nameCurator.toHexString()
+  nSignalTransaction.signer = event.params.nameCurator
   nSignalTransaction.type = 'MintNSignal'
   nSignalTransaction.nameSignal = event.params.nSignalCreated
   nSignalTransaction.versionSignal = event.params.vSignalCreated
@@ -320,11 +261,7 @@ export function handleNSignalMinted(event: NSignalMinted): void {
 }
 
 export function handleNSignalBurned(event: NSignalBurned): void {
-  let curatorID = event.params.nameCurator.toHexString()
-  let oldID = joinID([
-    event.params.graphAccount.toHexString(),
-    event.params.subgraphNumber.toString(),
-  ])
+  let curatorID = event.params.nameCurator
   let bigIntID = getSubgraphID(event.params.graphAccount, event.params.subgraphNumber)
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
   let subgraph = Subgraph.load(subgraphID)!
@@ -333,12 +270,9 @@ export function handleNSignalBurned(event: NSignalBurned): void {
   subgraph.unsignalledTokens = subgraph.unsignalledTokens.plus(event.params.tokensReceived)
   subgraph.save()
 
-  let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, oldID, 1)
-  subgraphDuplicate.save()
-
   // update name signal
   let nameSignal = createOrLoadNameSignal(
-    event.params.nameCurator.toHexString(),
+    event.params.nameCurator,
     subgraphID,
     event.block.timestamp,
   )
@@ -356,16 +290,10 @@ export function handleNSignalBurned(event: NSignalBurned): void {
   if (nameSignal.averageCostBasis == BigDecimal.fromString('0')) {
     nameSignal.averageCostBasisPerSignal = BigDecimal.fromString('0')
   }
-  let nsDuplicateID = joinID([curatorID, oldID])
-  nameSignal.linkedEntity = nsDuplicateID
   nameSignal.save()
 
-  let nameSignalDuplicate = duplicateOrUpdateNameSignalWithNewID(nameSignal, nsDuplicateID, 1)
-  nameSignalDuplicate.subgraph = oldID
-  nameSignalDuplicate.save()
-
   // update curator
-  let curator = createOrLoadCurator(event.params.nameCurator.toHexString(), event.block.timestamp)
+  let curator = createOrLoadCurator(event.params.nameCurator, event.block.timestamp)
   curator.totalNameUnsignalledTokens = curator.totalNameUnsignalledTokens.plus(
     event.params.tokensReceived,
   )
@@ -382,11 +310,11 @@ export function handleNSignalBurned(event: NSignalBurned): void {
 
   // Create n signal tx
   let nSignalTransaction = new NameSignalTransaction(
-    event.transaction.hash.toHexString().concat('-').concat(event.logIndex.toString()),
+    compoundId(event.transaction.hash, Bytes.fromBigInt(event.logIndex)),
   )
   nSignalTransaction.blockNumber = event.block.number.toI32()
   nSignalTransaction.timestamp = event.block.timestamp.toI32()
-  nSignalTransaction.signer = event.params.nameCurator.toHexString()
+  nSignalTransaction.signer = event.params.nameCurator
   nSignalTransaction.type = 'BurnNSignal'
   nSignalTransaction.nameSignal = event.params.nSignalBurnt
   nSignalTransaction.versionSignal = event.params.vSignalBurnt
@@ -396,10 +324,6 @@ export function handleNSignalBurned(event: NSignalBurned): void {
 }
 
 export function handleNameSignalUpgrade(event: NameSignalUpgrade): void {
-  let oldID = joinID([
-    event.params.graphAccount.toHexString(),
-    event.params.subgraphNumber.toString(),
-  ])
   let bigIntID = getSubgraphID(event.params.graphAccount, event.params.subgraphNumber)
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
   let subgraph = Subgraph.load(subgraphID)!
@@ -410,33 +334,19 @@ export function handleNameSignalUpgrade(event: NameSignalUpgrade): void {
   subgraph.unsignalledTokens = subgraph.unsignalledTokens.plus(event.params.tokensSignalled)
   subgraph.signalledTokens = subgraph.signalledTokens.plus(event.params.tokensSignalled)
   subgraph.save()
-
-  let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, oldID, 1)
-  subgraphDuplicate.save()
 }
 
 // Only need to upgrade withdrawable tokens. Everything else handled from
 // curation events, or handleGRTWithdrawn
 export function handleNameSignalDisabled(event: NameSignalDisabled): void {
-  let oldID = joinID([
-    event.params.graphAccount.toHexString(),
-    event.params.subgraphNumber.toString(),
-  ])
   let bigIntID = getSubgraphID(event.params.graphAccount, event.params.subgraphNumber)
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
   let subgraph = Subgraph.load(subgraphID)!
   subgraph.withdrawableTokens = event.params.withdrawableGRT
   subgraph.save()
-
-  let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, oldID, 1)
-  subgraphDuplicate.save()
 }
 
 export function handleGRTWithdrawn(event: GRTWithdrawn): void {
-  let oldID = joinID([
-    event.params.graphAccount.toHexString(),
-    event.params.subgraphNumber.toString(),
-  ])
   let bigIntID = getSubgraphID(event.params.graphAccount, event.params.subgraphNumber)
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
   let subgraph = Subgraph.load(subgraphID)!
@@ -445,29 +355,19 @@ export function handleGRTWithdrawn(event: GRTWithdrawn): void {
   subgraph.nameSignalAmount = subgraph.nameSignalAmount.minus(event.params.nSignalBurnt)
   subgraph.save()
 
-  let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, oldID, 1)
-  subgraphDuplicate.save()
-
   let nameSignal = createOrLoadNameSignal(
-    event.params.nameCurator.toHexString(),
+    event.params.nameCurator,
     subgraphID,
     event.block.timestamp,
   )
   nameSignal.withdrawnTokens = event.params.withdrawnGRT
   nameSignal.nameSignal = nameSignal.nameSignal.minus(event.params.nSignalBurnt)
   nameSignal.lastNameSignalChange = event.block.timestamp.toI32()
-
-  let nsDuplicateID = joinID([event.params.nameCurator.toHexString(), oldID])
-  nameSignal.linkedEntity = nsDuplicateID
   nameSignal.save()
 
-  let nameSignalDuplicate = duplicateOrUpdateNameSignalWithNewID(nameSignal, nsDuplicateID, 1)
-  nameSignalDuplicate.subgraph = oldID
-  nameSignalDuplicate.save()
-
-  let curator = Curator.load(event.params.nameCurator.toHexString())!
+  let curator = Curator.load(event.params.nameCurator)!
   curator.totalWithdrawnTokens = curator.totalWithdrawnTokens.plus(event.params.withdrawnGRT)
-  curator.save()
+  curator.save()6
 }
 
 // - event: SubgraphPublished(indexed uint256,indexed bytes32,uint32)
@@ -476,7 +376,7 @@ export function handleGRTWithdrawn(event: GRTWithdrawn): void {
 export function handleSubgraphPublishedV2(event: SubgraphPublished1): void {
   let bigIntID = event.params.subgraphID
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
-  let versionID: string
+  let versionID: Bytes
   let versionNumber: BigInt
 
   // Update subgraph
@@ -485,7 +385,7 @@ export function handleSubgraphPublishedV2(event: SubgraphPublished1): void {
     event.transaction.from,
     event.block.timestamp,
   )
-  versionID = joinID([subgraph.id, subgraph.versionCount.toString()])
+  versionID = compoundId(subgraph.id, Bytes.fromBigInt(subgraph.versionCount))
   subgraph.currentVersion = versionID
   subgraph.versionCount = subgraph.versionCount.plus(BigInt.fromI32(1))
   subgraph.updatedAt = event.block.timestamp.toI32()
@@ -495,7 +395,7 @@ export function handleSubgraphPublishedV2(event: SubgraphPublished1): void {
   subgraph.save()
 
   // Create subgraph deployment, if needed. Can happen if the deployment has never been staked on
-  let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
+  let subgraphDeploymentID = event.params.subgraphDeploymentID
   let deployment = createOrLoadSubgraphDeployment(subgraphDeploymentID, event.block.timestamp)
 
   // Create subgraph version
@@ -520,11 +420,6 @@ export function handleSubgraphDeprecatedV2(event: SubgraphDeprecated1): void {
   subgraph.updatedAt = event.block.timestamp.toI32()
   subgraph.withdrawableTokens = event.params.withdrawableGRT
   subgraph.save()
-
-  if (subgraph.linkedEntity != null) {
-    let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, subgraph.linkedEntity!, 1)
-    subgraphDuplicate.save()
-  }
 }
 
 // - event: SubgraphMetadataUpdated(indexed uint256,bytes32)
@@ -538,18 +433,13 @@ export function handleSubgraphMetadataUpdatedV2(event: SubgraphMetadataUpdated1)
   subgraph.metadataHash = event.params.subgraphMetadata
   subgraph.updatedAt = event.block.timestamp.toI32()
   subgraph.save()
-
-  if (subgraph.linkedEntity != null) {
-    let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, subgraph.linkedEntity!, 1)
-    subgraphDuplicate.save()
-  }
 }
 
 // - event: SignalMinted(indexed uint256,indexed address,uint256,uint256,uint256)
 //   handler: handleNSignalMintedV2
 
 export function handleNSignalMintedV2(event: SignalMinted): void {
-  let curatorID = event.params.curator.toHexString()
+  let curatorID = event.params.curator
   let bigIntID = event.params.subgraphID
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
   let subgraph = Subgraph.load(subgraphID)!
@@ -558,16 +448,7 @@ export function handleNSignalMintedV2(event: SignalMinted): void {
   subgraph.signalledTokens = subgraph.signalledTokens.plus(event.params.tokensDeposited)
   subgraph.save()
 
-  if (subgraph.linkedEntity != null) {
-    let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, subgraph.linkedEntity!, 1)
-    subgraphDuplicate.save()
-  }
-
-  let nameSignal = createOrLoadNameSignal(
-    event.params.curator.toHexString(),
-    subgraphID,
-    event.block.timestamp,
-  )
+  let nameSignal = createOrLoadNameSignal(event.params.curator, subgraphID, event.block.timestamp)
   nameSignal.nameSignal = nameSignal.nameSignal.plus(event.params.nSignalCreated)
   nameSignal.signalledTokens = nameSignal.signalledTokens.plus(event.params.tokensDeposited)
   nameSignal.lastNameSignalChange = event.block.timestamp.toI32()
@@ -583,18 +464,8 @@ export function handleNSignalMintedV2(event: SignalMinted): void {
   }
   nameSignal.save()
 
-  if (subgraph.linkedEntity != null && nameSignal.linkedEntity != null) {
-    let nameSignalDuplicate = duplicateOrUpdateNameSignalWithNewID(
-      nameSignal,
-      nameSignal.linkedEntity!,
-      1,
-    )
-    nameSignalDuplicate.subgraph = subgraph.linkedEntity!
-    nameSignalDuplicate.save()
-  }
-
   // Update the curator
-  let curator = createOrLoadCurator(event.params.curator.toHexString(), event.block.timestamp)
+  let curator = createOrLoadCurator(event.params.curator, event.block.timestamp)
   curator.totalNameSignalledTokens = curator.totalNameSignalledTokens.plus(
     event.params.tokensDeposited,
   )
@@ -613,11 +484,11 @@ export function handleNSignalMintedV2(event: SignalMinted): void {
 
   // Create n signal tx
   let nSignalTransaction = new NameSignalTransaction(
-    event.transaction.hash.toHexString().concat('-').concat(event.logIndex.toString()),
+    compoundId(event.transaction.hash, Bytes.fromBigInt(event.logIndex)),
   )
   nSignalTransaction.blockNumber = event.block.number.toI32()
   nSignalTransaction.timestamp = event.block.timestamp.toI32()
-  nSignalTransaction.signer = event.params.curator.toHexString()
+  nSignalTransaction.signer = event.params.curator
   nSignalTransaction.type = 'MintNSignal'
   nSignalTransaction.nameSignal = event.params.nSignalCreated
   nSignalTransaction.versionSignal = event.params.vSignalCreated
@@ -638,17 +509,8 @@ export function handleNSignalBurnedV2(event: SignalBurned): void {
   subgraph.unsignalledTokens = subgraph.unsignalledTokens.plus(event.params.tokensReceived)
   subgraph.save()
 
-  if (subgraph.linkedEntity != null) {
-    let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, subgraph.linkedEntity!, 1)
-    subgraphDuplicate.save()
-  }
-
   // update name signal
-  let nameSignal = createOrLoadNameSignal(
-    event.params.curator.toHexString(),
-    subgraphID,
-    event.block.timestamp,
-  )
+  let nameSignal = createOrLoadNameSignal(event.params.curator, subgraphID, event.block.timestamp)
 
   nameSignal.nameSignal = nameSignal.nameSignal.minus(event.params.nSignalBurnt)
   nameSignal.unsignalledTokens = nameSignal.unsignalledTokens.plus(event.params.tokensReceived)
@@ -665,18 +527,8 @@ export function handleNSignalBurnedV2(event: SignalBurned): void {
   }
   nameSignal.save()
 
-  if (subgraph.linkedEntity != null && nameSignal.linkedEntity != null) {
-    let nameSignalDuplicate = duplicateOrUpdateNameSignalWithNewID(
-      nameSignal,
-      nameSignal.linkedEntity!,
-      1,
-    )
-    nameSignalDuplicate.subgraph = subgraph.linkedEntity!
-    nameSignalDuplicate.save()
-  }
-
   // update curator
-  let curator = createOrLoadCurator(event.params.curator.toHexString(), event.block.timestamp)
+  let curator = createOrLoadCurator(event.params.curator, event.block.timestamp)
   curator.totalNameUnsignalledTokens = curator.totalNameUnsignalledTokens.plus(
     event.params.tokensReceived,
   )
@@ -693,11 +545,11 @@ export function handleNSignalBurnedV2(event: SignalBurned): void {
 
   // Create n signal tx
   let nSignalTransaction = new NameSignalTransaction(
-    event.transaction.hash.toHexString().concat('-').concat(event.logIndex.toString()),
+    compoundId(event.transaction.hash, Bytes.fromBigInt(event.logIndex)),
   )
   nSignalTransaction.blockNumber = event.block.number.toI32()
   nSignalTransaction.timestamp = event.block.timestamp.toI32()
-  nSignalTransaction.signer = event.params.curator.toHexString()
+  nSignalTransaction.signer = event.params.curator
   nSignalTransaction.type = 'BurnNSignal'
   nSignalTransaction.nameSignal = event.params.nSignalBurnt
   nSignalTransaction.versionSignal = event.params.vSignalBurnt
@@ -718,32 +570,13 @@ export function handleGRTWithdrawnV2(event: GRTWithdrawn1): void {
   subgraph.nameSignalAmount = subgraph.nameSignalAmount.minus(event.params.nSignalBurnt)
   subgraph.save()
 
-  if (subgraph.linkedEntity != null) {
-    let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, subgraph.linkedEntity!, 1)
-    subgraphDuplicate.save()
-  }
-
-  let nameSignal = createOrLoadNameSignal(
-    event.params.curator.toHexString(),
-    subgraphID,
-    event.block.timestamp,
-  )
+  let nameSignal = createOrLoadNameSignal(event.params.curator, subgraphID, event.block.timestamp)
   nameSignal.withdrawnTokens = event.params.withdrawnGRT
   nameSignal.nameSignal = nameSignal.nameSignal.minus(event.params.nSignalBurnt)
   nameSignal.lastNameSignalChange = event.block.timestamp.toI32()
   nameSignal.save()
 
-  if (subgraph.linkedEntity != null && nameSignal.linkedEntity) {
-    let nameSignalDuplicate = duplicateOrUpdateNameSignalWithNewID(
-      nameSignal,
-      nameSignal.linkedEntity!,
-      1,
-    )
-    nameSignalDuplicate.subgraph = subgraph.linkedEntity!
-    nameSignalDuplicate.save()
-  }
-
-  let curator = Curator.load(event.params.curator.toHexString())!
+  let curator = Curator.load(event.params.curator)!
   curator.totalWithdrawnTokens = curator.totalWithdrawnTokens.plus(event.params.withdrawnGRT)
   curator.save()
 }
@@ -762,11 +595,6 @@ export function handleSubgraphUpgraded(event: SubgraphUpgraded): void {
   subgraph.unsignalledTokens = subgraph.unsignalledTokens.plus(event.params.tokensSignalled)
   subgraph.signalledTokens = subgraph.signalledTokens.plus(event.params.tokensSignalled)
   subgraph.save()
-
-  if (subgraph.linkedEntity != null) {
-    let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, subgraph.linkedEntity!, 1)
-    subgraphDuplicate.save()
-  }
 }
 
 // - event: SubgraphVersionUpdated(indexed uint256,indexed bytes32,bytes32)
@@ -775,7 +603,7 @@ export function handleSubgraphUpgraded(event: SubgraphUpgraded): void {
 export function handleSubgraphVersionUpdated(event: SubgraphVersionUpdated): void {
   let bigIntID = event.params.subgraphID
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
-  let versionID: string
+  let versionID: Bytes
   let versionNumber: BigInt
 
   // Update subgraph
@@ -786,7 +614,7 @@ export function handleSubgraphVersionUpdated(event: SubgraphVersionUpdated): voi
     subgraph.save()
 
     // Update already initialized subgraph version
-    versionID = joinID([subgraph.id, subgraph.versionCount.minus(BigInt.fromI32(1)).toString()])
+    versionID = compoundId(subgraph.id, Bytes.fromBigInt(subgraph.versionCount.minus(BigInt.fromI32(1))))
     let subgraphVersion = SubgraphVersion.load(versionID)!
     // let hexHash = changetype<Bytes>(addQm(event.params.versionMetadata))
     // let base58Hash = hexHash.toBase58()
@@ -795,14 +623,14 @@ export function handleSubgraphVersionUpdated(event: SubgraphVersionUpdated): voi
     subgraphVersion.save()
   } else {
     versionNumber = subgraph.versionCount
-    versionID = joinID([subgraph.id, subgraph.versionCount.toString()])
+    versionID = compoundId(subgraph.id, Bytes.fromBigInt(subgraph.versionCount))
     subgraph.currentVersion = versionID
     subgraph.versionCount = subgraph.versionCount.plus(BigInt.fromI32(1))
     subgraph.updatedAt = event.block.timestamp.toI32()
     subgraph.save()
 
     // Create subgraph deployment, if needed. Can happen if the deployment has never been staked on
-    let subgraphDeploymentID = event.params.subgraphDeploymentID.toHexString()
+    let subgraphDeploymentID = event.params.subgraphDeploymentID
     let deployment = createOrLoadSubgraphDeployment(subgraphDeploymentID, event.block.timestamp)
 
     // Create subgraph version
@@ -815,27 +643,6 @@ export function handleSubgraphVersionUpdated(event: SubgraphVersionUpdated): voi
     let hexHash = changetype<Bytes>(addQm(event.params.versionMetadata))
     let base58Hash = hexHash.toBase58()
     subgraphVersion.metadataHash = event.params.versionMetadata
-    //subgraphVersion = fetchSubgraphVersionMetadata(subgraphVersion, base58Hash)
-
-    if (subgraph.linkedEntity != null) {
-      let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(
-        subgraph,
-        subgraph.linkedEntity!,
-        1,
-      )
-      let duplicateVersionID = joinID([subgraphDuplicate.id, versionNumber.toString()])
-      subgraphDuplicate.currentVersion = duplicateVersionID
-      subgraphDuplicate.save()
-
-      let subgraphVersionDuplicate = duplicateOrUpdateSubgraphVersionWithNewID(
-        subgraphVersion,
-        duplicateVersionID,
-        1,
-      )
-      subgraphVersionDuplicate.subgraph = subgraphDuplicate.id
-      subgraphVersion.linkedEntity = subgraphVersionDuplicate.id
-      subgraphVersionDuplicate.save()
-    }
     subgraphVersion.save()
   }
 }
@@ -850,16 +657,13 @@ export function handleLegacySubgraphClaimed(event: LegacySubgraphClaimed): void 
   let subgraph = createOrLoadSubgraph(subgraphID, event.params.graphAccount, event.block.timestamp)
   subgraph.migrated = true
   subgraph.save()
-
-  let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, subgraph.linkedEntity!, 1)
-  subgraphDuplicate.save()
 }
 
 // - event: Transfer(indexed address,indexed address,indexed uint256)
 //   handler: handleTransfer
 
 export function handleTransfer(event: Transfer): void {
-  let newOwner = createOrLoadGraphAccount(event.params.to.toHexString(), event.block.timestamp)
+  let newOwner = createOrLoadGraphAccount(event.params.to, event.block.timestamp)
 
   // Update subgraph v2
   let subgraph = createOrLoadSubgraph(
@@ -870,9 +674,4 @@ export function handleTransfer(event: Transfer): void {
   subgraph.updatedAt = event.block.timestamp.toI32()
   subgraph.owner = newOwner.id
   subgraph.save()
-
-  if (subgraph.linkedEntity != null) {
-    let subgraphDuplicate = duplicateOrUpdateSubgraphWithNewID(subgraph, subgraph.linkedEntity!, 1)
-    subgraphDuplicate.save()
-  }
 }
