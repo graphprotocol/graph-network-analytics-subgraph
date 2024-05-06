@@ -211,6 +211,7 @@ export function createOrLoadDelegatedStake(
   if (delegatedStake == null) {
     let indexerEntity = Indexer.load(indexer)!
     let relationId = compoundId(indexer, changetype<Bytes>(Bytes.fromBigInt(indexerEntity.delegatorsCount)))
+    log.warning("Relation created: {}", [relationId.toHexString()])
 
     delegatedStake = new DelegatedStake(id)
     delegatedStake.indexer = indexer
@@ -509,8 +510,8 @@ function createGraphAccountName(
 }
 
 export function joinID(pieces: Array<Bytes>): Bytes {
-  return pieces.reduce((acc, elem) => {
-    return acc.concat(bytesSeparator).concat(elem)
+  return pieces.reduce((acc, elem, index) => {
+    return index == 0 ? elem : acc.concat(bytesSeparator).concat(elem)
   }, Bytes.empty())
 }
 
@@ -614,9 +615,10 @@ export function batchUpdateDelegatorsForIndexer(indexerId: Bytes, timestamp: Big
   // pre-calculates a lot of data for all delegators that exists for a specific indexer
   // using already existing links with the indexer-delegatedStake relations
   for (let i = 0; i < indexer.delegatorsCount.toI32(); i++) {
-    let relationId = compoundId(indexer.id, changetype<Bytes>(Bytes.fromBigInt(BigInt.fromI32(i))))
-    let relation = IndexerDelegatedStakeRelation.load(relationId)!
-    if (relation.active) {
+    let relationId = compoundId(indexer.id, changetype<Bytes>(Bytes.fromI32(i)))
+    log.warning("Relation to load: {}", [relationId.toHexString()])
+    let relation = IndexerDelegatedStakeRelation.load(relationId)
+    if (relation !== null && relation.active) {
       let delegatedStake = DelegatedStake.load(relation.stake)!
       let delegator = Delegator.load(delegatedStake.delegator)!
       // Only update core entities if there's a change in the exchange rate
@@ -642,6 +644,8 @@ export function batchUpdateDelegatorsForIndexer(indexerId: Bytes, timestamp: Big
 
       getAndUpdateDelegatedStakeDailyData(delegatedStake as DelegatedStake, timestamp)
       getAndUpdateDelegatorDailyData(delegator as Delegator, timestamp)
+    } else if(relation === null) {
+      log.error("Relation: {} is null", [relationId.toHexString()])
     }
   }
 }

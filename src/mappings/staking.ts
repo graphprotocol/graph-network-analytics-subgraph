@@ -32,7 +32,6 @@ import {
   createOrLoadSubgraphDeployment,
   createOrLoadIndexer,
   createOrLoadPool,
-  joinID,
   createOrLoadDelegator,
   createOrLoadDelegatedStake,
   updateAdvancedIndexerMetrics,

@@ -1,7 +1,6 @@
 import { Bytes, DataSourceContext } from '@graphprotocol/graph-ts'
 import { DIDAttributeChanged } from '../types/EthereumDIDRegistry/EthereumDIDRegistry'
 import { GraphAccountMetadata as GraphAccountMetadataTemplate } from '../types/templates'
-import { GraphAccount } from '../types/schema'
 
 import { addQm, createOrLoadGraphAccount, joinID } from './helpers'
 
