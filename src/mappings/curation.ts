@@ -19,7 +19,6 @@ import {
   createOrLoadSubgraphDeployment,
   createOrLoadCurator,
   createOrLoadGraphNetwork,
-  joinID,
   getAndUpdateSubgraphDeploymentDailyData,
   calculatePricePerShare,
   getAndUpdateNetworkDailyData,
@@ -98,7 +97,7 @@ export function handleBurned(event: Burned): void {
 
   // Update signal
   let subgraphDeploymentID = event.params.subgraphDeploymentID
-  let signalID = joinID([id, subgraphDeploymentID])
+  let signalID = compoundId(id, subgraphDeploymentID)
   let signal = Signal.load(signalID)!
   // Note - if you immediately deposited and then withdrew, you would lose 5%, and you were
   // realize this loss by seeing unsignaled tokens being 95 and signalled 100

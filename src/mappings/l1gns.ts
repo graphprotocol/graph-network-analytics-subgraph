@@ -4,7 +4,6 @@ import { SubgraphSentToL2, CuratorBalanceSentToL2 } from '../types/L1GNS/L1GNS'
 import { Subgraph, NameSignal, SubgraphVersion, SubgraphDeployment } from '../types/schema'
 
 import {
-  joinID,
   convertBigIntSubgraphIDToBase58,
   getAliasedL2SubgraphID,
   getAndUpdateSubgraphDeploymentDailyData,
