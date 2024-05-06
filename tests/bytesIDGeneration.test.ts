@@ -26,6 +26,7 @@ test('Bytes id generation', () => {
   let delegReload = Delegator.load(delegator.id)!
 
   let delegBytesFromI32 = changetype<Bytes>(Bytes.fromI32(100000))
+  let delegBytesFromString = changetype<Bytes>(Bytes.fromBigInt(BigInt.fromString('100000')))
   let delegBytesFromEntity = changetype<Bytes>(Bytes.fromBigInt(delegator.lockedTokens))
   let delegBytesFromEntityReload = changetype<Bytes>(Bytes.fromBigInt(delegReload.lockedTokens))
 
@@ -37,13 +38,14 @@ test('Bytes id generation', () => {
       ', I32: ' +
       delegBytesFromI32.toHex(),
   )
+  assert.assertTrue(delegBytesFromEntityReload !== delegBytesFromI32)
   assert.bytesEquals(
     delegBytesFromEntityReload,
-    delegBytesFromI32,
-    'Bytes from entity and I32 differ. Entity: ' +
+    delegBytesFromString,
+    'Bytes from entity reload and String differ. Entity Reload: ' +
       delegBytesFromEntityReload.toHex() +
-      ', I32: ' +
-      delegBytesFromI32.toHex(),
+      ', String: ' +
+      delegBytesFromString.toHex(),
   )
   assert.bytesEquals(
     compound1,
