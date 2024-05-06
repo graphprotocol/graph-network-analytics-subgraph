@@ -44,6 +44,8 @@ import {
   getAndUpdateNetworkDailyData,
   calculateCapacities,
   compoundId,
+  BIGINT_ONE,
+  BIGINT_ZERO,
 } from './helpers'
 import { avoidNegativeRoundingError } from './utils'
 
@@ -77,7 +79,7 @@ export function handleStakeDeposited(event: StakeDeposited): void {
   // Update graph network
   let graphNetwork = createOrLoadGraphNetwork()
   graphNetwork.totalTokensStaked = graphNetwork.totalTokensStaked.plus(event.params.tokens)
-  if (previousStake == BigInt.fromI32(0)) {
+  if (previousStake == BIGINT_ZERO) {
     graphNetwork.stakedIndexersCount = graphNetwork.stakedIndexersCount + 1
   }
   graphNetwork.save()
@@ -182,7 +184,7 @@ export function handleStakeSlashed(event: StakeSlashed): void {
 }
 
 export function handleStakeDelegated(event: StakeDelegated): void {
-  let zeroShares = event.params.shares.equals(BigInt.fromI32(0))
+  let zeroShares = event.params.shares.equals(BIGINT_ZERO)
 
   // update indexer
   let indexerID = event.params.indexer
@@ -190,7 +192,7 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   indexer.delegatedTokens = indexer.delegatedTokens.plus(event.params.tokens)
   indexer.delegatorShares = indexer.delegatorShares.plus(event.params.shares)
 
-  if (indexer.delegatorShares != BigInt.fromI32(0)) {
+  if (indexer.delegatorShares != BIGINT_ZERO) {
     indexer = updateDelegationExchangeRate(indexer as Indexer)
   }
   indexer = updateAdvancedIndexerMetrics(indexer as Indexer)
@@ -221,7 +223,7 @@ export function handleStakeDelegated(event: StakeDelegated): void {
       .times(previousShares.toBigDecimal())
       .plus(event.params.tokens.toBigDecimal())
     let averageCostBasisShares = previousShares.plus(event.params.shares)
-    if (averageCostBasisShares.gt(BigInt.fromI32(0))) {
+    if (averageCostBasisShares.gt(BIGINT_ZERO)) {
       delegatedStake.personalExchangeRate = averageCostBasisTokens
         .div(averageCostBasisShares.toBigDecimal())
         .truncate(18)
@@ -267,7 +269,7 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   // Re-activate relation with indexer before batch update, so new datapoints are created properly
   // We check for 0 shares, in case there's a minimal signalling that doesn't really mint Shares
   // We wouldn't want to re-activate the relation in that case
-  if (!delegatedStake.shareAmount.equals(BigInt.fromI32(0))) {
+  if (!delegatedStake.shareAmount.equals(BIGINT_ZERO)) {
     let relation = IndexerDelegatedStakeRelation.load(delegatedStake.relation)!
     relation.active = true
     relation.save()
@@ -298,7 +300,7 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
 
   let beforeUpdateDelegationExchangeRate = indexer.delegationExchangeRate
 
-  if (indexer.delegatorShares != BigInt.fromI32(0)) {
+  if (indexer.delegatorShares != BIGINT_ZERO) {
     indexer = updateDelegationExchangeRate(indexer as Indexer)
   }
   indexer = updateAdvancedIndexerMetrics(indexer as Indexer)
@@ -371,7 +373,7 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   indexerDailyData.save()
 
   // De-activate relation with indexer after batch update, so last datapoints are created properly
-  if (delegatedStake.shareAmount.equals(BigInt.fromI32(0))) {
+  if (delegatedStake.shareAmount.equals(BIGINT_ZERO)) {
     let relation = IndexerDelegatedStakeRelation.load(delegatedStake.relation)!
     relation.active = false
     relation.save()
@@ -391,7 +393,7 @@ export function handleStakeDelegatedWithdrawn(event: StakeDelegatedWithdrawn): v
   delegator.lockedTokens = delegatedStake.lockedTokens.minus(lockedBefore)
   delegator.save()
 
-  delegatedStake.lockedTokens = BigInt.fromI32(0)
+  delegatedStake.lockedTokens = BIGINT_ZERO
   delegatedStake.lockedUntil = 0
   delegatedStake.save()
 
@@ -416,7 +418,7 @@ export function handleAllocationCreated(event: AllocationCreated): void {
   // update indexer
   let indexer = Indexer.load(indexerID)!
   indexer.allocatedTokens = indexer.allocatedTokens.plus(event.params.tokens)
-  indexer.totalAllocationCount = indexer.totalAllocationCount.plus(BigInt.fromI32(1))
+  indexer.totalAllocationCount = indexer.totalAllocationCount.plus(BIGINT_ONE)
   indexer.allocationCount = indexer.allocationCount + 1
   indexer = updateAdvancedIndexerMetrics(indexer as Indexer)
   indexer = calculateCapacities(indexer as Indexer)
@@ -439,18 +441,18 @@ export function handleAllocationCreated(event: AllocationCreated): void {
   allocation.activeForIndexer = indexerID
   allocation.subgraphDeployment = subgraphDeploymentID
   allocation.allocatedTokens = event.params.tokens
-  allocation.effectiveAllocation = BigInt.fromI32(0)
+  allocation.effectiveAllocation = BIGINT_ZERO
   allocation.createdAtEpoch = event.params.epoch.toI32()
   allocation.closedAtEpoch = 0
   allocation.createdAtBlockHash = event.block.hash
-  allocation.queryFeesCollected = BigInt.fromI32(0)
-  allocation.queryFeeRebates = BigInt.fromI32(0)
-  allocation.distributedRebates = BigInt.fromI32(0)
-  allocation.curatorRewards = BigInt.fromI32(0)
-  allocation.indexingRewards = BigInt.fromI32(0)
-  allocation.indexingIndexerRewards = BigInt.fromI32(0)
-  allocation.indexingDelegatorRewards = BigInt.fromI32(0)
-  allocation.delegationFees = BigInt.fromI32(0)
+  allocation.queryFeesCollected = BIGINT_ZERO
+  allocation.queryFeeRebates = BIGINT_ZERO
+  allocation.distributedRebates = BIGINT_ZERO
+  allocation.curatorRewards = BIGINT_ZERO
+  allocation.indexingRewards = BIGINT_ZERO
+  allocation.indexingIndexerRewards = BIGINT_ZERO
+  allocation.indexingDelegatorRewards = BIGINT_ZERO
+  allocation.delegationFees = BIGINT_ZERO
   allocation.status = 'Active'
   allocation.totalReturn = BigDecimal.fromString('0')
   allocation.annualizedReturn = BigDecimal.fromString('0')
@@ -670,7 +672,7 @@ export function handleRebateClaimed(event: RebateClaimed): void {
   indexer.delegatorQueryFees = indexer.delegatorQueryFees.plus(event.params.delegationFees)
   indexer.delegatedTokens = indexer.delegatedTokens.plus(event.params.delegationFees)
 
-  if (indexer.delegatorShares != BigInt.fromI32(0)) {
+  if (indexer.delegatorShares != BIGINT_ZERO) {
     indexer = updateDelegationExchangeRate(indexer as Indexer)
   }
   indexer = updateAdvancedIndexerMetrics(indexer as Indexer)
@@ -758,7 +760,7 @@ export function handleRebateCollected(event: RebateCollected): void {
   indexer.queryFeeRebates = indexer.queryFeeRebates.plus(event.params.queryRebates)
   indexer.delegatorQueryFees = indexer.delegatorQueryFees.plus(event.params.delegationRewards)
   indexer.delegatedTokens = indexer.delegatedTokens.plus(event.params.delegationRewards)
-  if (indexer.delegatorShares != BigInt.fromI32(0)) {
+  if (indexer.delegatorShares != BIGINT_ZERO) {
     indexer = updateDelegationExchangeRate(indexer as Indexer)
   }
   indexer = updateAdvancedIndexerMetrics(indexer as Indexer)

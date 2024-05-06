@@ -8,6 +8,7 @@ import {
   getAliasedL2SubgraphID,
   getAndUpdateSubgraphDeploymentDailyData,
   compoundId,
+  BIGINT_ZERO,
 } from './helpers'
 
 /*
@@ -55,9 +56,9 @@ export function handleSubgraphSentToL2(event: SubgraphSentToL2): void {
   subgraph.nameSignalAmount = subgraph.nameSignalAmount.minus(nameSignal.nameSignal)
   let withdrawable = curationTokens.minus(event.params._tokens)
   subgraph.withdrawableTokens =
-    withdrawable == BigInt.fromI32(-1) ? BigInt.fromI32(0) : withdrawable // to fix rounding error in AS
+    withdrawable == BigInt.fromI32(-1) ? BIGINT_ZERO : withdrawable // to fix rounding error in AS
 
-  nameSignal.nameSignal = BigInt.fromI32(0)
+  nameSignal.nameSignal = BIGINT_ZERO
   //nameSignal.signal = BigDecimal.fromString('0');
   nameSignal.lastNameSignalChange = event.block.number.toI32()
 
@@ -106,9 +107,9 @@ export function handleCuratorBalanceSentToL2(event: CuratorBalanceSentToL2): voi
   subgraph.nameSignalAmount = subgraph.nameSignalAmount.minus(nameSignal.nameSignal)
   let withdrawable = subgraph.withdrawableTokens.minus(event.params._tokens)
   subgraph.withdrawableTokens =
-    withdrawable == BigInt.fromI32(-1) ? BigInt.fromI32(0) : withdrawable // to fix rounding error in AS
+    withdrawable == BigInt.fromI32(-1) ? BIGINT_ZERO : withdrawable // to fix rounding error in AS
 
-  nameSignal.nameSignal = BigInt.fromI32(0)
+  nameSignal.nameSignal = BIGINT_ZERO
   //nameSignal.signal = BigDecimal.fromString('0');
   nameSignal.lastNameSignalChange = event.block.number.toI32()
 
