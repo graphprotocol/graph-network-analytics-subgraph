@@ -12,7 +12,7 @@ import {
   SubgraphDeployment,
   SignalTransaction,
 } from '../types/schema'
-import { BigInt, Bytes } from '@graphprotocol/graph-ts'
+import { Bytes } from '@graphprotocol/graph-ts'
 
 import {
   createOrLoadSignal,
@@ -23,6 +23,7 @@ import {
   calculatePricePerShare,
   getAndUpdateNetworkDailyData,
   compoundId,
+  BIGINT_ZERO,
 } from './helpers'
 
 /**
@@ -76,7 +77,7 @@ export function handleSignalled(event: Signalled): void {
   signalTransaction.type = 'MintSignal'
   signalTransaction.signal = event.params.signal
   signalTransaction.tokens = event.params.tokens.minus(event.params.curationTax)
-  signalTransaction.withdrawalFees = BigInt.fromI32(0)
+  signalTransaction.withdrawalFees = BIGINT_ZERO
   signalTransaction.subgraphDeployment = event.params.subgraphDeploymentID
   signalTransaction.save()
 
@@ -127,7 +128,7 @@ export function handleBurned(event: Burned): void {
   signalTransaction.type = 'BurnSignal'
   signalTransaction.signal = event.params.signal
   signalTransaction.tokens = event.params.tokens
-  signalTransaction.withdrawalFees = BigInt.fromI32(0)
+  signalTransaction.withdrawalFees = BIGINT_ZERO
   signalTransaction.subgraphDeployment = event.params.subgraphDeploymentID
   signalTransaction.save()
 
