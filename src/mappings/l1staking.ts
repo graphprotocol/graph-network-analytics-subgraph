@@ -14,7 +14,6 @@ import {
 } from '../types/schema'
 import {
   calculateCapacities,
-  joinID,
   updateAdvancedIndexerMetrics,
   updateDelegationExchangeRate,
   getAndUpdateDelegatedStakeDailyData,

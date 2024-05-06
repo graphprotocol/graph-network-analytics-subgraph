@@ -35,6 +35,7 @@
     "lint": "yarn eslint .",
     "lint-fix": "eslint . --fix",
     "prettier": "prettier '**/*.ts'",
+    "test": "graph test -v 0.6.0-rc.2",
     "prettier-write": "prettier --write '**/*.ts'"
   },
   "devDependencies": {
@@ -47,7 +48,8 @@
     "eslint": "^7.2.0",
     "mustache": "^4.0.1",
     "prettier": "^2.0.5",
-    "typescript": "^3.9.3"
+    "typescript": "^3.9.3",
+    "matchstick-as": "0.6.0-beta.2"
   },
   "author": "",
   "bugs": {
