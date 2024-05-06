@@ -15,6 +15,7 @@ import {
   getAndUpdateSubgraphDeploymentDailyData,
   batchUpdateDelegatorsForIndexer,
   getAndUpdateNetworkDailyData,
+  BIGINT_ZERO,
 } from './helpers'
 
 export function handleRewardsAssigned(event: RewardsAssigned): void {
@@ -26,7 +27,7 @@ export function handleRewardsAssigned(event: RewardsAssigned): void {
   indexer.rewardsEarned = indexer.rewardsEarned.plus(event.params.amount)
   // If the delegation pool has zero tokens, the contracts don't give away any rewards
   let indexerIndexingRewards =
-    indexer.delegatedTokens == BigInt.fromI32(0)
+    indexer.delegatedTokens == BIGINT_ZERO
       ? event.params.amount
       : event.params.amount
           .times(BigInt.fromI32(indexer.indexingRewardCut))
@@ -38,7 +39,7 @@ export function handleRewardsAssigned(event: RewardsAssigned): void {
   indexer.indexerIndexingRewards = indexer.indexerIndexingRewards.plus(indexerIndexingRewards)
   indexer.delegatedTokens = indexer.delegatedTokens.plus(delegatorIndexingRewards)
 
-  if (indexer.delegatorShares != BigInt.fromI32(0)) {
+  if (indexer.delegatorShares != BIGINT_ZERO) {
     indexer = updateDelegationExchangeRate(indexer as Indexer)
   }
   indexer = updateAdvancedIndexerMetrics(indexer as Indexer)

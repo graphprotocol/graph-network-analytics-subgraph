@@ -26,6 +26,10 @@ import { addresses } from '../../config/addresses'
 import { LAUNCH_DAY, SECONDS_PER_DAY, avoidNegativeRoundingError } from './utils'
 
 let bytesSeparator = Bytes.fromHexString('0xABCDEF')
+export let BIGINT_ZERO = BigInt.fromI32(0)
+export let BIGINT_ONE = BigInt.fromI32(1)
+export let BIGDECIMAL_ZERO = BigDecimal.fromString('0')
+export let BIGDECIMAL_ONE = BigDecimal.fromString('1')
 
 export function createOrLoadGraphAccount(id: Bytes, timeStamp: BigInt): GraphAccount {
   let graphAccount = GraphAccount.load(id)
@@ -33,13 +37,13 @@ export function createOrLoadGraphAccount(id: Bytes, timeStamp: BigInt): GraphAcc
     graphAccount = new GraphAccount(id)
     graphAccount.createdAt = timeStamp.toI32()
     graphAccount.operators = []
-    graphAccount.balance = BigInt.fromI32(0)
-    graphAccount.balanceReceivedFromL1Delegation = BigInt.fromI32(0)
-    graphAccount.balanceReceivedFromL1Signalling = BigInt.fromI32(0)
-    graphAccount.curationApproval = BigInt.fromI32(0)
-    graphAccount.stakingApproval = BigInt.fromI32(0)
-    graphAccount.gnsApproval = BigInt.fromI32(0)
-    //graphAccount.subgraphQueryFees = BigInt.fromI32(0)
+    graphAccount.balance = BIGINT_ZERO
+    graphAccount.balanceReceivedFromL1Delegation = BIGINT_ZERO
+    graphAccount.balanceReceivedFromL1Signalling = BIGINT_ZERO
+    graphAccount.curationApproval = BIGINT_ZERO
+    graphAccount.stakingApproval = BIGINT_ZERO
+    graphAccount.gnsApproval = BIGINT_ZERO
+    //graphAccount.subgraphQueryFees = BIGINT_ZERO
     graphAccount.save()
   }
   return graphAccount as GraphAccount
@@ -57,7 +61,7 @@ export function createOrLoadSubgraph(
     subgraph.owner = owner
     subgraph.createdAt = timestamp.toI32()
     subgraph.updatedAt = timestamp.toI32()
-    subgraph.versionCount = BigInt.fromI32(0)
+    subgraph.versionCount = BIGINT_ZERO
     subgraph.active = true
     subgraph.startedTransferToL2 = false
     subgraph.transferredToL2 = false
@@ -66,14 +70,14 @@ export function createOrLoadSubgraph(
     subgraph.nftID = bigIntID.toString()
     subgraph.entityVersion = 2
 
-    subgraph.signalledTokens = BigInt.fromI32(0)
-    subgraph.unsignalledTokens = BigInt.fromI32(0)
-    subgraph.nameSignalAmount = BigInt.fromI32(0)
+    subgraph.signalledTokens = BIGINT_ZERO
+    subgraph.unsignalledTokens = BIGINT_ZERO
+    subgraph.nameSignalAmount = BIGINT_ZERO
     subgraph.reserveRatio = 0
-    subgraph.withdrawableTokens = BigInt.fromI32(0)
-    subgraph.withdrawnTokens = BigInt.fromI32(0)
-    subgraph.signalledTokensSentToL2 = BigInt.fromI32(0)
-    subgraph.signalledTokensReceivedOnL2 = BigInt.fromI32(0)
+    subgraph.withdrawableTokens = BIGINT_ZERO
+    subgraph.withdrawnTokens = BIGINT_ZERO
+    subgraph.signalledTokensSentToL2 = BIGINT_ZERO
+    subgraph.signalledTokensReceivedOnL2 = BIGINT_ZERO
 
     subgraph.save()
 
@@ -93,22 +97,22 @@ export function createOrLoadSubgraphDeployment(
   if (deployment == null) {
     deployment = new SubgraphDeployment(subgraphID)
     deployment.createdAt = timestamp.toI32()
-    deployment.stakedTokens = BigInt.fromI32(0)
-    deployment.indexingRewardAmount = BigInt.fromI32(0)
-    deployment.indexingIndexerRewardAmount = BigInt.fromI32(0)
-    deployment.indexingDelegatorRewardAmount = BigInt.fromI32(0)
-    deployment.queryFeesAmount = BigInt.fromI32(0)
-    deployment.queryFeeRebates = BigInt.fromI32(0)
-    deployment.delegatorQueryFees = BigInt.fromI32(0)
-    deployment.curatorFeeRewards = BigInt.fromI32(0)
+    deployment.stakedTokens = BIGINT_ZERO
+    deployment.indexingRewardAmount = BIGINT_ZERO
+    deployment.indexingIndexerRewardAmount = BIGINT_ZERO
+    deployment.indexingDelegatorRewardAmount = BIGINT_ZERO
+    deployment.queryFeesAmount = BIGINT_ZERO
+    deployment.queryFeeRebates = BIGINT_ZERO
+    deployment.delegatorQueryFees = BIGINT_ZERO
+    deployment.curatorFeeRewards = BIGINT_ZERO
     deployment.transferredToL2 = false
-    deployment.signalledTokensSentToL2 = BigInt.fromI32(0)
-    deployment.signalledTokensReceivedOnL2 = BigInt.fromI32(0)
+    deployment.signalledTokensSentToL2 = BIGINT_ZERO
+    deployment.signalledTokensReceivedOnL2 = BIGINT_ZERO
 
-    deployment.signalledTokens = BigInt.fromI32(0)
-    deployment.unsignalledTokens = BigInt.fromI32(0)
-    deployment.signalAmount = BigInt.fromI32(0)
-    deployment.pricePerShare = BigDecimal.fromString('0')
+    deployment.signalledTokens = BIGINT_ZERO
+    deployment.unsignalledTokens = BIGINT_ZERO
+    deployment.signalAmount = BIGINT_ZERO
+    deployment.pricePerShare = BIGDECIMAL_ZERO
     deployment.reserveRatio = graphNetwork.defaultReserveRatio
     deployment.deniedAt = 0
     deployment.save()
@@ -127,43 +131,43 @@ export function createOrLoadIndexer(id: Bytes, timestamp: BigInt): Indexer {
     indexer.createdAt = timestamp.toI32()
     indexer.account = id
 
-    indexer.stakedTokens = BigInt.fromI32(0)
-    indexer.allocatedTokens = BigInt.fromI32(0)
-    indexer.lockedTokens = BigInt.fromI32(0)
-    indexer.unstakedTokens = BigInt.fromI32(0)
+    indexer.stakedTokens = BIGINT_ZERO
+    indexer.allocatedTokens = BIGINT_ZERO
+    indexer.lockedTokens = BIGINT_ZERO
+    indexer.unstakedTokens = BIGINT_ZERO
     indexer.tokensLockedUntil = 0
-    indexer.queryFeesCollected = BigInt.fromI32(0)
-    indexer.queryFeeRebates = BigInt.fromI32(0)
-    indexer.rewardsEarned = BigInt.fromI32(0)
-    indexer.indexerRewardsOwnGenerationRatio = BigDecimal.fromString('0')
+    indexer.queryFeesCollected = BIGINT_ZERO
+    indexer.queryFeeRebates = BIGINT_ZERO
+    indexer.rewardsEarned = BIGINT_ZERO
+    indexer.indexerRewardsOwnGenerationRatio = BIGDECIMAL_ZERO
 
-    indexer.delegatedCapacity = BigInt.fromI32(0)
-    indexer.tokenCapacity = BigInt.fromI32(0)
-    indexer.availableStake = BigInt.fromI32(0)
+    indexer.delegatedCapacity = BIGINT_ZERO
+    indexer.tokenCapacity = BIGINT_ZERO
+    indexer.availableStake = BIGINT_ZERO
 
-    indexer.delegatedTokens = BigInt.fromI32(0)
-    indexer.ownStakeRatio = BigDecimal.fromString('0')
-    indexer.delegatedStakeRatio = BigDecimal.fromString('0')
-    indexer.delegatorShares = BigInt.fromI32(0)
-    indexer.delegationExchangeRate = BigDecimal.fromString('1')
+    indexer.delegatedTokens = BIGINT_ZERO
+    indexer.ownStakeRatio = BIGDECIMAL_ZERO
+    indexer.delegatedStakeRatio = BIGDECIMAL_ZERO
+    indexer.delegatorShares = BIGINT_ZERO
+    indexer.delegationExchangeRate = BIGDECIMAL_ONE
     indexer.indexingRewardCut = 0
-    indexer.indexingRewardEffectiveCut = BigDecimal.fromString('0')
-    indexer.overDelegationDilution = BigDecimal.fromString('0')
-    indexer.delegatorIndexingRewards = BigInt.fromI32(0)
-    indexer.indexerIndexingRewards = BigInt.fromI32(0)
-    indexer.delegatorQueryFees = BigInt.fromI32(0)
+    indexer.indexingRewardEffectiveCut = BIGDECIMAL_ZERO
+    indexer.overDelegationDilution = BIGDECIMAL_ZERO
+    indexer.delegatorIndexingRewards = BIGINT_ZERO
+    indexer.indexerIndexingRewards = BIGINT_ZERO
+    indexer.delegatorQueryFees = BIGINT_ZERO
     indexer.queryFeeCut = 0
-    indexer.queryFeeEffectiveCut = BigDecimal.fromString('0')
+    indexer.queryFeeEffectiveCut = BIGDECIMAL_ZERO
     indexer.delegatorParameterCooldown = 0
     indexer.lastDelegationParameterUpdate = 0
     indexer.forcedClosures = 0
     indexer.allocationCount = 0
-    indexer.totalAllocationCount = BigInt.fromI32(0)
+    indexer.totalAllocationCount = BIGINT_ZERO
 
     indexer.transferredToL2 = false
-    indexer.stakedTokensTransferredToL2 = BigInt.fromI32(0)
+    indexer.stakedTokensTransferredToL2 = BIGINT_ZERO
 
-    indexer.delegatorsCount = BigInt.fromI32(0)
+    indexer.delegatorsCount = BIGINT_ZERO
 
     let graphNetwork = createOrLoadGraphNetwork()
     graphNetwork.indexerCount = graphNetwork.indexerCount + 1
@@ -180,15 +184,15 @@ export function createOrLoadDelegator(id: Bytes, timestamp: BigInt): Delegator {
     createOrLoadGraphAccount(id, timestamp)
     delegator = new Delegator(id)
     delegator.account = id
-    delegator.stakedTokens = BigInt.fromI32(0)
-    delegator.lockedTokens = BigInt.fromI32(0)
-    delegator.totalStakedTokens = BigInt.fromI32(0)
-    delegator.totalUnstakedTokens = BigInt.fromI32(0)
+    delegator.stakedTokens = BIGINT_ZERO
+    delegator.lockedTokens = BIGINT_ZERO
+    delegator.totalStakedTokens = BIGINT_ZERO
+    delegator.totalUnstakedTokens = BIGINT_ZERO
     delegator.createdAt = timestamp.toI32()
-    delegator.totalRealizedRewards = BigDecimal.fromString('0')
-    delegator.totalUnrealizedRewards = BigDecimal.fromString('0')
-    delegator.originalDelegation = BigDecimal.fromString('0')
-    delegator.currentDelegation = BigDecimal.fromString('0')
+    delegator.totalRealizedRewards = BIGDECIMAL_ZERO
+    delegator.totalUnrealizedRewards = BIGDECIMAL_ZERO
+    delegator.originalDelegation = BIGDECIMAL_ZERO
+    delegator.currentDelegation = BIGDECIMAL_ZERO
     delegator.stakesCount = 0
     delegator.activeStakesCount = 0
     delegator.save()
@@ -210,26 +214,27 @@ export function createOrLoadDelegatedStake(
 
   if (delegatedStake == null) {
     let indexerEntity = Indexer.load(indexer)!
-    let relationId = compoundId(indexer, changetype<Bytes>(Bytes.fromBigInt(indexerEntity.delegatorsCount)))
-    log.warning("Relation created: {}", [relationId.toHexString()])
-
+    let relationId = compoundId(
+      indexer,
+      changetype<Bytes>(Bytes.fromBigInt(indexerEntity.delegatorsCount)),
+    )
     delegatedStake = new DelegatedStake(id)
     delegatedStake.indexer = indexer
     delegatedStake.delegator = delegator.id
-    delegatedStake.stakedTokens = BigInt.fromI32(0)
-    delegatedStake.totalStakedTokens = BigInt.fromI32(0)
-    delegatedStake.totalUnstakedTokens = BigInt.fromI32(0)
-    delegatedStake.lockedTokens = BigInt.fromI32(0)
+    delegatedStake.stakedTokens = BIGINT_ZERO
+    delegatedStake.totalStakedTokens = BIGINT_ZERO
+    delegatedStake.totalUnstakedTokens = BIGINT_ZERO
+    delegatedStake.lockedTokens = BIGINT_ZERO
     delegatedStake.lockedUntil = 0
-    delegatedStake.shareAmount = BigInt.fromI32(0)
+    delegatedStake.shareAmount = BIGINT_ZERO
     delegatedStake.transferredToL2 = false
-    delegatedStake.stakedTokensTransferredToL2 = BigInt.fromI32(0)
-    delegatedStake.personalExchangeRate = BigDecimal.fromString('1')
-    delegatedStake.latestIndexerExchangeRate = BigDecimal.fromString('1')
-    delegatedStake.realizedRewards = BigDecimal.fromString('0')
-    delegatedStake.unrealizedRewards = BigDecimal.fromString('0')
-    delegatedStake.originalDelegation = BigDecimal.fromString('0')
-    delegatedStake.currentDelegation = BigDecimal.fromString('0')
+    delegatedStake.stakedTokensTransferredToL2 = BIGINT_ZERO
+    delegatedStake.personalExchangeRate = BIGDECIMAL_ONE
+    delegatedStake.latestIndexerExchangeRate = BIGDECIMAL_ONE
+    delegatedStake.realizedRewards = BIGDECIMAL_ZERO
+    delegatedStake.unrealizedRewards = BIGDECIMAL_ZERO
+    delegatedStake.originalDelegation = BIGDECIMAL_ZERO
+    delegatedStake.currentDelegation = BIGDECIMAL_ZERO
     delegatedStake.createdAt = timestamp
     delegatedStake.relation = relationId
     delegatedStake.save()
@@ -242,7 +247,7 @@ export function createOrLoadDelegatedStake(
     relation.active = true
     relation.save()
 
-    indexerEntity.delegatorsCount = indexerEntity.delegatorsCount.plus(BigInt.fromI32(1))
+    indexerEntity.delegatorsCount = indexerEntity.delegatorsCount.plus(BIGINT_ONE)
     indexerEntity.save()
 
     delegator.stakesCount = delegator.stakesCount + 1
@@ -256,20 +261,20 @@ export function createOrLoadCurator(id: Bytes, timestamp: BigInt): Curator {
   if (curator == null) {
     curator = new Curator(id)
     curator.createdAt = timestamp.toI32()
-    curator.totalSignalledTokens = BigInt.fromI32(0)
-    curator.totalUnsignalledTokens = BigInt.fromI32(0)
+    curator.totalSignalledTokens = BIGINT_ZERO
+    curator.totalUnsignalledTokens = BIGINT_ZERO
 
-    curator.totalNameSignalledTokens = BigInt.fromI32(0)
-    curator.totalNameUnsignalledTokens = BigInt.fromI32(0)
-    curator.totalWithdrawnTokens = BigInt.fromI32(0)
+    curator.totalNameSignalledTokens = BIGINT_ZERO
+    curator.totalNameUnsignalledTokens = BIGINT_ZERO
+    curator.totalWithdrawnTokens = BIGINT_ZERO
 
-    curator.realizedRewards = BigInt.fromI32(0)
-    curator.annualizedReturn = BigDecimal.fromString('0')
-    curator.totalReturn = BigDecimal.fromString('0')
-    curator.signalingEfficiency = BigDecimal.fromString('0')
-    curator.totalNameSignalAverageCostBasis = BigDecimal.fromString('0')
-    curator.totalNameSignal = BigDecimal.fromString('0')
-    curator.totalAverageCostBasisPerNameSignal = BigDecimal.fromString('0')
+    curator.realizedRewards = BIGINT_ZERO
+    curator.annualizedReturn = BIGDECIMAL_ZERO
+    curator.totalReturn = BIGDECIMAL_ZERO
+    curator.signalingEfficiency = BIGDECIMAL_ZERO
+    curator.totalNameSignalAverageCostBasis = BIGDECIMAL_ZERO
+    curator.totalNameSignal = BIGDECIMAL_ZERO
+    curator.totalAverageCostBasisPerNameSignal = BIGDECIMAL_ZERO
     curator.save()
 
     let graphNetwork = createOrLoadGraphNetwork()
@@ -286,11 +291,11 @@ export function createOrLoadSignal(curator: Bytes, subgraphDeploymentID: Bytes):
     signal = new Signal(signalID)
     signal.curator = curator
     signal.subgraphDeployment = subgraphDeploymentID
-    signal.signalledTokens = BigInt.fromI32(0)
-    signal.unsignalledTokens = BigInt.fromI32(0)
-    signal.signal = BigInt.fromI32(0)
+    signal.signalledTokens = BIGINT_ZERO
+    signal.unsignalledTokens = BIGINT_ZERO
+    signal.signal = BIGINT_ZERO
     signal.lastSignalChange = 0
-    signal.realizedRewards = BigInt.fromI32(0)
+    signal.realizedRewards = BIGINT_ZERO
     signal.save()
   }
   return signal as Signal
@@ -309,17 +314,17 @@ export function createOrLoadNameSignal(
     nameSignal.entityVersion = 2
     nameSignal.curator = underlyingCurator.id
     nameSignal.subgraph = subgraphID
-    nameSignal.signalledTokens = BigInt.fromI32(0)
-    nameSignal.unsignalledTokens = BigInt.fromI32(0)
-    nameSignal.withdrawnTokens = BigInt.fromI32(0)
-    nameSignal.nameSignal = BigInt.fromI32(0)
+    nameSignal.signalledTokens = BIGINT_ZERO
+    nameSignal.unsignalledTokens = BIGINT_ZERO
+    nameSignal.withdrawnTokens = BIGINT_ZERO
+    nameSignal.nameSignal = BIGINT_ZERO
     nameSignal.lastNameSignalChange = 0
-    nameSignal.realizedRewards = BigInt.fromI32(0)
-    nameSignal.signalledTokensSentToL2 = BigInt.fromI32(0)
-    nameSignal.signalledTokensReceivedOnL2 = BigInt.fromI32(0)
+    nameSignal.realizedRewards = BIGINT_ZERO
+    nameSignal.signalledTokensSentToL2 = BIGINT_ZERO
+    nameSignal.signalledTokensReceivedOnL2 = BIGINT_ZERO
     nameSignal.transferredToL2 = false
-    nameSignal.averageCostBasis = BigDecimal.fromString('0')
-    nameSignal.averageCostBasisPerSignal = BigDecimal.fromString('0')
+    nameSignal.averageCostBasis = BIGDECIMAL_ZERO
+    nameSignal.averageCostBasisPerSignal = BIGDECIMAL_ZERO
     nameSignal.save()
   }
   return nameSignal as NameSignal
@@ -329,10 +334,10 @@ export function createOrLoadPool(id: BigInt): Pool {
   let pool = Pool.load(changetype<Bytes>(Bytes.fromBigInt(id)))
   if (pool == null) {
     pool = new Pool(changetype<Bytes>(Bytes.fromBigInt(id)))
-    pool.allocation = BigInt.fromI32(0)
-    pool.totalQueryFees = BigInt.fromI32(0)
-    pool.claimedFees = BigInt.fromI32(0)
-    pool.curatorRewards = BigInt.fromI32(0)
+    pool.allocation = BIGINT_ZERO
+    pool.totalQueryFees = BIGINT_ZERO
+    pool.claimedFees = BIGINT_ZERO
+    pool.curatorRewards = BIGINT_ZERO
     pool.save()
   }
   return pool as Pool
@@ -349,25 +354,25 @@ export function createOrLoadGraphNetwork(): GraphNetwork {
     graphNetwork.delegationRatio = 0
     graphNetwork.defaultReserveRatio = 0
 
-    graphNetwork.totalTokensStaked = BigInt.fromI32(0)
-    graphNetwork.totalTokensClaimable = BigInt.fromI32(0)
-    graphNetwork.totalUnstakedTokensLocked = BigInt.fromI32(0)
-    graphNetwork.totalTokensAllocated = BigInt.fromI32(0)
-    graphNetwork.totalDelegatedTokens = BigInt.fromI32(0)
+    graphNetwork.totalTokensStaked = BIGINT_ZERO
+    graphNetwork.totalTokensClaimable = BIGINT_ZERO
+    graphNetwork.totalUnstakedTokensLocked = BIGINT_ZERO
+    graphNetwork.totalTokensAllocated = BIGINT_ZERO
+    graphNetwork.totalDelegatedTokens = BIGINT_ZERO
 
-    graphNetwork.totalQueryFees = BigInt.fromI32(0)
-    graphNetwork.totalIndexerQueryFeesCollected = BigInt.fromI32(0)
-    graphNetwork.totalIndexerQueryFeeRebates = BigInt.fromI32(0)
-    graphNetwork.totalDelegatorQueryFeeRebates = BigInt.fromI32(0)
-    graphNetwork.totalCuratorQueryFees = BigInt.fromI32(0)
-    graphNetwork.totalTaxedQueryFees = BigInt.fromI32(0)
-    graphNetwork.totalUnclaimedQueryFeeRebates = BigInt.fromI32(0)
+    graphNetwork.totalQueryFees = BIGINT_ZERO
+    graphNetwork.totalIndexerQueryFeesCollected = BIGINT_ZERO
+    graphNetwork.totalIndexerQueryFeeRebates = BIGINT_ZERO
+    graphNetwork.totalDelegatorQueryFeeRebates = BIGINT_ZERO
+    graphNetwork.totalCuratorQueryFees = BIGINT_ZERO
+    graphNetwork.totalTaxedQueryFees = BIGINT_ZERO
+    graphNetwork.totalUnclaimedQueryFeeRebates = BIGINT_ZERO
 
-    graphNetwork.totalIndexingRewards = BigInt.fromI32(0)
-    graphNetwork.totalIndexingIndexerRewards = BigInt.fromI32(0)
-    graphNetwork.totalIndexingDelegatorRewards = BigInt.fromI32(0)
+    graphNetwork.totalIndexingRewards = BIGINT_ZERO
+    graphNetwork.totalIndexingIndexerRewards = BIGINT_ZERO
+    graphNetwork.totalIndexingDelegatorRewards = BIGINT_ZERO
 
-    graphNetwork.totalTokensSignalled = BigInt.fromI32(0)
+    graphNetwork.totalTokensSignalled = BIGINT_ZERO
 
     graphNetwork.indexerCount = 0
     graphNetwork.stakedIndexersCount = 0
@@ -410,11 +415,15 @@ export function getVersionNumber(
 ): BigInt {
   // create versionID. start at version 1
   // TODO - should I start it at 0?
-  let versionID = joinID([graphAccount, subgraphNumber, changetype<Bytes>(Bytes.fromBigInt(versionNumber))])
+  let versionID = joinID([
+    graphAccount,
+    subgraphNumber,
+    changetype<Bytes>(Bytes.fromBigInt(versionNumber)),
+  ])
   let version = SubgraphVersion.load(versionID)
   // recursion until you get the right version
   if (version != null) {
-    versionNumber = versionNumber.plus(BigInt.fromI32(1))
+    versionNumber = versionNumber.plus(BIGINT_ONE)
     getVersionNumber(graphAccount, subgraphNumber, versionNumber)
   }
   return versionNumber
@@ -495,7 +504,10 @@ function createGraphAccountName(
     graphAccountName.save()
     // check that this name is not already used by another graph account (changing ownership)
     // If so, remove the old owner, and set the new one
-  } else if (graphAccountName.graphAccount === null || graphAccountName.graphAccount! != graphAccount) {
+  } else if (
+    graphAccountName.graphAccount === null ||
+    graphAccountName.graphAccount! != graphAccount
+  ) {
     // Only update the old graph account if it exists
     if (graphAccountName.graphAccount !== null) {
       // Set defaultDisplayName to null if they lost ownership of this name
@@ -535,42 +547,40 @@ export function calculateOwnStakeRatio(indexer: Indexer): BigDecimal {
   let maxPossibleTotalUsable = stakedTokensBD + stakedTokensBD * delegationRatioBD
   let currentTotalStake = stakedTokensBD + delegatedTokensBD
   let totalUsable = min(maxPossibleTotalUsable, currentTotalStake)
-  return totalUsable == BigDecimal.fromString('0')
-    ? BigDecimal.fromString('0')
-    : stakedTokensBD / totalUsable
+  return totalUsable == BIGDECIMAL_ZERO ? BIGDECIMAL_ZERO : stakedTokensBD / totalUsable
 }
 
 export function calculateDelegatedStakeRatio(indexer: Indexer): BigDecimal {
   // If own stake ratio is 0 it's because there's no usable stake, so we can't say that delegStakeRatio is 100%.
   // Also, own stake ratio can't be less than 0.0588 with the current delegationRatio, and even if it changes
   // it can never be 0 and have delegations.
-  return indexer.ownStakeRatio == BigDecimal.fromString('0')
-    ? BigDecimal.fromString('0')
-    : BigDecimal.fromString('1') - indexer.ownStakeRatio
+  return indexer.ownStakeRatio == BIGDECIMAL_ZERO
+    ? BIGDECIMAL_ZERO
+    : BIGDECIMAL_ONE - indexer.ownStakeRatio
 }
 
 export function calculateIndexingRewardEffectiveCut(indexer: Indexer): BigDecimal {
   let delegatorCut =
     BigInt.fromI32(1000000 - indexer.indexingRewardCut).toBigDecimal() /
     BigDecimal.fromString('1000000')
-  return indexer.delegatedStakeRatio == BigDecimal.fromString('0')
-    ? BigDecimal.fromString('0')
-    : BigDecimal.fromString('1') - delegatorCut / indexer.delegatedStakeRatio
+  return indexer.delegatedStakeRatio == BIGDECIMAL_ZERO
+    ? BIGDECIMAL_ZERO
+    : BIGDECIMAL_ONE - delegatorCut / indexer.delegatedStakeRatio
 }
 
 export function calculateQueryFeeEffectiveCut(indexer: Indexer): BigDecimal {
   let delegatorCut =
     BigInt.fromI32(1000000 - indexer.queryFeeCut).toBigDecimal() / BigDecimal.fromString('1000000')
-  return indexer.delegatedStakeRatio == BigDecimal.fromString('0')
-    ? BigDecimal.fromString('0')
-    : BigDecimal.fromString('1') - delegatorCut / indexer.delegatedStakeRatio
+  return indexer.delegatedStakeRatio == BIGDECIMAL_ZERO
+    ? BIGDECIMAL_ZERO
+    : BIGDECIMAL_ONE - delegatorCut / indexer.delegatedStakeRatio
 }
 
 export function calculateIndexerRewardOwnGenerationRatio(indexer: Indexer): BigDecimal {
   let rewardCut =
     BigInt.fromI32(indexer.indexingRewardCut).toBigDecimal() / BigDecimal.fromString('1000000')
-  return indexer.ownStakeRatio == BigDecimal.fromString('0')
-    ? BigDecimal.fromString('0')
+  return indexer.ownStakeRatio == BIGDECIMAL_ZERO
+    ? BIGDECIMAL_ZERO
     : rewardCut / indexer.ownStakeRatio
 }
 
@@ -580,9 +590,9 @@ export function calculateOverdelegationDilution(indexer: Indexer): BigDecimal {
   let graphNetwork = createOrLoadGraphNetwork()
   let delegationRatioBD = BigInt.fromI32(graphNetwork.delegationRatio).toBigDecimal()
   let maxDelegatedStake = stakedTokensBD * delegationRatioBD
-  return stakedTokensBD == BigDecimal.fromString('0')
-    ? BigDecimal.fromString('0')
-    : BigDecimal.fromString('1') - maxDelegatedStake / max(maxDelegatedStake, delegatedTokensBD)
+  return stakedTokensBD == BIGDECIMAL_ZERO
+    ? BIGDECIMAL_ZERO
+    : BIGDECIMAL_ONE - maxDelegatedStake / max(maxDelegatedStake, delegatedTokensBD)
 }
 
 export function updateAdvancedIndexerMetrics(indexer: Indexer): Indexer {
@@ -615,10 +625,9 @@ export function batchUpdateDelegatorsForIndexer(indexerId: Bytes, timestamp: Big
   // pre-calculates a lot of data for all delegators that exists for a specific indexer
   // using already existing links with the indexer-delegatedStake relations
   for (let i = 0; i < indexer.delegatorsCount.toI32(); i++) {
-    let relationId = compoundId(indexer.id, changetype<Bytes>(Bytes.fromI32(i)))
-    log.warning("Relation to load: {}", [relationId.toHexString()])
-    let relation = IndexerDelegatedStakeRelation.load(relationId)
-    if (relation !== null && relation.active) {
+    let relationId = compoundId(indexer.id, changetype<Bytes>(Bytes.fromBigInt(BigInt.fromString(i.toString()))))
+    let relation = IndexerDelegatedStakeRelation.load(relationId)!
+    if (relation.active) {
       let delegatedStake = DelegatedStake.load(relation.stake)!
       let delegator = Delegator.load(delegatedStake.delegator)!
       // Only update core entities if there's a change in the exchange rate
@@ -644,8 +653,6 @@ export function batchUpdateDelegatorsForIndexer(indexerId: Bytes, timestamp: Big
 
       getAndUpdateDelegatedStakeDailyData(delegatedStake as DelegatedStake, timestamp)
       getAndUpdateDelegatorDailyData(delegator as Delegator, timestamp)
-    } else if(relation === null) {
-      log.error("Relation: {} is null", [relationId.toHexString()])
     }
   }
 }
@@ -708,8 +715,8 @@ export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt)
     dailyData.dayEnd = dailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
     dailyData.dayNumber = dayNumber
     dailyData.indexer = entity.id
-    dailyData.netDailyDelegatedTokens = BigInt.fromI32(0)
-    dailyData.delegatorsCount = BigInt.fromI32(0)
+    dailyData.netDailyDelegatedTokens = BIGINT_ZERO
+    dailyData.delegatorsCount = BIGINT_ZERO
   }
 
   dailyData.stakedTokens = entity.stakedTokens
@@ -848,8 +855,8 @@ export function calculatePricePerShare(deployment: SubgraphDeployment): BigDecim
   // HOTFIX for now, if deployment.reserveRatio -> 0, use a known previous default
   let reserveRatioMultiplier = deployment.reserveRatio == 0 ? 2 : 1000000 / deployment.reserveRatio
   let pricePerShare =
-    deployment.signalAmount == BigInt.fromI32(0)
-      ? BigDecimal.fromString('0')
+    deployment.signalAmount == BIGINT_ZERO
+      ? BIGDECIMAL_ZERO
       : deployment.signalledTokens
           .toBigDecimal()
           .div(deployment.signalAmount.toBigDecimal())

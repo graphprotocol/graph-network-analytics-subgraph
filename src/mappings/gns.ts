@@ -1,4 +1,4 @@
-import { BigDecimal, BigInt, Bytes, ipfs, json } from '@graphprotocol/graph-ts'
+import { BigDecimal, Bytes, ipfs, json } from '@graphprotocol/graph-ts'
 import {
   SubgraphPublished,
   SubgraphDeprecated,
@@ -45,6 +45,7 @@ import {
   convertBigIntSubgraphIDToBase58,
   compoundId,
   joinIDString,
+  BIGINT_ONE,
 } from './helpers'
 
 export function handleSetDefaultName(event: SetDefaultName): void {
@@ -134,17 +135,16 @@ export function handleSubgraphMetadataUpdated(event: SubgraphMetadataUpdated): v
  */
 export function handleSubgraphPublished(event: SubgraphPublished): void {
   let subgraphID = getSubgraphID(event.params.graphAccount, event.params.subgraphNumber)
-  let versionNumber: BigInt
 
   // Update subgraph
   let subgraph = createOrLoadSubgraph(subgraphID, event.params.graphAccount, event.block.timestamp)
 
-  versionNumber = subgraph.versionCount
+  let versionNumber = subgraph.versionCount
   let versionIDNew = compoundId(subgraph.id, changetype<Bytes>(Bytes.fromBigInt(subgraph.versionCount)))
   subgraph.creatorAddress = event.params.graphAccount
   subgraph.subgraphNumber = event.params.subgraphNumber
   subgraph.oldID = joinIDString([event.params.graphAccount.toHexString(), event.params.subgraphNumber.toString()])
-  subgraph.versionCount = subgraph.versionCount.plus(BigInt.fromI32(1))
+  subgraph.versionCount = subgraph.versionCount.plus(BIGINT_ONE)
   subgraph.updatedAt = event.block.timestamp.toI32()
 
   subgraph.currentVersion = versionIDNew
@@ -374,8 +374,7 @@ export function handleGRTWithdrawn(event: GRTWithdrawn): void {
 export function handleSubgraphPublishedV2(event: SubgraphPublished1): void {
   let bigIntID = event.params.subgraphID
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
-  let versionID: Bytes
-  let versionNumber: BigInt
+
 
   // Update subgraph
   let subgraph = createOrLoadSubgraph(
@@ -383,9 +382,10 @@ export function handleSubgraphPublishedV2(event: SubgraphPublished1): void {
     event.transaction.from,
     event.block.timestamp,
   )
-  versionID = compoundId(subgraph.id, changetype<Bytes>(Bytes.fromBigInt(subgraph.versionCount)))
+  let versionNumber = subgraph.versionCount
+  let versionID = compoundId(subgraph.id, changetype<Bytes>(Bytes.fromBigInt(subgraph.versionCount)))
   subgraph.currentVersion = versionID
-  subgraph.versionCount = subgraph.versionCount.plus(BigInt.fromI32(1))
+  subgraph.versionCount = subgraph.versionCount.plus(BIGINT_ONE)
   subgraph.updatedAt = event.block.timestamp.toI32()
   subgraph.reserveRatio = event.params.reserveRatio.toI32()
   subgraph.migrated = true
@@ -602,7 +602,6 @@ export function handleSubgraphVersionUpdated(event: SubgraphVersionUpdated): voi
   let bigIntID = event.params.subgraphID
   let subgraphID = convertBigIntSubgraphIDToBase58(bigIntID)
   let versionID: Bytes
-  let versionNumber: BigInt
 
   // Update subgraph
   let subgraph = Subgraph.load(subgraphID)!
@@ -612,7 +611,7 @@ export function handleSubgraphVersionUpdated(event: SubgraphVersionUpdated): voi
     subgraph.save()
 
     // Update already initialized subgraph version
-    versionID = compoundId(subgraph.id, changetype<Bytes>(Bytes.fromBigInt(subgraph.versionCount.minus(BigInt.fromI32(1)))))
+    versionID = compoundId(subgraph.id, changetype<Bytes>(Bytes.fromBigInt(subgraph.versionCount.minus(BIGINT_ONE))))
     let subgraphVersion = SubgraphVersion.load(versionID)!
     // let hexHash = changetype<Bytes>(addQm(event.params.versionMetadata))
     // let base58Hash = hexHash.toBase58()
@@ -620,10 +619,10 @@ export function handleSubgraphVersionUpdated(event: SubgraphVersionUpdated): voi
     //subgraphVersion = fetchSubgraphVersionMetadata(subgraphVersion, base58Hash)
     subgraphVersion.save()
   } else {
-    versionNumber = subgraph.versionCount
+    let versionNumber = subgraph.versionCount
     versionID = compoundId(subgraph.id, changetype<Bytes>(Bytes.fromBigInt(subgraph.versionCount)))
     subgraph.currentVersion = versionID
-    subgraph.versionCount = subgraph.versionCount.plus(BigInt.fromI32(1))
+    subgraph.versionCount = subgraph.versionCount.plus(BIGINT_ONE)
     subgraph.updatedAt = event.block.timestamp.toI32()
     subgraph.save()
 

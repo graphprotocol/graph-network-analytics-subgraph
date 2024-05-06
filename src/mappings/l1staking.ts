@@ -21,6 +21,7 @@ import {
   createOrLoadGraphNetwork,
   getAndUpdateNetworkDailyData,
   compoundId,
+  BIGINT_ZERO,
 } from './helpers'
 
 /*
@@ -82,7 +83,7 @@ export function handleDelegationTransferredToL2(event: DelegationTransferredToL2
   delegation.stakedTokensTransferredToL2 = delegation.stakedTokensTransferredToL2.plus(
     event.params.transferredDelegationTokens,
   )
-  delegation.shareAmount = BigInt.fromI32(0)
+  delegation.shareAmount = BIGINT_ZERO
   delegation.totalUnstakedTokens = delegation.totalUnstakedTokens.plus(
     event.params.transferredDelegationTokens,
   )
@@ -97,7 +98,7 @@ export function handleDelegationTransferredToL2(event: DelegationTransferredToL2
   let beforeUpdateDelegationExchangeRate = indexer.delegationExchangeRate
   indexer.delegatedTokens = indexer.delegatedTokens.minus(event.params.transferredDelegationTokens)
   indexer.delegatorShares = indexer.delegatorShares.minus(delegatorSharesBefore)
-  if (indexer.delegatorShares != BigInt.fromI32(0)) {
+  if (indexer.delegatorShares != BIGINT_ZERO) {
     indexer = updateDelegationExchangeRate(indexer as Indexer)
   }
   indexer = updateAdvancedIndexerMetrics(indexer as Indexer)
