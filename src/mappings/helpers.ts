@@ -214,10 +214,6 @@ export function createOrLoadDelegatedStake(
 
   if (delegatedStake == null) {
     let indexerEntity = Indexer.load(indexer)!
-    let relationId = compoundId(
-      indexer,
-      changetype<Bytes>(Bytes.fromBigInt(indexerEntity.delegatorsCount)),
-    )
     delegatedStake = new DelegatedStake(id)
     delegatedStake.indexer = indexer
     delegatedStake.delegator = delegator.id
@@ -236,15 +232,11 @@ export function createOrLoadDelegatedStake(
     delegatedStake.originalDelegation = BIGDECIMAL_ZERO
     delegatedStake.currentDelegation = BIGDECIMAL_ZERO
     delegatedStake.createdAt = timestamp
-    delegatedStake.relation = relationId
+    delegatedStake.relation = id
     delegatedStake.save()
 
-    let relation = new IndexerDelegatedStakeRelation(relationId)
-
-    relation.indexer = indexerEntity.id
-    relation.stake = delegatedStake.id
-    relation.delegator = delegator.id
-    relation.active = true
+    let relation = new IndexerDelegatedStakeRelation(id) // minimal amount of data to avoid running out of memory
+    relation.indexer = indexerEntity.id // only needed for field derivation and active status
     relation.save()
 
     indexerEntity.delegatorsCount = indexerEntity.delegatorsCount.plus(BIGINT_ONE)
@@ -623,37 +615,35 @@ export function batchUpdateDelegatorsForIndexer(indexerId: Bytes, timestamp: Big
   // Loading it again here to make sure we have the latest up to date data on the entity.
   let indexer = Indexer.load(indexerId)!
   // pre-calculates a lot of data for all delegators that exists for a specific indexer
-  // using already existing links with the indexer-delegatedStake relations
-  for (let i = 0; i < indexer.delegatorsCount.toI32(); i++) {
-    let relationId = compoundId(indexer.id, changetype<Bytes>(Bytes.fromBigInt(BigInt.fromString(i.toString()))))
-    let relation = IndexerDelegatedStakeRelation.load(relationId)!
-    if (relation.active) {
-      let delegatedStake = DelegatedStake.load(relation.stake)!
-      let delegator = Delegator.load(delegatedStake.delegator)!
-      // Only update core entities if there's a change in the exchange rate
-      if (delegatedStake.latestIndexerExchangeRate != indexer.delegationExchangeRate) {
-        let oldUnrealizedRewards = delegatedStake.unrealizedRewards
+  // uses lightweight relation entity to derive the full list. hopefully it doesn't run out of memory on big deleg count indexers
+  let relations = indexer.relations.load()
 
-        delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate
-        delegatedStake.currentDelegation =
-          delegatedStake.latestIndexerExchangeRate * delegatedStake.shareAmount.toBigDecimal()
-        delegatedStake.unrealizedRewards = avoidNegativeRoundingError(
-          delegatedStake.currentDelegation - delegatedStake.originalDelegation,
-        )
-        delegatedStake.save()
+  for (let i = 0; i < relations.length; i++) {
+    let delegatedStake = DelegatedStake.load(relations[i].id)!
+    let delegator = Delegator.load(delegatedStake.delegator)!
+    // Only update core entities if there's a change in the exchange rate
+    if (delegatedStake.latestIndexerExchangeRate != indexer.delegationExchangeRate) {
+      let oldUnrealizedRewards = delegatedStake.unrealizedRewards
 
-        let diffUnrealized = delegatedStake.unrealizedRewards - oldUnrealizedRewards
+      delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate
+      delegatedStake.currentDelegation =
+        delegatedStake.latestIndexerExchangeRate.times(delegatedStake.shareAmount.toBigDecimal())
+      delegatedStake.unrealizedRewards = avoidNegativeRoundingError(
+        delegatedStake.currentDelegation.minus(delegatedStake.originalDelegation),
+      )
+      delegatedStake.save()
 
-        delegator.totalUnrealizedRewards = avoidNegativeRoundingError(
-          delegator.totalUnrealizedRewards.plus(diffUnrealized),
-        )
-        delegator.currentDelegation = delegator.currentDelegation.plus(diffUnrealized)
-        delegator.save()
-      }
+      let diffUnrealized = delegatedStake.unrealizedRewards.minus(oldUnrealizedRewards)
 
-      getAndUpdateDelegatedStakeDailyData(delegatedStake as DelegatedStake, timestamp)
-      getAndUpdateDelegatorDailyData(delegator as Delegator, timestamp)
+      delegator.totalUnrealizedRewards = avoidNegativeRoundingError(
+        delegator.totalUnrealizedRewards.plus(diffUnrealized),
+      )
+      delegator.currentDelegation = delegator.currentDelegation.plus(diffUnrealized)
+      delegator.save()
     }
+
+    getAndUpdateDelegatedStakeDailyData(delegatedStake as DelegatedStake, timestamp)
+    getAndUpdateDelegatorDailyData(delegator as Delegator, timestamp)
   }
 }
 
@@ -663,16 +653,13 @@ export function getAndUpdateNetworkDailyData(
 ): GraphNetworkDailyData {
   let dayNumber = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
   let id = compoundId(entity.id, Bytes.fromI32(dayNumber))
-  let dailyData = GraphNetworkDailyData.load(id)
 
-  if (dailyData == null) {
-    dailyData = new GraphNetworkDailyData(id)
-
-    dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
-    dailyData.dayEnd = dailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
-    dailyData.dayNumber = dayNumber
-    dailyData.network = entity.id
-  }
+  // not checking for previous entity since we don't want to waste a load and data will be overwritten anyways
+  let dailyData = new GraphNetworkDailyData(id)
+  dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
+  dailyData.dayEnd = dailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
+  dailyData.dayNumber = dayNumber
+  dailyData.network = entity.id
 
   dailyData.delegationRatio = entity.delegationRatio
   dailyData.totalTokensStaked = entity.totalTokensStaked
@@ -706,18 +693,15 @@ export function getAndUpdateNetworkDailyData(
 export function getAndUpdateIndexerDailyData(entity: Indexer, timestamp: BigInt): IndexerDailyData {
   let dayNumber = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
   let id = compoundId(entity.id, Bytes.fromI32(dayNumber))
-  let dailyData = IndexerDailyData.load(id)
 
-  if (dailyData == null) {
-    dailyData = new IndexerDailyData(id)
-
-    dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
-    dailyData.dayEnd = dailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
-    dailyData.dayNumber = dayNumber
-    dailyData.indexer = entity.id
-    dailyData.netDailyDelegatedTokens = BIGINT_ZERO
-    dailyData.delegatorsCount = BIGINT_ZERO
-  }
+  // not checking for previous entity since we don't want to waste a load and data will be overwritten anyways
+  let dailyData = new IndexerDailyData(id)
+  dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
+  dailyData.dayEnd = dailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
+  dailyData.dayNumber = dayNumber
+  dailyData.indexer = entity.id
+  dailyData.netDailyDelegatedTokens = BIGINT_ZERO
+  dailyData.delegatorsCount = BIGINT_ZERO
 
   dailyData.stakedTokens = entity.stakedTokens
   dailyData.delegatedTokens = entity.delegatedTokens
@@ -748,20 +732,17 @@ export function getAndUpdateDelegatedStakeDailyData(
 ): DelegatedStakeDailyData {
   let dayNumber = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
   let stakeId = compoundId(stakeEntity.id, Bytes.fromI32(dayNumber))
-  let stakeDailyData = DelegatedStakeDailyData.load(stakeId)
 
-  if (stakeDailyData == null) {
-    stakeDailyData = new DelegatedStakeDailyData(stakeId)
-
-    stakeDailyData.dayStart = BigInt.fromI32(
-      (timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY,
-    )
-    stakeDailyData.dayEnd = stakeDailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
-    stakeDailyData.dayNumber = dayNumber
-    stakeDailyData.stake = stakeEntity.id
-    stakeDailyData.delegator = stakeEntity.delegator
-    stakeDailyData.indexer = stakeEntity.indexer
-  }
+  // not checking for previous entity since we don't want to waste a load and data will be overwritten anyways
+  let stakeDailyData = new DelegatedStakeDailyData(stakeId)
+  stakeDailyData.dayStart = BigInt.fromI32(
+    (timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY,
+  )
+  stakeDailyData.dayEnd = stakeDailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
+  stakeDailyData.dayNumber = dayNumber
+  stakeDailyData.stake = stakeEntity.id
+  stakeDailyData.delegator = stakeEntity.delegator
+  stakeDailyData.indexer = stakeEntity.indexer
 
   stakeDailyData.stakedTokens = stakeEntity.stakedTokens
   stakeDailyData.lockedTokens = stakeEntity.lockedTokens
@@ -784,16 +765,13 @@ export function getAndUpdateDelegatorDailyData(
 ): DelegatorDailyData {
   let dayNumber = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
   let id = compoundId(entity.id, Bytes.fromI32(dayNumber))
-  let dailyData = DelegatorDailyData.load(id)
-
-  if (dailyData == null) {
-    dailyData = new DelegatorDailyData(id)
-
-    dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
-    dailyData.dayEnd = dailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
-    dailyData.dayNumber = dayNumber
-    dailyData.delegator = entity.id
-  }
+  
+  // not checking for previous entity since we don't want to waste a load and data will be overwritten anyways
+  let dailyData = new DelegatorDailyData(id)
+  dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
+  dailyData.dayEnd = dailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
+  dailyData.dayNumber = dayNumber
+  dailyData.delegator = entity.id
 
   dailyData.stakesCount = entity.stakesCount
   dailyData.activeStakesCount = entity.activeStakesCount
@@ -814,16 +792,13 @@ export function getAndUpdateSubgraphDeploymentDailyData(
 ): SubgraphDeploymentDailyData {
   let dayId = timestamp.toI32() / SECONDS_PER_DAY - LAUNCH_DAY
   let id = compoundId(entity.id, Bytes.fromI32(dayId))
-  let dailyData = SubgraphDeploymentDailyData.load(id)
 
-  if (dailyData == null) {
-    dailyData = new SubgraphDeploymentDailyData(id)
-
-    dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
-    dailyData.dayEnd = dailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
-    dailyData.dayNumber = dayId
-    dailyData.subgraphDeployment = entity.id
-  }
+  // not checking for previous entity since we don't want to waste a load and data will be overwritten anyways
+  let dailyData = new SubgraphDeploymentDailyData(id)
+  dailyData.dayStart = BigInt.fromI32((timestamp.toI32() / SECONDS_PER_DAY) * SECONDS_PER_DAY)
+  dailyData.dayEnd = dailyData.dayStart.plus(BigInt.fromI32(SECONDS_PER_DAY))
+  dailyData.dayNumber = dayId
+  dailyData.subgraphDeployment = entity.id
 
   dailyData.stakedTokens = entity.stakedTokens
   dailyData.signalledTokens = entity.signalledTokens
