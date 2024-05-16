@@ -505,6 +505,9 @@ type Indexer @entity {
   "Delegators to this Indexer"
   delegators: [DelegatedStake!]! @derivedFrom(field: "indexer")
 
+  "Delegator relation entities. For internal usage for performance reasons"
+  relations: [IndexerDelegatedStakeRelation!]! @derivedFrom(field: "indexer")
+
   "CURRENT tokens delegated to the indexer"
   delegatedTokens: BigInt!
 
@@ -1071,16 +1074,7 @@ type IndexerDelegatedStakeRelation @entity {
   id: Bytes!
 
   "Indexer entity where the delegation resides"
-  indexer: Indexer!
-
-  "Delegator entity owner of said delegation stake"
-  delegator: Delegator!
-
-  "DelegatedStake entity that represents the delegation"
-  stake: DelegatedStake!
-
-  "Whether the delegation is active or not. Useful to avoid updating non-active delegations without deleting the entity."
-  active: Boolean!
+  indexer: Indexer
 }
 
 type IndexerDailyData @entity {

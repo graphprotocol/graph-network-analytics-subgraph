@@ -271,7 +271,7 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   // We wouldn't want to re-activate the relation in that case
   if (!delegatedStake.shareAmount.equals(BIGINT_ZERO)) {
     let relation = IndexerDelegatedStakeRelation.load(delegatedStake.relation)!
-    relation.active = true
+    relation.indexer = indexer.id
     relation.save()
   }
 
@@ -375,7 +375,7 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   // De-activate relation with indexer after batch update, so last datapoints are created properly
   if (delegatedStake.shareAmount.equals(BIGINT_ZERO)) {
     let relation = IndexerDelegatedStakeRelation.load(delegatedStake.relation)!
-    relation.active = false
+    relation.indexer = null
     relation.save()
   }
   getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)

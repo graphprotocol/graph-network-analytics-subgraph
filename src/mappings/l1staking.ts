@@ -156,7 +156,7 @@ export function handleDelegationTransferredToL2(event: DelegationTransferredToL2
 
   // De-activate relation with indexer after batch update, so last datapoints are created properly
   let relation = IndexerDelegatedStakeRelation.load(delegation.relation)!
-  relation.active = false
+  relation.indexer = null
   relation.save()
   getAndUpdateNetworkDailyData(graphNetwork as GraphNetwork, event.block.timestamp)
 }
