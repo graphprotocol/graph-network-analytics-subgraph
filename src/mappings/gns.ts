@@ -165,8 +165,6 @@ export function handleSubgraphPublished(event: SubgraphPublished): void {
   subgraphVersion.subgraphDeployment = subgraphDeploymentID
   subgraphVersion.version = versionNumber.toI32()
   subgraphVersion.createdAt = event.block.timestamp.toI32()
-  let hexHash = changetype<Bytes>(addQm(event.params.versionMetadata))
-  let base58Hash = hexHash.toBase58()
   subgraphVersion.metadataHash = event.params.versionMetadata
   subgraphVersion.save()
 }
@@ -637,8 +635,6 @@ export function handleSubgraphVersionUpdated(event: SubgraphVersionUpdated): voi
     subgraphVersion.subgraphDeployment = subgraphDeploymentID
     subgraphVersion.version = versionNumber.toI32()
     subgraphVersion.createdAt = event.block.timestamp.toI32()
-    let hexHash = changetype<Bytes>(addQm(event.params.versionMetadata))
-    let base58Hash = hexHash.toBase58()
     subgraphVersion.metadataHash = event.params.versionMetadata
     subgraphVersion.save()
   }
