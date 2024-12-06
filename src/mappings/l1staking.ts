@@ -117,9 +117,6 @@ export function handleDelegationTransferredToL2(event: DelegationTransferredToL2
 
   delegation.realizedRewards = delegation.realizedRewards.plus(realizedRewards)
   delegation.originalDelegation = BigDecimal.fromString('0')
-  delegation.latestIndexerExchangeRate = indexer.delegationExchangeRate
-  delegation.currentDelegation = BigDecimal.fromString('0')
-  delegation.unrealizedRewards = BigDecimal.fromString('0')
   delegation.save()
 
   // update delegator
@@ -129,7 +126,6 @@ export function handleDelegationTransferredToL2(event: DelegationTransferredToL2
   )
   delegator.totalRealizedRewards = delegator.totalRealizedRewards.plus(realizedRewards)
   delegator.originalDelegation = delegator.originalDelegation.plus(oldOriginalDelegation)
-  delegator.currentDelegation = delegator.currentDelegation.minus(currentBalance)
   delegator.stakedTokens = delegator.stakedTokens.minus(event.params.transferredDelegationTokens)
   delegator.lockedTokens = delegator.lockedTokens.plus(event.params.transferredDelegationTokens)
   delegator.lastUndelegatedAt = event.block.timestamp.toI32()

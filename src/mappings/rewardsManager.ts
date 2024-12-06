@@ -13,7 +13,6 @@ import {
   createOrLoadGraphNetwork,
   getAndUpdateIndexerDailyData,
   getAndUpdateSubgraphDeploymentDailyData,
-  batchUpdateDelegatorsForIndexer,
   getAndUpdateNetworkDailyData,
   BIGINT_ZERO,
 } from './helpers'
@@ -79,8 +78,6 @@ export function handleRewardsAssigned(event: RewardsAssigned): void {
   graphNetwork.totalDelegatedTokens =
     graphNetwork.totalDelegatedTokens.plus(delegatorIndexingRewards)
   graphNetwork.save()
-
-  batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
 
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   getAndUpdateSubgraphDeploymentDailyData(

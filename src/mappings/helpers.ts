@@ -190,9 +190,7 @@ export function createOrLoadDelegator(id: Bytes, timestamp: BigInt): Delegator {
     delegator.totalUnstakedTokens = BIGINT_ZERO
     delegator.createdAt = timestamp.toI32()
     delegator.totalRealizedRewards = BIGDECIMAL_ZERO
-    delegator.totalUnrealizedRewards = BIGDECIMAL_ZERO
     delegator.originalDelegation = BIGDECIMAL_ZERO
-    delegator.currentDelegation = BIGDECIMAL_ZERO
     delegator.stakesCount = 0
     delegator.activeStakesCount = 0
     delegator.save()
@@ -226,11 +224,8 @@ export function createOrLoadDelegatedStake(
     delegatedStake.transferredToL2 = false
     delegatedStake.stakedTokensTransferredToL2 = BIGINT_ZERO
     delegatedStake.personalExchangeRate = BIGDECIMAL_ONE
-    delegatedStake.latestIndexerExchangeRate = BIGDECIMAL_ONE
     delegatedStake.realizedRewards = BIGDECIMAL_ZERO
-    delegatedStake.unrealizedRewards = BIGDECIMAL_ZERO
     delegatedStake.originalDelegation = BIGDECIMAL_ZERO
-    delegatedStake.currentDelegation = BIGDECIMAL_ZERO
     delegatedStake.createdAt = timestamp
     delegatedStake.relation = id
     delegatedStake.save()
@@ -712,11 +707,8 @@ export function getAndUpdateDelegatedStakeDailyData(
   stakeDailyData.lockedTokens = stakeEntity.lockedTokens
   stakeDailyData.shareAmount = stakeEntity.shareAmount
   stakeDailyData.personalExchangeRate = stakeEntity.personalExchangeRate
-  stakeDailyData.latestIndexerExchangeRate = stakeEntity.latestIndexerExchangeRate
-  stakeDailyData.unrealizedRewards = stakeEntity.unrealizedRewards
   stakeDailyData.realizedRewards = stakeEntity.realizedRewards
   stakeDailyData.originalDelegation = stakeEntity.originalDelegation
-  stakeDailyData.currentDelegation = stakeEntity.currentDelegation
 
   stakeDailyData.save()
 
@@ -740,9 +732,7 @@ export function getAndUpdateDelegatorDailyData(
   dailyData.stakesCount = entity.stakesCount
   dailyData.activeStakesCount = entity.activeStakesCount
   dailyData.stakedTokens = entity.stakedTokens
-  dailyData.currentDelegation = entity.currentDelegation
   dailyData.lockedTokens = entity.lockedTokens
-  dailyData.totalUnrealizedRewards = entity.totalUnrealizedRewards
   dailyData.totalRealizedRewards = entity.totalRealizedRewards
 
   dailyData.save()
