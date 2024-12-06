@@ -611,42 +611,6 @@ export function compoundId(idA: Bytes, idB: Bytes): Bytes {
   return idA.concat(bytesSeparator).concat(idB)
 }
 
-export function batchUpdateDelegatorsForIndexer(indexerId: Bytes, timestamp: BigInt): void {
-  // Loading it again here to make sure we have the latest up to date data on the entity.
-  let indexer = Indexer.load(indexerId)!
-  // pre-calculates a lot of data for all delegators that exists for a specific indexer
-  // uses lightweight relation entity to derive the full list. hopefully it doesn't run out of memory on big deleg count indexers
-  let relations = indexer.relations.load()
-
-  for (let i = 0; i < relations.length; i++) {
-    let delegatedStake = DelegatedStake.load(relations[i].id)!
-    let delegator = Delegator.load(delegatedStake.delegator)!
-    // Only update core entities if there's a change in the exchange rate
-    if (delegatedStake.latestIndexerExchangeRate != indexer.delegationExchangeRate) {
-      let oldUnrealizedRewards = delegatedStake.unrealizedRewards
-
-      delegatedStake.latestIndexerExchangeRate = indexer.delegationExchangeRate
-      delegatedStake.currentDelegation =
-        delegatedStake.latestIndexerExchangeRate.times(delegatedStake.shareAmount.toBigDecimal())
-      delegatedStake.unrealizedRewards = avoidNegativeRoundingError(
-        delegatedStake.currentDelegation.minus(delegatedStake.originalDelegation),
-      )
-      delegatedStake.save()
-
-      let diffUnrealized = delegatedStake.unrealizedRewards.minus(oldUnrealizedRewards)
-
-      delegator.totalUnrealizedRewards = avoidNegativeRoundingError(
-        delegator.totalUnrealizedRewards.plus(diffUnrealized),
-      )
-      delegator.currentDelegation = delegator.currentDelegation.plus(diffUnrealized)
-      delegator.save()
-    }
-
-    getAndUpdateDelegatedStakeDailyData(delegatedStake as DelegatedStake, timestamp)
-    getAndUpdateDelegatorDailyData(delegator as Delegator, timestamp)
-  }
-}
-
 export function getAndUpdateNetworkDailyData(
   entity: GraphNetwork,
   timestamp: BigInt,

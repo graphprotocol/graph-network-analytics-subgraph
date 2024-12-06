@@ -40,7 +40,6 @@ import {
   getAndUpdateIndexerDailyData,
   calculatePricePerShare,
   getAndUpdateSubgraphDeploymentDailyData,
-  batchUpdateDelegatorsForIndexer,
   getAndUpdateNetworkDailyData,
   calculateCapacities,
   compoundId,
@@ -279,8 +278,6 @@ export function handleStakeDelegated(event: StakeDelegated): void {
   let graphNetwork = createOrLoadGraphNetwork()
   graphNetwork.totalDelegatedTokens = graphNetwork.totalDelegatedTokens.plus(event.params.tokens)
   graphNetwork.save()
-
-  // batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
 
   // analytics
   let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
@@ -713,8 +710,6 @@ export function handleRebateClaimed(event: RebateClaimed): void {
   )
   graphNetwork.save()
 
-  batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
-
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   getAndUpdateSubgraphDeploymentDailyData(
     subgraphDeployment as SubgraphDeployment,
@@ -810,8 +805,6 @@ export function handleRebateCollected(event: RebateCollected): void {
     event.params.delegationRewards,
   )
   graphNetwork.save()
-
-  batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
 
   getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   getAndUpdateSubgraphDeploymentDailyData(deployment as SubgraphDeployment, event.block.timestamp)

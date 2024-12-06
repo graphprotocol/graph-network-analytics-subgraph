@@ -144,9 +144,6 @@ export function handleDelegationTransferredToL2(event: DelegationTransferredToL2
   )
   graphNetwork.save()
 
-  // batch update delegs
-  // batchUpdateDelegatorsForIndexer(indexer.id, event.block.timestamp)
-
   // analytics
   let indexerDailyData = getAndUpdateIndexerDailyData(indexer as Indexer, event.block.timestamp)
   indexerDailyData.netDailyDelegatedTokens = indexerDailyData.netDailyDelegatedTokens.minus(
