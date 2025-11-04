@@ -156,18 +156,36 @@ export function handleStakeWithdrawn(event: StakeWithdrawn): void {
  * - update the Indexers stake
  */
 export function handleStakeSlashed(event: StakeSlashed): void {
+  let graphNetwork = createOrLoadGraphNetwork()
   let id = event.params.indexer
   let indexer = Indexer.load(id)!
 
-  indexer.stakedTokens = indexer.stakedTokens.minus(event.params.tokens)
+  let slashedTokens = event.params.tokens
 
-  // We need to call into stakes mapping, because locked tokens might have been
-  // decremented, and this is not released in the event
-  // To fix this we would need to indicate in the event how many locked tokens were released
-  let graphNetwork = createOrLoadGraphNetwork()
-  let staking = Staking.bind(event.address)
-  let indexerStored = staking.stakes(event.params.indexer)
-  indexer.lockedTokens = indexerStored.tokensLocked
+  // When tokens are slashed, locked tokens might need to be unlocked if indexer overallocated
+  if (slashedTokens.gt(BigInt.fromI32(0))) {
+    let tokensUsed = indexer.allocatedTokens.plus(indexer.lockedTokens)
+    let tokensAvailable = tokensUsed.gt(indexer.stakedTokens)
+      ? BigInt.fromI32(0)
+      : indexer.stakedTokens.minus(tokensUsed)
+
+    if (slashedTokens.gt(tokensAvailable) && indexer.lockedTokens.gt(BigInt.fromI32(0))) {
+      let tokensOverAllocated = slashedTokens.minus(tokensAvailable)
+      // Calculate min(tokensOverAllocated, lockedTokens)
+      let tokensToUnlock = tokensOverAllocated.lt(indexer.lockedTokens)
+        ? tokensOverAllocated
+        : indexer.lockedTokens
+
+      indexer.lockedTokens = indexer.lockedTokens.minus(tokensToUnlock)
+
+      if (indexer.lockedTokens.equals(BigInt.fromI32(0))) {
+        indexer.tokensLockedUntil = 0
+      }
+    }
+  }
+
+  indexer.stakedTokens = indexer.stakedTokens.minus(slashedTokens)
+
   indexer = updateAdvancedIndexerMetrics(indexer as Indexer)
   indexer = calculateCapacities(indexer as Indexer)
   indexer.save()
