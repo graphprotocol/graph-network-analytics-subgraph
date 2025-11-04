@@ -717,8 +717,14 @@ type Delegator @entity {
   "[CURRENT] Total realized rewards across all delegated stakes. Realized rewards are added when undelegating and realizing a profit"
   totalRealizedRewards: BigDecimal!
 
+  "[CURRENT] Total unrealized rewards across all delegated stakes."
+  totalUnrealizedRewards: BigDecimal!
+
   "[CURRENT] Original amount delegated across all delegated stakes."
   originalDelegation: BigDecimal!
+
+  "[CURRENT] Current delegation amount across all delegated stakes. This is updated based on the continuous restake from delegation"
+  currentDelegation: BigDecimal!
 
   "List of all the daily data entities that exists for this delegator"
   dailyData: [DelegatorDailyData!]! @derivedFrom(field: "delegator")
@@ -781,8 +787,17 @@ type DelegatedStake @entity {
   realizedRewards: BigDecimal!
 
   # Pre-calculated data
+  "[CURRENT] Latest known value for share exchange rate. Should reflect the same value as 'delegationExchangeRate' on the related Indexer"
+  latestIndexerExchangeRate: BigDecimal!
+
+  "[CURRENT] Rewards not yet withdrawn, but already distributed."
+  unrealizedRewards: BigDecimal!
+
   "[CURRENT] Original value of the delegation shares. Should be sharesAmount * personalExchangeRate"
   originalDelegation: BigDecimal!
+
+  "[CURRENT] Current value of the delegation shares. Should be sharesAmount * latestIndexerExchangeRate"
+  currentDelegation: BigDecimal!
 
   "CUMULATIVE tokens delegated"
   totalStakedTokens: BigInt!
@@ -1139,8 +1154,14 @@ type DelegatorDailyData @entity {
   "[CURRENT] Amount of locked (undelegating) tokens for this day across all stakes"
   lockedTokens: BigInt!
 
+  "[CURRENT] Aggregation of unrealized rewards across all stakes"
+  totalUnrealizedRewards: BigDecimal!
+
   "[CURRENT] Aggregation of realized rewards across all stakes"
   totalRealizedRewards: BigDecimal!
+
+  "[CURRENT] Current delegation for the delegator across all stakes"
+  currentDelegation: BigDecimal!
 
   "[CURRENT] Total amount of DelegatedStake entities this Delegator historically had at this point in time"
   stakesCount: Int!
@@ -1183,11 +1204,20 @@ type DelegatedStakeDailyData @entity {
   "[CURRENT] Initial exchange rate for this delegator in this indexer at this day. It will increase as an average cost basis if the delegator adds more delegation."
   personalExchangeRate: BigDecimal!
 
+  "[CURRENT] Latest delegationExchangeRate value for the indexer"
+  latestIndexerExchangeRate: BigDecimal!
+
+  "[CURRENT] Unrealized rewards for the delegator on this particular stake"
+  unrealizedRewards: BigDecimal!
+
   "[CURRENT] Realized rewards for the delegator on this particular stake"
   realizedRewards: BigDecimal!
 
   "[CURRENT] Original delegation for the delegator on this particular stake"
   originalDelegation: BigDecimal!
+
+  "[CURRENT] Current delegation for the delegator on this particular stake"
+  currentDelegation: BigDecimal!
 }
 
 type DelegatorDelegatedStakeDailyRelation @entity {
